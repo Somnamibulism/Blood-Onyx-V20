@@ -7,7 +7,7 @@
     "minimum": "13",
     "maximum": "13"
   },
-  "url": "https://github.com/The-Final-Artificer/Foundry-VTM-V20",
+  "url": "https://github.com/Somnamibulism/Blood-Onyx-V20",
   "authors": [
     {
       "name": "The Final Artificer"
@@ -113,5 +113,7 @@
   "initiative": "1d10 + @attributes.dexterity + @attributes.wits",
   "primaryTokenAttribute": "health",
   "secondaryTokenAttribute": "blood",
-  "socket": true
+  "socket": true,
+  "manifest": "https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json",
+  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.9/blood-onyx-v20-ru9.zip"
 }
