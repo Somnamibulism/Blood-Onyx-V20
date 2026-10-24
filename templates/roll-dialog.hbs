@@ -1,0 +1,163 @@
+<form class="vtm-roll-dialog ru-compact-roll">
+  <div class="form-group">
+    <label>Первая характеристика</label>
+    <select name="primary">
+      <option value="">— Нет —</option>
+      <optgroup label="Атрибуты">
+        {{#each attrOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      <optgroup label="Способности">
+        {{#each abilOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      <optgroup label="Добродетели">
+        {{#each virtOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      <optgroup label="Другое">
+        {{#each otherOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      {{#if bgOpts.length}}
+      <optgroup label="Дополнения">
+        {{#each bgOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      {{/if}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Вторая характеристика</label>
+    <select name="secondary">
+      <option value="">— Нет —</option>
+      <optgroup label="Атрибуты">
+        {{#each attrOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      <optgroup label="Способности">
+        {{#each abilOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      <optgroup label="Добродетели">
+        {{#each virtOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      <optgroup label="Другое">
+        {{#each otherOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      {{#if bgOpts.length}}
+      <optgroup label="Дополнения">
+        {{#each bgOpts}}
+        <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
+        {{/each}}
+      </optgroup>
+      {{/if}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Модификатор</label>
+    <input type="number" name="modifier" value="0" />
+  </div>
+
+  {{#if woundPen}}
+  <div class="form-group wound-pen-row">
+    <label>Штраф ранений</label>
+    <span class="wound-pen-val">{{woundPen}}</span>
+  </div>
+  {{/if}}
+  {{#if armorPen}}
+  <div class="form-group wound-pen-row armor-pen-row">
+    <label>Штраф снаряжения (Ловкость)</label>
+    <span class="wound-pen-val">{{armorPen}}</span>
+  </div>
+  {{/if}}
+  <div class="form-group wound-pen-row item-bonus-row" style="display:none;">
+    <label>Бонус предметов</label>
+    <span class="wound-pen-val"></span>
+  </div>
+  {{#if shadowPlayPool}}
+  <div class="form-group wound-pen-row potence-row">
+    <label>Игра теней (Скрытность/Запугивание)</label>
+    <span class="wound-pen-val">+{{shadowPlayPool}}</span>
+  </div>
+  {{/if}}
+  {{#if potenceAuto}}
+  <div class="form-group wound-pen-row potence-row">
+    <label>Могущество (автоуспехи)</label>
+    <span class="wound-pen-val">+{{potenceAuto}}</span>
+  </div>
+  {{/if}}
+
+  <div class="form-group">
+    <label>Сложность</label>
+    <input type="hidden" name="difficulty" value="{{difficulty}}" />
+    <div class="diff-buttons">
+      <button type="button" class="diff-btn {{#if (eq difficulty 3)}}active{{/if}}" data-diff="3">3</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 4)}}active{{/if}}" data-diff="4">4</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 5)}}active{{/if}}" data-diff="5">5</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 6)}}active{{/if}}" data-diff="6">6</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 7)}}active{{/if}}" data-diff="7">7</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 8)}}active{{/if}}" data-diff="8">8</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 9)}}active{{/if}}" data-diff="9">9</button>
+      <button type="button" class="diff-btn {{#if (eq difficulty 10)}}active{{/if}}" data-diff="10">10</button>
+    </div>
+    {{#if encumbered}}
+    <div class="difficulty-pen-row encumbrance-diff-row">
+      <span class="wound-pen-val">Перегруз: +1 к сложности физических действий</span>
+    </div>
+    {{/if}}
+    {{#if unbalanced}}
+    <div class="difficulty-pen-row">
+      <span class="wound-pen-val">Потеря равновесия: +1 к сложности</span>
+    </div>
+    {{/if}}
+    {{#if blindedPenalty}}
+    <div class="difficulty-pen-row blinded-pen-row">
+      <span class="wound-pen-val">+{{blindedPenalty}} из-за ослепления</span>
+    </div>
+    {{/if}}
+    {{#if wolfPerceptionBonus}}
+    <div class="difficulty-pen-row wolf-form-row">
+      <span class="wound-pen-val">{{wolfPerceptionBonus}} Форма волка (обостренные чувства)</span>
+    </div>
+    {{/if}}
+    {{#if batPerceptionBonus}}
+    <div class="difficulty-pen-row wolf-form-row">
+      <span class="wound-pen-val">{{batPerceptionBonus}} Форма летучей мыши (острый слух)</span>
+    </div>
+    {{/if}}
+  </div>
+
+  <div class="form-group check">
+    <label><input type="checkbox" name="specialty" /> Специализация (10 считается дважды)</label>
+  </div>
+  {{#if wpAvailable}}
+  <div class="form-group check ru-roll-resources">
+    <label><input type="checkbox" name="spendWp" /> Потратить 1 Волю: +1 автоматический успех (осталось {{wpAvailable}})</label>
+  </div>
+  {{/if}}
+  {{#if bloodAvailable}}
+  <div class="form-group ru-roll-resources">
+    <label>Кровь: усилить физический атрибут на +1 (по правилам V20)</label>
+    <select name="bloodBoost">
+      <option value="">Не тратить кровь</option>
+      <option value="strength">Сила: −1 кровь</option>
+      <option value="dexterity">Ловкость: −1 кровь</option>
+      <option value="stamina">Выносливость: −1 кровь</option>
+    </select>
+  </div>
+  {{/if}}
+</form>

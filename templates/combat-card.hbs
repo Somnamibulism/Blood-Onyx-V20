@@ -1,0 +1,69 @@
+<div class="vtm-roll vtm-combat {{#if noDice}}hit{{else}}{{outcome}}{{/if}}">
+  <div class="roll-header {{#if targetImg}}dual-portrait{{/if}}">
+    <div class="roll-portrait-wrap">
+      <img class="roll-portrait" src="{{actorImg}}" style="{{portraitStyle}}" />
+    </div>
+    <div class="roll-info">
+      <span class="roll-actor">{{actorName}}</span>
+      <span class="roll-label">{{label}}</span>
+    </div>
+    {{#if targetImg}}
+    <div class="roll-portrait-wrap">
+      <img class="roll-portrait" src="{{targetImg}}" style="{{targetPortraitStyle}}" />
+    </div>
+    {{/if}}
+  </div>
+
+  {{#unless noDice}}
+  <div class="roll-meta">
+    {{sublabel}} | Пул {{pool}}{{#if poolNote}} ({{poolNote}}){{/if}}, Сложность {{difficulty}}
+  </div>
+  <div class="roll-dice">
+    {{#each dice}}
+    <span class="die {{this.status}}">{{this.value}}</span>
+    {{/each}}
+  </div>
+  <div class="roll-result">
+    {{#if (eq outcome "botch")}}<span class="result-botch">ПРОВАЛ!</span>{{/if}}
+    {{#if (eq outcome "failure")}}<span class="result-fail">{{#if isAttack}}Промах!{{else}}Неудача{{/if}}</span>{{/if}}
+    {{#if (eq outcome "success")}}<span class="result-success">{{#if autoSuccesses}}{{diceTotal}} + {{autoLabel}} = {{/if}}Успехов: {{total}}</span>{{/if}}
+  </div>
+  {{/unless}}
+
+  {{#if compared}}
+  <div class="vtm-chronicle-report" aria-label="Сравнение атаки и защиты">
+    <div class="vtm-report-title">Проверка попадания</div>
+    <div class="vtm-report-step"><strong>Атака:</strong> {{attackSuccesses}} успехов</div>
+    <div class="vtm-report-step"><strong>Защита:</strong> {{defenseSuccesses}} успехов ({{defenseLabel}})</div>
+    <div class="vtm-report-final {{#if showDamageBtn}}is-hit{{else}}is-zero{{/if}}">Чистых успехов: {{netSuccesses}}. {{#if showDamageBtn}}Попадание, далее урон и поглощение.{{else}}Удар отражен.{{/if}}</div>
+  </div>
+  {{else}}
+  {{#unless noDice}}
+  <div class="vtm-dice-inspect">Брошено {{pool}}d10, сложность {{difficulty}}. {{#if autoSuccesses}}Включено {{autoSuccesses}} автоматических успехов ({{autoLabel}}).{{/if}} Итог: {{total}}.</div>
+  {{/unless}}
+  {{/if}}
+
+  {{#if defendedLabel}}
+  <div class="combat-defended"><i class="fas fa-shield-alt"></i> {{defendedLabel}}</div>
+  {{/if}}
+
+  {{#if hitLabel}}
+  <div class="combat-hit"><i class="fas fa-crosshairs"></i> {{hitLabel}}</div>
+  {{/if}}
+
+  {{#if canDefend}}
+  <div class="combat-actions">
+    <button type="button" class="combat-defend-btn">
+      <i class="fas fa-shield-alt"></i> Защищаться ({{targetName}})
+    </button>
+  </div>
+  {{/if}}
+
+  {{#if showDamageBtn}}
+  <div class="combat-actions">
+    <button type="button" class="combat-damage-btn">
+      <i class="fas fa-skull-crossbones"></i> {{#if damageBtnLabel}}{{damageBtnLabel}}{{else}}Бросить урон{{/if}}
+    </button>
+  </div>
+  {{/if}}
+</div>

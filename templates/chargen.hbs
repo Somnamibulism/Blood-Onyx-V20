@@ -1,0 +1,469 @@
+<div class="chargen-wizard">
+
+  {{!-- Step indicator --}}
+  <div class="chargen-step-bar">
+    {{#each stepInfo}}
+    <div class="chargen-step-pip {{#if this.active}}active{{/if}} {{#if this.done}}done{{/if}}">
+      <span class="pip-num">{{this.num}}</span>
+      <span class="pip-label">{{this.name}}</span>
+    </div>
+    {{/each}}
+  </div>
+
+  <div class="chargen-content">
+
+    {{!-- ══════════ STEP 0: CONCEPT ══════════ --}}
+    {{#if (eq step 0)}}
+    <div class="chargen-step">
+      <h2>Концепция персонажа</h2>
+      <p class="chargen-hint">Кем ты была при жизни и чего желаешь после Становления?</p>
+      {{#if salubriCreationHint}}
+      <p class="clan-disc-hint">Салюбри (целители): Ясновидение, Стойкость и Обеа. По стандартному V20 требуется 5 точек в факте биографии «Поколение» (8-е поколение). Для домашней хроники решение можно изменить с рассказчицей.</p>
+      {{/if}}
+
+      <div class="chargen-form-grid">
+        <div class="field">
+          <label>Клан <span class="required">*</span></label>
+          <select name="clan">
+            <option value="">Выберите клан...</option>
+            {{#each clanChoices}}
+            <option value="{{this.value}}" {{#if (eq this.value ../d.clan)}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="field">
+          <label>Натура <span class="required">*</span></label>
+          <select name="nature">
+            <option value="">Выбрать...</option>
+            {{#each config.natures}}
+            <option value="{{this}}" {{#if (eq this ../d.nature)}}selected{{/if}}>{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="field">
+          <label>Маска <span class="required">*</span></label>
+          <select name="demeanor">
+            <option value="">Выбрать...</option>
+            {{#each config.natures}}
+            <option value="{{this}}" {{#if (eq this ../d.demeanor)}}selected{{/if}}>{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="field">
+          <label>Концепция</label>
+          <input type="text" name="concept" value="{{d.concept}}" placeholder="Например, разочарованный следователь" />
+        </div>
+        <div class="field">
+          <label>Сир</label>
+          <input type="text" name="sire" value="{{d.sire}}" placeholder="Имя сира" />
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+
+    {{!-- ══════════ STEP 1: ATTRIBUTES ══════════ --}}
+    {{#if (eq step 1)}}
+    <div class="chargen-step">
+      <h2>Характеристики</h2>
+      <p class="chargen-hint">Укажи приоритеты групп и распредели точки. Начальное значение каждой характеристики: 1.</p>
+
+      <div class="priority-section">
+        {{#each priorities}}
+        <div class="priority-row">
+          <label>{{this.label}}</label>
+          <select class="priority-select" data-group="{{this.key}}">
+            <option value="">Приоритет...</option>
+            {{#each this.options}}
+            <option value="{{this.value}}" {{#if this.selected}}selected{{/if}} {{#if this.disabled}}disabled{{/if}}>
+              {{this.label}}
+            </option>
+            {{/each}}
+          </select>
+        </div>
+        {{/each}}
+      </div>
+
+      <div class="chargen-columns">
+        {{#each groups}}
+        <div class="chargen-group">
+          <h3>{{this.label}} <span class="pool-badge"><span class="pool-count">{{this.remaining}}</span> осталось</span></h3>
+          {{#each this.traits}}
+          <div class="chargen-trait">
+            <span class="trait-name">{{this.label}}</span>
+            <div class="dot-row chargen-dots" data-key="{{this.key}}" data-group="{{../key}}">
+              {{{vtmDots this.value 5}}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+
+    {{!-- ══════════ STEP 2: ABILITIES ══════════ --}}
+    {{#if (eq step 2)}}
+    <div class="chargen-step">
+      <h2>Способности</h2>
+      <p class="chargen-hint">Распредели точки между группами. На этом этапе максимум каждой способности: 3.</p>
+
+      <div class="priority-section">
+        {{#each priorities}}
+        <div class="priority-row">
+          <label>{{this.label}}</label>
+          <select class="priority-select" data-group="{{this.key}}">
+            <option value="">Приоритет...</option>
+            {{#each this.options}}
+            <option value="{{this.value}}" {{#if this.selected}}selected{{/if}} {{#if this.disabled}}disabled{{/if}}>
+              {{this.label}}
+            </option>
+            {{/each}}
+          </select>
+        </div>
+        {{/each}}
+      </div>
+
+      <div class="chargen-columns">
+        {{#each groups}}
+        <div class="chargen-group">
+          <h3>{{this.label}} <span class="pool-badge"><span class="pool-count">{{this.remaining}}</span> осталось</span></h3>
+          {{#each this.traits}}
+          <div class="chargen-trait">
+            <span class="trait-name">{{this.label}}</span>
+            <div class="dot-row chargen-dots" data-key="{{this.key}}" data-group="{{../key}}">
+              {{{vtmDots this.value 5}}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+
+    {{!-- ══════════ STEP 3: ADVANTAGES ══════════ --}}
+    {{#if (eq step 3)}}
+    <div class="chargen-step">
+      <h2>Преимущества</h2>
+      <p class="chargen-hint">Клановые дисциплины уже добавлены. Выбери факты биографии и распредели добродетели.</p>
+
+      <div class="chargen-adv-columns">
+
+        {{!-- Disciplines --}}
+        <div class="chargen-adv-section">
+          <h3>Дисциплины <span class="pool-badge"><span class="disc-pool-count">{{discRemaining}}</span> осталось</span></h3>
+          {{#if clanDiscHint}}
+          <p class="clan-disc-hint"><i class="fas fa-info-circle"></i> {{d.clan}}: {{clanDiscHint}}</p>
+          {{/if}}
+          {{#each discEntries}}
+          <div class="disc-entry" data-idx="{{this.idx}}">
+            <span class="disc-name">{{this.displayName}}</span>
+            <div class="dot-row disc-dots">
+              {{{vtmDots this.dots 5}}}
+            </div>
+            <button type="button" class="disc-remove" data-idx="{{@index}}" title="Remove"><i class="fas fa-times"></i></button>
+          </div>
+          {{#if this.guides.length}}
+          <details class="discipline-guide chargen-discipline-guide">
+            <summary>Что дают точки этой дисциплины?</summary>
+            <div class="discipline-guide-list">
+              {{#each this.guides}}
+              <div class="discipline-guide-entry {{#if this.selected}}known{{/if}}">
+                <b>Уровень {{this.num}}</b>
+                <p>{{this.note}}</p>
+              </div>
+              {{/each}}
+            </div>
+          </details>
+          {{/if}}
+          {{/each}}
+          <details class="chargen-catalog {{#if catalogOpen.discipline}}open{{/if}}>
+            <summary><i class="fas fa-book-open"></i> Выбрать дисциплину из справочника</summary>
+            <input class="chargen-catalog-search" type="search" data-catalog="discipline" placeholder="Поиск дисциплины…" />
+            <div class="chargen-catalog-list" data-catalog="discipline">
+              {{#each disciplineCatalog}}
+              <div class="chargen-catalog-entry" {{#if this.selected}}hidden{{/if}}>
+                <span>{{this.label}}</span>
+                <button type="button" class="chargen-catalog-add" data-type="discipline" data-name="{{this.name}}" aria-label="Добавить {{this.label}}"><i class="fas fa-plus"></i> Добавить</button>
+              </div>
+              {{/each}}
+            </div>
+          </details>
+          <div class="chargen-drop-hint"><i class="fas fa-hand-pointer"></i> Или перетащите из компендиума</div>
+        </div>
+
+        {{!-- Backgrounds --}}
+        <div class="chargen-adv-section">
+          <h3>Факты биографии <span class="pool-badge"><span class="bg-pool-count">{{bgRemaining}}</span> осталось</span></h3>
+          {{#each d.bg}}
+          <div class="bg-entry" data-idx="{{@index}}">
+            <span class="bg-name">{{this.name}}</span>
+            <div class="dot-row bg-dots">
+              {{{vtmDots this.dots 5}}}
+            </div>
+            <button type="button" class="bg-remove" data-idx="{{@index}}" title="Remove"><i class="fas fa-times"></i></button>
+          </div>
+          {{/each}}
+          <details class="chargen-catalog" {{#if catalogOpen.background}}open{{/if}}>
+            <summary><i class="fas fa-book-open"></i> Выбрать факт биографии</summary>
+            <input class="chargen-catalog-search" type="search" data-catalog="background" placeholder="Поиск факта биографии…" />
+            <div class="chargen-catalog-list" data-catalog="background">
+              {{#each backgroundCatalog}}
+              <div class="chargen-catalog-entry" {{#if this.selected}}hidden{{/if}}>
+                <span>{{this.label}}</span>
+                <button type="button" class="chargen-catalog-add" data-type="background" data-name="{{this.name}}"><i class="fas fa-plus"></i> Добавить</button>
+              </div>
+              {{/each}}
+            </div>
+          </details>
+          <div class="chargen-drop-hint"><i class="fas fa-hand-pointer"></i> Или перетащите из компендиума</div>
+        </div>
+
+        {{!-- Virtues --}}
+        <div class="chargen-adv-section">
+          <h3>Добродетели <span class="pool-badge"><span class="virtue-pool-count">{{virtueRemaining}}</span> осталось</span></h3>
+          <div class="chargen-trait">
+            <select class="virtue-name-select" data-key="conscience">
+              <option value="Conscience" {{#if (eq virtueLabels.conscience "Conscience")}}selected{{/if}}>Совесть</option>
+              <option value="Conviction" {{#if (eq virtueLabels.conscience "Conviction")}}selected{{/if}}>Решимость</option>
+            </select>
+            <div class="dot-row virtue-dots" data-key="conscience">
+              {{{vtmDots d.virtues.conscience 5}}}
+            </div>
+          </div>
+          <div class="chargen-trait">
+            <select class="virtue-name-select" data-key="selfControl">
+              <option value="Self-Control" {{#if (eq virtueLabels.selfControl "Self-Control")}}selected{{/if}}>Самоконтроль</option>
+              <option value="Instinct" {{#if (eq virtueLabels.selfControl "Instinct")}}selected{{/if}}>Инстинкты</option>
+            </select>
+            <div class="dot-row virtue-dots" data-key="selfControl">
+              {{{vtmDots d.virtues.selfControl 5}}}
+            </div>
+          </div>
+          <div class="chargen-trait">
+            <span class="trait-name">Смелость</span>
+            <div class="dot-row virtue-dots" data-key="courage">
+              {{{vtmDots d.virtues.courage 5}}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+
+    {{!-- ══════════ STEP 4: FINISHING TOUCHES ══════════ --}}
+    {{#if (eq step 4)}}
+    <div class="chargen-step chargen-finish-step">
+      <h2>Завершение создания персонажа</h2>
+
+      <div class="fb-top-bar">
+        <div class="fb-info-row">
+          <div class="field fb-gen-field">
+            <label>Поколение</label>
+            <input type="number" name="generation" value="{{d.generation}}" min="3" max="15" {{#if generationFromBackground}}readonly title="Рассчитано из факта биографии «Поколение»"{{/if}} />
+          </div>
+          <div class="fb-auto-vals">
+            <span>Человечность <strong>{{humanity}}</strong></span>
+            <span>Воля <strong>{{willpower}}</strong></span>
+            <span>Запас крови <strong>{{bloodPool}}</strong></span>
+          </div>
+        </div>
+        <div class="fb-counter">
+          Свободные очки: <strong class="fb-remaining">{{freebiesLeft}}</strong> / 15
+        </div>
+      </div>
+
+      <div class="fb-grid">
+        {{!-- Attributes column --}}
+        <div class="fb-col">
+          <h3>Характеристики <span class="fb-cost-tag">5 за точку</span></h3>
+          {{#each fbData.attrs}}
+          <h4>{{this.label}}</h4>
+          {{#each this.items}}
+          <div class="fb-row">
+            <span class="fb-label">{{this.label}}</span>
+            <span class="fb-val">{{this.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="{{this.path}}" {{#unless this.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="{{this.path}}" {{#unless this.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if this.bonus}}<span class="fb-bonus">+{{this.bonus}}</span>{{/if}}
+          </div>
+          {{/each}}
+          {{/each}}
+        </div>
+
+        {{!-- Abilities column --}}
+        <div class="fb-col fb-col-tall">
+          <h3>Способности <span class="fb-cost-tag">2 за точку</span></h3>
+          {{#each fbData.abils}}
+          <h4>{{this.label}}</h4>
+          {{#each this.items}}
+          <div class="fb-row {{#unless this.total}}fb-zero{{/unless}}">
+            <span class="fb-label">{{this.label}}</span>
+            <span class="fb-val">{{this.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="{{this.path}}" {{#unless this.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="{{this.path}}" {{#unless this.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if this.bonus}}<span class="fb-bonus">+{{this.bonus}}</span>{{/if}}
+          </div>
+          {{/each}}
+          {{/each}}
+        </div>
+
+        {{!-- Right column: Disciplines, Backgrounds, Virtues, WP, Humanity --}}
+        <div class="fb-col">
+          {{#if fbData.discs.length}}
+          <h3>Дисциплины <span class="fb-cost-tag">7 за точку</span></h3>
+          {{#each fbData.discs}}
+          <div class="fb-row">
+            <span class="fb-label">{{this.label}}</span>
+            <span class="fb-val">{{this.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="{{this.path}}" {{#unless this.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="{{this.path}}" {{#unless this.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if this.bonus}}<span class="fb-bonus">+{{this.bonus}}</span>{{/if}}
+          </div>
+          {{/each}}
+          {{/if}}
+
+          {{#if fbData.bgs.length}}
+          <h3>Факты биографии <span class="fb-cost-tag">1 за точку</span></h3>
+          {{#each fbData.bgs}}
+          <div class="fb-row">
+            <span class="fb-label">{{this.label}}</span>
+            <span class="fb-val">{{this.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="{{this.path}}" {{#unless this.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="{{this.path}}" {{#unless this.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if this.bonus}}<span class="fb-bonus">+{{this.bonus}}</span>{{/if}}
+          </div>
+          {{/each}}
+          {{/if}}
+
+          <h3>Добродетели <span class="fb-cost-tag">2 за точку</span></h3>
+          {{#each fbData.virtues}}
+          <div class="fb-row">
+            <span class="fb-label">{{this.label}}</span>
+            <span class="fb-val">{{this.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="{{this.path}}" {{#unless this.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="{{this.path}}" {{#unless this.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if this.bonus}}<span class="fb-bonus">+{{this.bonus}}</span>{{/if}}
+          </div>
+          {{/each}}
+
+          <h3>Прочее</h3>
+          <div class="fb-row">
+            <span class="fb-label">{{fbData.wp.label}}</span>
+            <span class="fb-val">{{fbData.wp.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="willpower" {{#unless fbData.wp.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="willpower" {{#unless fbData.wp.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if fbData.wp.bonus}}<span class="fb-bonus">+{{fbData.wp.bonus}}</span>{{/if}}
+            <span class="fb-cost-inline">1 очко/ур.</span>
+          </div>
+          <div class="fb-wp-selector">
+            <span>Выбор Воли (1–10)</span>
+            <div class="dot-row fb-wp-dots">{{{vtmDots fbData.wp.total 10}}}</div>
+          </div>
+          <div class="fb-row">
+            <span class="fb-label">{{fbData.hum.label}}</span>
+            <span class="fb-val">{{fbData.hum.total}}</span>
+            <div class="fb-btns">
+              <button type="button" class="fb-sub" data-path="humanity" {{#unless fbData.hum.canSub}}disabled{{/unless}}><i class="fas fa-minus"></i></button>
+              <button type="button" class="fb-add" data-path="humanity" {{#unless fbData.hum.canAdd}}disabled{{/unless}}><i class="fas fa-plus"></i></button>
+            </div>
+            {{#if fbData.hum.bonus}}<span class="fb-bonus">+{{fbData.hum.bonus}}</span>{{/if}}
+            <span class="fb-cost-inline">2/dot</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fb-mf-section">
+        <label class="fb-mf-toggle">
+          <input type="checkbox" name="useMeritsFlaws" {{#if d.useMeritsFlaws}}checked{{/if}} />
+          Добавить достоинства и недостатки <span class="fb-cost-tag">не более 7 очков каждой категории</span>
+        </label>
+        {{#if d.useMeritsFlaws}}
+        <div class="fb-mf-body">
+          <div class="fb-mf-columns">
+            <div class="fb-mf-col">
+              <h4>Достоинства <span class="mf-tally">{{meritTotal}} / 7</span></h4>
+              {{#each merits}}
+              <div class="mf-entry">
+                <span class="mf-name">{{this.name}}</span>
+                <span class="mf-cost">{{this.cost}} очк.</span>
+                <button type="button" class="mf-remove" data-idx="{{this.idx}}"><i class="fas fa-times"></i></button>
+              </div>
+              {{/each}}
+            </div>
+            <div class="fb-mf-col">
+              <h4>Недостатки <span class="mf-tally">{{flawTotal}} / 7</span></h4>
+              {{#each flaws}}
+              <div class="mf-entry">
+                <span class="mf-name">{{this.name}}</span>
+                <span class="mf-cost">{{this.absCost}} очк.</span>
+                <button type="button" class="mf-remove" data-idx="{{this.idx}}"><i class="fas fa-times"></i></button>
+              </div>
+              {{/each}}
+            </div>
+          </div>
+          <div class="chargen-catalog-sides">
+            <details class="chargen-catalog" {{#if catalogOpen.merit}}open{{/if}}>
+              <summary><i class="fas fa-book-open"></i> Каталог достоинств</summary>
+              <input class="chargen-catalog-search" type="search" data-catalog="merit" placeholder="Поиск достоинства…" />
+              <div class="chargen-catalog-list" data-catalog="merit">
+                {{#each meritCatalog}}
+                <div class="chargen-catalog-entry" {{#if this.selected}}hidden{{/if}}>
+                  <span>{{this.label}} <small>{{this.cost}} очк.</small></span>
+                  <button type="button" class="chargen-catalog-add" data-type="merit" data-name="{{this.name}}"><i class="fas fa-plus"></i> Добавить</button>
+                </div>
+                {{/each}}
+              </div>
+            </details>
+            <details class="chargen-catalog" {{#if catalogOpen.flaw}}open{{/if}}>
+              <summary><i class="fas fa-book-open"></i> Каталог недостатков</summary>
+              <input class="chargen-catalog-search" type="search" data-catalog="flaw" placeholder="Поиск недостатка…" />
+              <div class="chargen-catalog-list" data-catalog="flaw">
+                {{#each flawCatalog}}
+                <div class="chargen-catalog-entry" {{#if this.selected}}hidden{{/if}}>
+                  <span>{{this.label}} <small>{{this.cost}} очк.</small></span>
+                  <button type="button" class="chargen-catalog-add" data-type="flaw" data-name="{{this.name}}"><i class="fas fa-plus"></i> Добавить</button>
+                </div>
+                {{/each}}
+              </div>
+            </details>
+          </div>
+          <div class="chargen-drop-hint"><i class="fas fa-hand-pointer"></i> Или перетащите из компендиума</div>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+    {{/if}}
+
+  </div>
+
+  {{!-- Navigation --}}
+  <div class="chargen-nav">
+    {{#if (gt step 0)}}
+    <button type="button" class="chargen-back"><i class="fas fa-arrow-left"></i> Назад</button>
+    {{/if}}
+    <div class="chargen-spacer"></div>
+    {{#if (eq step 4)}}
+    <button type="button" class="chargen-finish"><i class="fas fa-check"></i> Создать персонажа</button>
+    {{else}}
+    <button type="button" class="chargen-next">Далее <i class="fas fa-arrow-right"></i></button>
+    {{/if}}
+  </div>
+
+</div>

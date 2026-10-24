@@ -1,0 +1,923 @@
+{{#if chargenActive}}
+{{> "systems/vtm-v20/templates/chargen.hbs"}}
+{{else}}
+<div class="sheet-inner">
+
+{{!-- TOP: portrait + header/status side by side --}}
+<div class="sheet-top">
+  <div class="portrait-panel">
+    <div class="portrait">
+      <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" draggable="false" />
+      <button type="button" class="portrait-edit" title="Change portrait"><i class="fas fa-image"></i></button>
+    </div>
+  </div>
+  <div class="sheet-top-right">
+    <header class="sheet-header">
+      <div class="header-fields">
+    <div class="name-row">
+      <h1 class="char-name">
+        <input name="name" type="text" value="{{actor.name}}" placeholder="Name" />
+      </h1>
+      {{#if isGM}}
+      <a class="show-portrait" title="Show portrait to players"><i class="fas fa-eye"></i></a>
+      <a class="sheet-lock" title="{{#if lockState}}Unlock Sheet{{else}}Lock Sheet{{/if}}">
+        <i class="fas {{#if lockState}}fa-lock{{else}}fa-lock-open{{/if}}"></i>
+      </a>
+      {{/if}}
+    </div>
+    {{#if isVampire}}
+    <div class="ru-sect-row"><label>Секта</label><select name="system.sect">
+      <option value="Camarilla" {{#if (eq system.sect "Camarilla")}}selected{{/if}}>Камарилья</option><option value="Sabbat" {{#if (eq system.sect "Sabbat")}}selected{{/if}}>Шабаш</option><option value="Independent" {{#if (eq system.sect "Independent")}}selected{{/if}}>Независимые</option><option value="Anarchs" {{#if (eq system.sect "Anarchs")}}selected{{/if}}>Анархи</option><option value="Unaligned" {{#if (eq system.sect "Unaligned")}}selected{{/if}}>Без принадлежности</option>
+    </select><span>V20 · русская сборка</span></div>{{/if}}
+    <div class="header-row">
+      {{#if isVampire}}
+      <div class="field">
+        <label>Clan{{#if clanInfo}} <span class="arch-info"><i class="fas fa-exclamation-circle"></i><span class="arch-pop"><b>{{system.clan}} Weakness</b>{{clanInfo.body}}</span></span>{{/if}}</label>
+        <select name="system.clan">
+          <option value=""></option>
+          {{#each clanChoices}}
+          <option value="{{this.value}}" {{#if (eq this.value ../system.clan)}}selected{{/if}}>{{this.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="field">
+        <label>Generation</label>
+        <input type="number" name="system.generation" value="{{system.generation}}" min="3" max="15" />
+      </div>
+      {{/if}}
+      <div class="field">
+        <label>Nature{{#if natureInfo}} <span class="arch-info"><i class="fas fa-exclamation-circle"></i><span class="arch-pop"><b>{{system.nature}}</b>{{natureInfo.body}}{{#if natureInfo.regain}}<span class="arch-regain">{{natureInfo.regain}}</span>{{/if}}</span></span>{{/if}}</label>
+        <select name="system.nature">
+          <option value=""></option>
+          {{#each config.natures}}
+          <option value="{{this}}" {{#if (eq this ../system.nature)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="field">
+        <label>Demeanor{{#if demeanorInfo}} <span class="arch-info"><i class="fas fa-exclamation-circle"></i><span class="arch-pop pop-right"><b>{{system.demeanor}}</b>{{demeanorInfo.body}}</span></span>{{/if}}</label>
+        <select name="system.demeanor">
+          <option value=""></option>
+          {{#each config.natures}}
+          <option value="{{this}}" {{#if (eq this ../system.demeanor)}}selected{{/if}}>{{this}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+    <div class="header-row">
+      {{#if isVampire}}
+      <div class="field">
+        <label>Sire</label>
+        <input type="text" name="system.sire" value="{{system.sire}}" />
+      </div>
+      {{/if}}
+      <div class="field">
+        <label>Concept</label>
+        <input type="text" name="system.concept" value="{{system.concept}}" />
+      </div>
+      <div class="field field-age">
+        <label>Apparent / True Age</label>
+        <div class="age-inputs">
+          <input type="text" name="system.apparentAge" value="{{system.apparentAge}}" placeholder="App." />
+          <input type="text" name="system.trueAge" value="{{system.trueAge}}" placeholder="True" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Chronicle</label>
+        <input type="text" name="system.chronicle" value="{{system.chronicle}}" />
+      </div>
+    </div>
+  </div>
+</header>
+
+{{!-- STATUS BAR --}}
+<div class="status-bar">
+  <div class="status-block health-mini">
+    <label><i class="fas fa-heart"></i> Health</label>
+    <div class="health-pips">
+      {{#each healthTrack}}
+      {{#unless this.infoOnly}}
+      <span class="health-pip {{this.cssClass}}" title="{{this.label}}">{{this.damageLabel}}</span>
+      {{/unless}}
+      {{/each}}
+    </div>
+  </div>
+  <div class="status-block soak-mini">
+    <button type="button" class="soak-btn" title="Soak {{soakPool}} ({{soakLabel}})">
+      <i class="fas fa-shield-alt"></i>
+    </button>
+  </div>
+  {{#if isVampire}}
+  <div class="status-block blood-mini">
+    <label><i class="fas fa-tint"></i> Blood {{system.blood.value}}/{{system.blood.max}}{{#if hungry}} <span class="hunger-tag" title="Blood pool at or below 7 - {{hungerLabel}} ({{hungerThreshold}}). Hunger frenzy checks apply around blood.">Hungry</span>{{/if}}</label>
+    <div class="blood-bar-wrap">
+      <div class="blood-bar" style="width: {{bloodPct}}%"></div>
+    </div>
+    <div class="blood-btns">
+      <button type="button" class="blood-spend"><i class="fas fa-minus"></i></button>
+      <button type="button" class="blood-gain"><i class="fas fa-plus"></i></button>
+    </div>
+  </div>
+  {{/if}}
+  <div class="status-block wp-mini">
+    <label><i class="fas fa-brain"></i> WP {{system.willpower.value}}/{{system.willpower.max}}</label>
+    <div class="wp-track">
+      {{{vtmSquares system.willpower.value system.willpower.max}}}
+    </div>
+  </div>
+  <div class="status-block move-mini">
+    <label><i class="fas fa-running"></i> {{curMove.label}}</label>
+    <span class="move-val">{{curMove.value}} yds</span>
+  </div>
+</div>
+  </div>{{!-- .sheet-top-right --}}
+</div>{{!-- .sheet-top --}}
+
+{{#if frenzied}}
+<div class="frenzy-banner">
+  <span class="frenzy-title"><span class="frenzy-icon-wrap"><span class="frenzy-banner-icon" style="-webkit-mask-image: url('{{frenzyIcon}}'); mask-image: url('{{frenzyIcon}}');"></span></span> {{frenzyName}}</span>
+  <span class="frenzy-effects">No wound penalties. Dominate against you at +2 difficulty, resisting it at -2. No Willpower rolls needed. Immune to R&ouml;tschreck. {{frenzyWpNote}}{{#if brujahFrenzyNote}} <b>Brujah:</b> may NEVER spend Willpower to avoid frenzy, but may spend 1 Willpower to end the frenzy.{{/if}}</span>
+  {{#if frenzyInstinct}}
+  <button type="button" class="ride-wave-btn"><i class="fas fa-water"></i> Ride the Wave</button>
+  {{/if}}
+  <button type="button" class="end-frenzy-btn"><i class="fas fa-heart-broken"></i> End {{frenzyName}}</button>
+</div>
+{{/if}}
+
+{{!-- TABS --}}
+<nav class="sheet-tabs" data-group="primary">
+  <a class="item" data-tab="stats"><i class="fas fa-chart-bar"></i> Stats</a>
+  {{#if isVampire}}<a class="item" data-tab="powers"><i class="fas fa-fire"></i> Advantages</a>{{/if}}
+  <a class="item" data-tab="status"><i class="fas fa-heartbeat"></i> Status</a>
+  <a class="item" data-tab="combat"><i class="fas fa-fist-raised"></i> Combat</a>
+  <a class="item" data-tab="inventory"><i class="fas fa-suitcase"></i> Inventory</a>
+  <a class="item" data-tab="bio"><i class="fas fa-book"></i> Bio</a>
+  <div class="money-section">
+    <i class="fas fa-dollar-sign money-sign"></i>
+    <span class="money-amount">{{moneyDisplay}}</span>
+    {{#if isGM}}
+    <a class="money-edit" title="Edit Money"><i class="fas fa-pencil-alt"></i></a>
+    {{/if}}
+  </div>
+</nav>
+
+{{!-- BODY --}}
+<section class="sheet-body">
+
+  {{!-- STATS --}}
+  <div class="tab stats" data-group="primary" data-tab="stats">
+    <div class="section-block">
+      <h2>Attributes</h2>
+      <div class="trait-columns">
+        {{#each attrGroups}}
+        <div class="trait-column">
+          <h3>{{this.label}}</h3>
+          {{#each this.traits}}
+          <div class="trait-row" data-trait="{{this.specKey}}">
+            <span class="trait-label rollable" data-roll="{{this.rollKey}}" data-label="{{this.label}}">{{this.label}}{{#if this.specialties.length}}<span class="trait-spec"> ({{join this.specialties ", "}})</span>{{/if}}</span>
+            {{#if this.canSpecialize}}<button type="button" class="spec-edit" title="Edit specialties"><i class="fas fa-pen-fancy"></i></button>{{/if}}
+            <div class="dot-row" data-path="{{this.path}}">
+              {{{vtmDots this.value @root.traitMax}}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h2>Abilities</h2>
+      <div class="trait-columns">
+        {{#each abilGroups}}
+        <div class="trait-column">
+          <h3>{{this.label}}</h3>
+          {{#each this.traits}}
+          <div class="trait-row" data-trait="{{this.specKey}}">
+            <span class="trait-label rollable" data-roll="{{this.rollKey}}" data-label="{{this.label}}">{{this.label}}{{#if this.specialties.length}}<span class="trait-spec"> ({{join this.specialties ", "}})</span>{{/if}}</span>
+            {{#if this.canSpecialize}}<button type="button" class="spec-edit" title="Edit specialties"><i class="fas fa-pen-fancy"></i></button>{{/if}}
+            <div class="dot-row" data-path="{{this.path}}">
+              {{{vtmDots this.value @root.traitMax}}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+
+  {{!-- POWERS --}}
+  {{#if isVampire}}
+  <div class="tab powers" data-group="primary" data-tab="powers">
+    <div class="trait-columns">
+      <div class="trait-column">
+        <h3>Disciplines</h3>
+        <button type="button" class="ru-homebrew-create" data-type="discipline"><i class="fas fa-feather-alt"></i> + Создать своё</button>
+        <div class="item-list">
+          {{#each disciplines}}
+          <div class="item" data-item-id="{{this._id}}">
+            <img class="item-img" src="{{this.img}}" width="25" height="25" />
+            <span class="item-name item-open">{{this.name}}</span>
+            <div class="dot-row item-dots" data-item-id="{{this._id}}" data-field="system.level">
+              {{{vtmDots this.system.level @root.traitMax}}}
+            </div>
+            {{#if this.activatable}}
+            <button type="button" class="discipline-activate {{#if this.active}}active{{/if}}" data-item-id="{{this._id}}" title="{{#if this.active}}Deactivate{{else}}Activate (1 blood){{/if}}">
+              <i class="fas fa-tint"></i>
+            </button>
+            {{/if}}
+            <div class="item-controls">
+              <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{#if this.hasGuides}}
+          <details class="discipline-guide" data-item-id="{{this._id}}">
+            <summary>Описание уровней <span class="disc-guide-counter">{{this.system.level}} / 5</span></summary>
+            <div class="discipline-guide-list">
+              {{#each this.guides}}
+              <div class="discipline-guide-entry {{#if this.learned}}known{{/if}}">
+                <b>{{this.level}}. {{this.title}}</b>
+                <p>{{this.note}}</p>
+                {{#if this.learned}}<button type="button" class="ru-power-open" data-item-id="{{../_id}}" title="Открыть силы дисциплины и выбрать цель"><i class="fas fa-hand-sparkles"></i> Применить</button>{{/if}}
+              </div>
+              {{/each}}
+            </div>
+          </details>
+          {{/if}}
+          {{/each}}
+        </div>
+      </div>
+      <div class="trait-column">
+        <h3>Backgrounds</h3>
+        <button type="button" class="ru-homebrew-create" data-type="background"><i class="fas fa-feather-alt"></i> + Создать своё</button>
+        <div class="item-list">
+          {{#each backgrounds}}
+          <div class="bg-entry" data-item-id="{{this._id}}">
+            <div class="item" data-item-id="{{this._id}}">
+              <span class="item-name item-open">{{this.name}}</span>
+              <div class="dot-row item-dots" data-item-id="{{this._id}}" data-field="system.rating">
+                {{{vtmDots this.system.rating @root.traitMax}}}
+              </div>
+              {{#if this.system.rating}}
+              <button type="button" class="bg-roll" data-item-id="{{this._id}}" data-name="{{this.name}}" title="Roll {{this.name}}">
+                <i class="fas fa-dice-d20"></i>
+              </button>
+              {{/if}}
+              <div class="item-controls">
+                <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+              </div>
+            </div>
+            <textarea class="bg-notes" data-item-id="{{this._id}}" placeholder="Notes..."{{#if ../sheetLocked}} disabled{{/if}}>{{this.system.notes}}</textarea>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      <div class="trait-column">
+        <h3>Virtues</h3>
+        <div class="trait-row">
+          <span class="trait-label rollable" data-roll="virtues.conscience" data-label="{{virtueLabels.conscience}}">{{virtueLabels.conscience}}</span>
+          <div class="dot-row" data-path="system.virtues.conscience">
+            {{{vtmDots system.virtues.conscience 5}}}
+          </div>
+        </div>
+        <div class="trait-row">
+          <span class="trait-label rollable" data-roll="virtues.selfControl" data-label="{{virtueLabels.selfControl}}">{{virtueLabels.selfControl}}</span>
+          <div class="dot-row" data-path="system.virtues.selfControl">
+            {{{vtmDots system.virtues.selfControl 5}}}
+          </div>
+        </div>
+        <div class="trait-row">
+          <span class="trait-label rollable" data-roll="virtues.courage" data-label="{{virtueLabels.courage}}">{{virtueLabels.courage}}</span>
+          <div class="dot-row" data-path="system.virtues.courage">
+            {{{vtmDots system.virtues.courage 5}}}
+          </div>
+        </div>
+
+        <h3>Merits</h3>
+        <button type="button" class="ru-homebrew-create" data-type="merit"><i class="fas fa-feather-alt"></i> + Создать своё</button>
+        <div class="item-list compact">
+          {{#each merits}}
+          <div class="item" data-item-id="{{this._id}}">
+            <span class="item-name item-open">{{this.name}}</span>
+            <span class="item-cost">({{this.system.cost}}pt)</span>
+            <div class="item-controls">
+              <a class="item-delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+
+        <h3>Flaws</h3>
+        <button type="button" class="ru-homebrew-create" data-type="merit" data-flaw="true"><i class="fas fa-feather-alt"></i> + Создать своё</button>
+        <div class="item-list compact">
+          {{#each flaws}}
+          <div class="item" data-item-id="{{this._id}}">
+            <span class="item-name item-open">{{this.name}}</span>
+            <span class="item-cost">({{abs this.system.cost}}pt)</span>
+            <div class="item-controls">
+              <a class="item-delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+    <div class="trait-columns paths-rituals-row">
+      <div class="trait-column">
+        <h3>Paths</h3>
+        <button type="button" class="ru-homebrew-create" data-type="path"><i class="fas fa-feather-alt"></i> + Создать своё</button>
+        {{#each pathCategories}}
+        <div class="path-category">
+          <h4 class="path-category-header"><i class="fas fa-caret-down"></i> {{this.label}}</h4>
+          <div class="item-list path-category-list">
+            {{#each this.paths}}
+            <div class="item" data-item-id="{{this._id}}">
+              <img class="item-img" src="{{this.img}}" width="25" height="25" />
+              <span class="item-name item-open">{{this.name}}</span>
+              <div class="dot-row item-dots" data-item-id="{{this._id}}" data-field="system.level">
+                {{{vtmDots this.system.level @root.traitMax}}}
+              </div>
+              <div class="item-controls">
+                <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+              </div>
+            </div>
+            {{/each}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+      <div class="trait-column">
+        <h3>Rituals</h3>
+        <button type="button" class="ru-homebrew-create" data-type="ritual"><i class="fas fa-feather-alt"></i> + Создать своё</button>
+        <div class="item-list compact">
+          {{#each rituals}}
+          <div class="item" data-item-id="{{this._id}}">
+            <span class="item-name item-open">{{this.name}}</span>
+            <span class="item-cost">Lv.{{this.system.level}}</span>
+            <button type="button" class="ritual-cast" data-item-id="{{this._id}}" title="Roll the casting">
+              <i class="fas fa-dice-d20"></i>
+            </button>
+            <div class="item-controls">
+              <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- STATUS --}}
+  <div class="tab status" data-group="primary" data-tab="status">
+    {{#if activeEffects.length}}
+    <div class="active-effects-bar">
+      {{#each activeEffects}}
+      <div class="active-effect">
+        <span class="effect-name"><i class="fas {{this.icon}}"></i> {{this.name}}</span>
+        <span class="effect-desc">{{this.desc}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+    <div class="status-columns">
+      <div class="status-column">
+        <div class="section-block">
+          <h3>Health</h3>
+          <div class="health-track">
+            {{#each healthTrack}}
+            <div class="health-row {{#if this.infoOnly}}info-only{{/if}}">
+              <span class="health-label">{{this.label}}</span>
+              <span class="health-penalty">
+                {{#if (eq this.penalty null)}}---{{else}}{{this.penalty}}{{/if}}
+              </span>
+              {{#if this.infoOnly}}
+              <div class="health-placeholder"></div>
+              {{else}}
+              <div class="health-box {{this.cssClass}}" data-level="{{this.key}}">
+                {{this.damageLabel}}
+              </div>
+              {{/if}}
+              <span class="health-desc">{{this.desc}}</span>
+            </div>
+            {{/each}}
+          </div>
+          <div class="health-actions">
+            <button type="button" class="soak-btn" title="Бросить поглощение">
+              <i class="fas fa-shield-alt"></i> Soak {{soakPool}} ({{soakLabel}})
+            </button>
+            {{#if isVampire}}
+            <button type="button" class="heal-btn" title="Left-click: Spend blood to heal &#10;Right-click: Reflexive heal roll (Stamina + Survival, diff 8)">
+              <i class="fas fa-tint"></i> Heal
+            </button>
+            {{/if}}
+            {{#if woundPenalty}}
+            <span class="wound-penalty {{#if woundsIgnored}}ignored{{/if}}">Wound Penalty: {{woundPenalty}}{{#if woundsIgnored}} (ignored){{/if}}</span>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="section-block">
+          <h3>Movement <span class="movement-unit">(yards/turn)</span></h3>
+          <div class="movement-grid">
+            <div class="move-row {{#if (eq curMove.label 'Walk')}}active{{/if}}"><i class="fas fa-walking"></i><span class="move-label">Walk</span><span class="move-value">{{movement.walk}}</span></div>
+            <div class="move-row {{#if (eq curMove.label 'Jog')}}active{{/if}}"><i class="fas fa-running"></i><span class="move-label">Jog</span><span class="move-value">{{movement.jog}}</span></div>
+            <div class="move-row {{#if (eq curMove.label 'Run')}}active{{/if}}"><i class="fas fa-bolt"></i><span class="move-label">Run</span><span class="move-value">{{movement.run}}</span></div>
+            <div class="move-row {{#if (eq curMove.label 'Hobble')}}active{{/if}}"><i class="fas fa-crutch"></i><span class="move-label">Hobble</span><span class="move-value">{{movement.hobble}}</span></div>
+            <div class="move-row {{#if (eq curMove.label 'Crawl')}}active{{/if}}"><i class="fas fa-hand-paper"></i><span class="move-label">Crawl</span><span class="move-value">{{movement.crawl}}</span></div>
+          </div>
+          <button type="button" class="jump-btn" title="Roll a jump (difficulty 3)"><i class="fas fa-angle-double-up"></i> Jump</button>
+        </div>
+      </div>
+
+      <div class="status-column">
+        {{#if isVampire}}
+        <div class="section-block">
+          <h3>Generation Info</h3>
+          <div class="gen-info">
+            <span>Max trait rating: <span class="gen-val">{{traitMax}}</span></span>
+            <span class="gen-sep">·</span>
+            <span>Blood per turn: <span class="gen-val">{{bloodPerTurn}}</span></span>
+          </div>
+        </div>
+        {{/if}}
+
+        <div class="section-block">
+          <h3>Willpower</h3>
+          <div class="wp-detail">
+            <label>Permanent</label>
+            <div class="wp-perm-row">
+              <div class="dot-row" data-path="system.willpower.max">
+                {{{vtmDots system.willpower.max 10}}}
+              </div>
+              <span class="wp-adjective">{{wpAdjective}}</span>
+              <button type="button" class="wp-roll rollable" data-roll="willpower" data-label="Willpower" title="Roll Willpower">
+                <i class="fas fa-dice-d10"></i> Бросок
+              </button>
+            </div>
+            <label>Temporary</label>
+            <div class="wp-temp-row">
+              <div class="wp-track" data-path="system.willpower.value">
+                {{{vtmSquares system.willpower.value system.willpower.max}}}
+              </div>
+              <button type="button" class="wp-spend-btn {{#if wpSpent}}active{{/if}}" title="Spend 1 Willpower for +1 automatic success on next roll">
+                <i class="fas fa-fire"></i> Use
+              </button>
+              <button type="button" class="wp-spend-btn wp-ignore-wounds-btn {{#if wpIgnoreWounds}}active{{/if}}" {{#if declaring}}disabled{{/if}} title="{{#if declaring}}Only available during resolution phase{{else}}Spend 1 Willpower to ignore wound penalties{{/if}}">
+                <i class="fas fa-heart-broken"></i> Endure
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block path-block">
+          <h3 data-tip="humanity">
+            {{#if isVampire}}
+            <select name="system.pathName" class="path-select" title="Выбрать Путь или Человечность">
+              {{#each pathChoices}}
+              <option value="{{this.value}}" {{#if (eq this.value ../system.pathName)}}selected{{/if}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+            {{else}}
+            Humanity
+            {{/if}}
+            {{#if humanityTip}}<span class="arch-info"><i class="fas fa-exclamation-circle"></i><span class="arch-pop pop-right"><b>Humanity</b>Humanity influences appearance: the lower it is, the more corpse-like the Kindred appears.<br /><br />Virtue dice pools can never exceed the Humanity rating.<br /><br />Vampires with higher Humanity rise earlier in the evening. If forced to act during the day, every dice pool is capped at the Humanity rating.<br /><br />Humanity also determines how long torpor lasts.</span></span>{{/if}}
+          </h3>
+          <div class="dot-row" data-path="system.humanity">
+            {{{vtmDots system.humanity 10}}}
+            <button type="button" class="wp-roll rollable" data-roll="humanity" data-label="{{system.pathName}}" title="Roll {{system.pathName}}">
+              <i class="fas fa-dice-d10"></i> Бросок
+            </button>
+          </div>
+          <div class="bearing-info">
+            <span class="bearing-type">Bearing: {{bearingName}}</span>
+            {{#if bearingLabel}}
+            <span class="bearing-label">({{bearingLabel}})</span>
+            {{/if}}
+            {{#if bearingMod}}
+            <span class="bearing-mod">{{bearingMod}}</span>
+            {{else}}
+            {{#if (eq system.humanity 0)}}
+            <span class="bearing-lost">Character lost</span>
+            {{/if}}
+            {{/if}}
+          </div>
+          {{#if humanityTip}}
+          <div class="bearing-note">The bearing modifier applies to Social rolls for appearing normal and winning sympathy.</div>
+          {{/if}}
+        </div>
+
+        <div class="section-block">
+          <h3>Experience</h3>
+          <div class="exp-fields">
+            <div class="field">
+              <label>Unspent</label>
+              <input type="number" name="system.experience.current" value="{{system.experience.current}}" min="0" />
+            </div>
+            <div class="field">
+              <label>Total</label>
+              <input type="number" name="system.experience.total" value="{{system.experience.total}}" min="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <h3>Situational Checks</h3>
+          <div class="sit-checks">
+            <button type="button" class="sit-check-btn fall-btn"><i class="fas fa-arrow-down"></i> Falling</button>
+            <button type="button" class="sit-check-btn throw-btn"><i class="fas fa-baseball-ball"></i> Throwing</button>
+            <button type="button" class="sit-check-btn awaken-btn"><i class="fas fa-sun"></i> Awakening</button>
+            <button type="button" class="sit-check-btn electro-btn"><i class="fas fa-bolt"></i> Electrocution</button>
+            <button type="button" class="sit-check-btn fire-btn"><i class="fas fa-fire"></i> Fire</button>
+            {{#if isVampire}}
+            <button type="button" class="sit-check-btn sunlight-btn"><i class="fas fa-cloud-sun"></i> Sunlight</button>
+            <button type="button" class="sit-check-btn frenzy-check-btn"><i class="fas fa-paw"></i> Frenzy</button>
+            <button type="button" class="sit-check-btn rotschreck-btn"><i class="fas fa-running"></i> R&ouml;tschreck</button>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- BIO --}}
+  <div class="tab bio" data-group="primary" data-tab="bio">
+    <div class="bio-toolbar">
+      <select class="bio-format-block" title="Block Format">
+        <option value="" disabled selected>Format</option>
+        <option value="<p>">Paragraph</option>
+        <option value="<h1>">Heading 1</option>
+        <option value="<h2>">Heading 2</option>
+        <option value="<h3>">Heading 3</option>
+        <option value="<blockquote>">Quote</option>
+        <option value="<pre>">Code</option>
+      </select>
+      <span class="bio-fmt-sep"></span>
+      <select class="bio-font-size" title="Font Size">
+        <option value="1">10px</option>
+        <option value="2">13px</option>
+        <option value="3" selected>16px</option>
+        <option value="4">18px</option>
+        <option value="5">24px</option>
+        <option value="6">32px</option>
+        <option value="7">48px</option>
+      </select>
+      <span class="bio-fmt-sep"></span>
+      <button type="button" class="bio-fmt" data-cmd="bold" title="Bold"><i class="fas fa-bold"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="italic" title="Italic"><i class="fas fa-italic"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="underline" title="Underline"><i class="fas fa-underline"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="strikethrough" title="Strikethrough"><i class="fas fa-strikethrough"></i></button>
+      <span class="bio-fmt-sep"></span>
+      <button type="button" class="bio-fmt" data-cmd="justifyLeft" title="Align Left"><i class="fas fa-align-left"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="justifyCenter" title="Align Center"><i class="fas fa-align-center"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="justifyRight" title="Align Right"><i class="fas fa-align-right"></i></button>
+      <span class="bio-fmt-sep"></span>
+      <button type="button" class="bio-fmt" data-cmd="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="insertOrderedList" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="outdent" title="Decrease Indent"><i class="fas fa-outdent"></i></button>
+      <button type="button" class="bio-fmt" data-cmd="indent" title="Increase Indent"><i class="fas fa-indent"></i></button>
+      <span class="bio-fmt-sep"></span>
+      <button type="button" class="bio-fmt" data-cmd="removeFormat" title="Clear Formatting"><i class="fas fa-eraser"></i></button>
+    </div>
+    <nav class="bio-subtabs">
+      <a class="bio-subtab" data-bio-tab="bio"><i class="fas fa-book-open"></i> Description</a>
+      <a class="bio-subtab" data-bio-tab="notes"><i class="fas fa-pen"></i> Notes</a>
+    </nav>
+    <div class="bio-section" data-bio-field="bio">
+      <div class="bio-editor-wrap">
+        <div class="bio-body"></div>
+        <button type="button" class="bio-arrow bio-prev"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" class="bio-arrow bio-next"><i class="fas fa-chevron-right"></i></button>
+        <span class="bio-page-num"></span>
+      </div>
+    </div>
+    <div class="bio-section" data-bio-field="notes">
+      <div class="bio-editor-wrap">
+        <div class="bio-body"></div>
+        <button type="button" class="bio-arrow bio-prev"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" class="bio-arrow bio-next"><i class="fas fa-chevron-right"></i></button>
+        <span class="bio-page-num"></span>
+      </div>
+    </div>
+  </div>
+
+  {{!-- COMBAT --}}
+  <div class="tab combat" data-group="primary" data-tab="combat">
+
+    <div class="section-block">
+      <div class="combat-attack-header">
+        <h2>Боевые манёвры <a class="attack-create" title="Создать свой манёвр"><i class="fas fa-plus"></i></a></h2>
+        <button type="button" class="targeting-toggle {{#if targetingEnabled}}active{{/if}}" title="Toggle targeted attacks">
+          <i class="fas fa-bullseye"></i>
+          <span>Прицел</span>
+        </button>
+        <button type="button" class="movement-toggle" title="Actions while moving lose 1 die (resolution only)">
+          <i class="fas fa-person-running"></i>
+          <span>Движение</span>
+        </button>
+        <div class="toggle-dropdown">
+          <button type="button" class="positioning-toggle {{#if flankAttack}}active{{/if}}{{#if rearAttack}}active{{/if}}" title="Attack position: flank +1 die, rear +2 dice">
+            <i class="fas fa-arrows-left-right"></i>
+            <span>{{posLabel}}</span>
+          </button>
+          <div class="toggle-menu">
+            <button type="button" data-value="none" class="{{#unless flankAttack}}{{#unless rearAttack}}selected{{/unless}}{{/unless}}">Нет</button>
+            <button type="button" data-value="flank" class="{{#if flankAttack}}selected{{/if}}">Фланг (+1 куб)</button>
+            <button type="button" data-value="rear" class="{{#if rearAttack}}selected{{/if}}">Сзади (+2 куба)</button>
+          </div>
+        </div>
+        <div class="toggle-dropdown">
+          <button type="button" class="range-toggle {{#if rangePointBlank}}active{{/if}}{{#if rangeMax}}active{{/if}}" title="Shooting distance: point blank diff 4, short range diff 6, maximum range diff 8">
+            <i class="fas fa-crosshairs"></i>
+            <span>{{rangeLabel}}</span>
+          </button>
+          <div class="toggle-menu">
+            <button type="button" data-value="pointblank" class="{{#if rangePointBlank}}selected{{/if}}">В упор (сл. 4)</button>
+            <button type="button" data-value="short" class="{{#unless rangePointBlank}}{{#unless rangeMax}}selected{{/unless}}{{/unless}}">Ближняя (сл. 6)</button>
+            <button type="button" data-value="max" class="{{#if rangeMax}}selected{{/if}}">Предельная (сл. 8)</button>
+          </div>
+        </div>
+        <button type="button" class="outnumbered-toggle {{#if multiOpp}}active{{/if}}" title="Battling multiple opponents in close combat: +1 attack and defense difficulty per extra foe, max +4. Left-click raises, right-click lowers">
+          <i class="fas fa-users"></i>
+          <span>Окружение{{#if multiOpp}} +{{multiOpp}}{{/if}}</span>
+        </button>
+        <button type="button" class="weapon-length-toggle {{#if weaponLength}}active{{/if}}" title="Fended off by a longer weapon: close-combat attacks lose 1 die while closing in">
+          <i class="fas fa-ruler-horizontal"></i>
+          <span>Длина оружия</span>
+        </button>
+      </div>
+      <p class="ru-combat-hint">{{maneuverGuide}}</p>
+      <div class="attack-list ru-combat-table">
+        {{#each attacks}}
+        <div class="attack-row {{#if this.img}}has-img{{/if}} {{#if this.declared}}declared{{/if}} {{#if ../resolving}}{{#unless this.declared}}res-dimmed{{/unless}}{{/if}} {{#if this.resExecuted}}res-done{{/if}}" data-attack-id="{{this.id}}">
+          {{#if this.img}}
+          <img class="attack-img" src="{{this.img}}" />
+          <div class="card-header">
+            <span class="attack-name">{{this.name}}</span>
+            {{#if this.custom}}
+            <button type="button" class="attack-delete" data-custom-id="{{this.customId}}" title="Delete maneuver">
+              <i class="fas fa-trash"></i>
+            </button>
+            {{/if}}
+          </div>
+          {{else}}
+          <div class="card-header">
+            <span class="attack-icon"><i class="fas {{this.icon}}"></i></span>
+            <span class="attack-name">{{this.name}}</span>
+            {{#if this.custom}}
+            <button type="button" class="attack-delete" data-custom-id="{{this.customId}}" title="Delete maneuver">
+              <i class="fas fa-trash"></i>
+            </button>
+            {{/if}}
+          </div>
+          {{/if}}
+          <div class="card-stats">
+            <span><b>Пул:</b> {{this.pool}}</span>
+            {{#if this.isAction}}
+            <span><b>Сложн.:</b> {{this.actionDifficulty}}</span>
+            {{else}}
+            {{#unless this.hideDamage}}<span><b>Урон:</b> {{this.damage}} {{this.damageType}}</span>{{/unless}}
+            {{#if this.difficultyLabel}}<span><b>Сложн.:</b> {{this.difficultyLabel}}</span>{{/if}}
+            {{#if this.range}}<span><b>Дистанция:</b> {{this.range}} ярд.</span>{{/if}}
+            {{#if this.ammoLabel}}<span><b>Патроны:</b> {{this.ammoLabel}}</span>{{/if}}
+            {{#if this.rate}}<span><b>Темп:</b> {{this.rate}}</span>{{/if}}
+            {{/if}}
+            {{#if this.note}}<span class="attack-note">{{this.note}}</span>{{/if}}
+          </div>
+          <div class="card-actions">
+            {{#if ../resolving}}
+              {{#if this.declared}}
+                {{#if this.resExecuted}}
+                <span class="res-done-label"><i class="fas fa-check"></i> Done</span>
+                {{/if}}
+              {{/if}}
+            {{/if}}
+            {{!-- declared actions visible in the declaration panel below --}}
+            {{#unless ../declFullDefense}}
+            {{#if this.isReadyWeapon}}
+            <button type="button" class="attack-btn action-roll-btn" data-action-id="{{this.id}}" data-ready-type="melee">
+              <i class="fas fa-hand-fist"></i> Ближнее
+            </button>
+            <button type="button" class="attack-btn action-roll-btn" data-action-id="{{this.id}}" data-ready-type="ranged">
+              <i class="fas fa-crosshairs"></i> Дальнее
+            </button>
+            {{else if this.isAction}}
+            <button type="button" class="attack-btn action-roll-btn" data-action-id="{{this.id}}">
+              <i class="fas fa-dice-d10"></i> Бросок
+            </button>
+            {{else}}
+            <button type="button" class="attack-btn" data-attack-id="{{this.id}}">
+              <i class="fas fa-dice-d10"></i> Атака
+            </button>
+            {{#if this.isRanged}}
+            <button type="button" class="attack-btn reload-btn" data-attack-id="{{this.id}}">
+              <i class="fas fa-rotate-right"></i> Перезарядка
+            </button>
+            {{/if}}
+            {{/if}}
+            {{/unless}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h2>Защитные манёвры</h2>
+      <div class="attack-list ru-combat-table ru-defense-table">
+        {{#each defenses}}
+        <div class="attack-row defense-row {{#if this.img}}has-img{{/if}} {{#if this.declared}}declared{{/if}} {{#if ../resolving}}{{#unless this.declared}}res-dimmed{{/unless}}{{/if}} {{#if this.resExecuted}}res-done{{/if}}">
+          {{#if this.img}}
+          <img class="attack-img" src="{{this.img}}" />
+          <div class="card-header">
+            <span class="attack-name">{{this.name}}</span>
+          </div>
+          {{else}}
+          <div class="card-header">
+            <span class="attack-icon"><i class="fas {{this.icon}}"></i></span>
+            <span class="attack-name">{{this.name}}</span>
+          </div>
+          {{/if}}
+          <div class="card-stats">
+            <span><b>Пул:</b> {{this.pool}}</span>
+            <span>{{this.poolLabel}}</span>
+          </div>
+          <div class="card-actions">
+            {{#if ../resolving}}
+              {{#if this.declared}}
+                {{#if this.resExecuted}}
+                <span class="res-done-label"><i class="fas fa-check"></i> Used</span>
+                {{else}}
+                <span class="res-ready-label"><i class="fas fa-shield-alt"></i> Ready</span>
+                {{/if}}
+              {{/if}}
+            {{/if}}
+            {{!-- declared defenses visible in the declaration panel below --}}
+            {{#unless ../declFullDefense}}
+            <button type="button" class="attack-btn defense-roll-btn" data-defense="{{this.defense}}" data-trait="{{this.trait}}" data-trait2="{{this.trait2}}" data-label="{{this.name}}">
+              <i class="fas fa-dice-d10"></i> {{#if ../declaring}}Защита{{else}}Бросок{{/if}}
+            </button>
+            {{/unless}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+      {{#if declaring}}
+      {{#unless grappleLocked}}
+      <button type="button" class="full-defense-btn {{#if declFullDefense}}active{{/if}}" data-action="declFullDefense">
+        <i class="fas fa-shield-alt"></i> Полная защита
+      </button>
+      {{/unless}}
+      {{/if}}
+    </div>
+  </div>
+
+  {{!-- INVENTORY --}}
+  <div class="tab inventory" data-group="primary" data-tab="inventory">
+    <div class="carrying-capacity">
+      <i class="fas fa-weight-hanging"></i> Carrying: {{carriedWeight}} / {{maxCarry}} kg
+    </div>
+    {{#if armorPenalty}}
+    <div class="armor-penalty-banner">
+      <i class="fas fa-shield-alt"></i> Gear Dex Penalty: {{armorPenalty}}
+    </div>
+    {{/if}}
+    {{#if encumbered}}
+    <div class="armor-penalty-banner">
+      <i class="fas fa-weight-hanging"></i> Encumbered: +1 Difficulty to Physical Actions
+    </div>
+    {{/if}}
+    {{#if cannotMove}}
+    <div class="armor-penalty-banner">
+      <i class="fas fa-ban"></i> Overloaded: Cannot Move
+    </div>
+    {{else if moveHalves}}
+    <div class="armor-penalty-banner">
+      <i class="fas fa-person-walking"></i> Overloaded: Movement Halved {{#if (gt moveHalves 1)}}x{{moveHalves}}{{/if}}
+    </div>
+    {{/if}}
+    <div class="inventory-columns">
+      <div class="inventory-column">
+        <h3>Weapons <a class="item-create" data-type="weapon"><i class="fas fa-plus"></i></a></h3>
+        <button type="button" class="ru-homebrew-create" data-type="weapon"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
+        <div class="item-list compact">
+          {{#each weapons}}
+          <div class="item inv-item {{#unless this.system.equipped}}stowed{{/unless}} {{#if this.reqUnmet}}req-unmet{{/if}}" data-item-id="{{this._id}}">
+            <a class="item-equip {{#if this.system.equipped}}equipped{{/if}}" title="{{#if this.system.equipped}}Unequip{{else}}Equip{{/if}}">
+              <i class="{{#if this.system.equipped}}fas fa-check-square{{else}}far fa-square{{/if}}"></i>
+            </a>
+            <div class="item-body">
+              <div class="item-title">
+                <span class="item-name">{{this.name}}</span>
+                {{#if this.system.equipped}}
+                {{#if (eq this.system.hands 2)}}<span class="item-hand" title="Uses both hands"><i class="fas fa-hands"></i> Both Hands</span>
+                {{else if this.system.offHand}}<span class="item-hand off" title="{{#if @root.ambidextrous}}Off hand (Ambidextrous: no penalty){{else}}Off hand: +1 difficulty{{/if}}"><i class="fas fa-hand-point-left"></i> Off Hand</span>
+                {{else}}<span class="item-hand" title="Main hand"><i class="fas fa-hand-point-right"></i> Main Hand</span>{{/if}}
+                {{/if}}
+                {{#if this.reqLabel}}<span class="item-req {{#if this.reqUnmet}}unmet{{/if}}" title="Requires {{this.reqLabel}}"><i class="fas fa-lock"></i> {{this.reqLabel}}</span>{{/if}}
+              </div>
+              <div class="item-stats">
+                <span class="item-detail">Dmg: {{this.system.damage}} {{this.system.damageType}}</span>
+                {{#if this.system.range}}<span class="item-detail">Range: {{this.system.range}} yds</span>{{/if}}
+                {{#if this.ammoLabel}}<span class="item-detail">Ammo: {{this.ammoLabel}}</span>
+                {{else if this.system.capacity}}<span class="item-detail">Cap: {{this.system.capacity}}</span>{{/if}}
+                {{#if this.system.rate}}<span class="item-detail">Rate: {{this.system.rate}}</span>{{/if}}
+                {{#if this.system.weight}}<span class="item-detail">{{this.system.weight}} kg</span>{{/if}}
+              </div>
+            </div>
+            <div class="item-controls">
+              <a class="item-open" title="Open item sheet"><i class="fas fa-external-link-alt"></i></a>
+              <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      <div class="inventory-column">
+        <h3>Attire <a class="item-create" data-type="armor"><i class="fas fa-plus"></i></a></h3>
+        <button type="button" class="ru-homebrew-create" data-type="armor"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
+        <div class="item-list compact">
+          {{#each armor}}
+          <div class="item inv-item {{#unless this.system.equipped}}stowed{{/unless}}" data-item-id="{{this._id}}">
+            <a class="item-equip {{#if this.system.equipped}}equipped{{/if}}" title="{{#if this.system.equipped}}Unequip{{else}}Equip{{/if}}">
+              <i class="{{#if this.system.equipped}}fas fa-check-square{{else}}far fa-square{{/if}}"></i>
+            </a>
+            <div class="item-body">
+              <div class="item-title">
+                <span class="item-name">{{this.name}}</span>
+              </div>
+              <div class="item-stats">
+                <span class="item-detail">Rating {{this.system.rating}}</span>
+                {{#if this.system.penalty}}<span class="item-detail penalty">Pen {{this.system.penalty}}</span>{{/if}}
+                {{#if this.system.weight}}<span class="item-detail">{{this.system.weight}} kg</span>{{/if}}
+              </div>
+            </div>
+            <div class="item-controls">
+              <a class="item-open" title="Open item sheet"><i class="fas fa-external-link-alt"></i></a>
+              <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      <div class="inventory-column">
+        <h3>Equipment <a class="item-create" data-type="equipment"><i class="fas fa-plus"></i></a></h3>
+        <button type="button" class="ru-homebrew-create" data-type="equipment"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
+        <div class="item-list compact">
+          {{#each equipment}}
+          <div class="item inv-item {{#unless this.system.equipped}}stowed{{/unless}}" data-item-id="{{this._id}}">
+            <a class="item-equip {{#if this.system.equipped}}equipped{{/if}}" title="{{#if this.system.equipped}}Unequip{{else}}Equip{{/if}}">
+              <i class="{{#if this.system.equipped}}fas fa-check-square{{else}}far fa-square{{/if}}"></i>
+            </a>
+            <div class="item-body">
+              <div class="item-title">
+                <span class="item-name">{{this.name}}</span>
+                {{#if (gt this.system.quantity 1)}}<span class="item-qty">x{{this.system.quantity}}</span>{{/if}}
+              </div>
+              <div class="item-stats">
+                {{#if this.system.weight}}<span class="item-detail">{{this.system.weight}} kg</span>{{/if}}
+              </div>
+            </div>
+            <div class="item-controls">
+              <a class="item-open" title="Open item sheet"><i class="fas fa-external-link-alt"></i></a>
+              <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+
+        <h3>Containers <a class="item-create" data-type="container"><i class="fas fa-plus"></i></a></h3>
+        <button type="button" class="ru-homebrew-create" data-type="container"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
+        <div class="item-list compact">
+          {{#each containers}}
+          <div class="item inv-item {{#unless this.system.equipped}}stowed{{/unless}}" data-item-id="{{this._id}}">
+            <a class="item-equip {{#if this.system.equipped}}equipped{{/if}}" title="{{#if this.system.equipped}}Unequip{{else}}Equip{{/if}}">
+              <i class="{{#if this.system.equipped}}fas fa-check-square{{else}}far fa-square{{/if}}"></i>
+            </a>
+            <div class="item-body">
+              <div class="item-title">
+                <span class="item-name">{{this.name}}</span>
+              </div>
+              <div class="item-stats">
+                <span class="item-detail">Cap: {{this.system.capacity}}</span>
+                {{#if this.system.penalty}}<span class="item-detail penalty">Pen {{this.system.penalty}}</span>{{/if}}
+                {{#if this.system.weight}}<span class="item-detail">{{this.system.weight}} kg</span>{{/if}}
+              </div>
+            </div>
+            <div class="item-controls">
+              <a class="item-open" title="Open item sheet"><i class="fas fa-external-link-alt"></i></a>
+              <a class="item-delete" title="Delete"><i class="fas fa-trash"></i></a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</div>{{!-- .sheet-inner --}}
+{{/if}}

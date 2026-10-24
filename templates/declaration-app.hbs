@@ -1,0 +1,83 @@
+<div class="declaration-content">
+  <div class="decl-header">
+    <img src="{{actorImg}}" class="decl-portrait" />
+    <div class="decl-info">
+      <h2>{{actorName}}</h2>
+      <span class="decl-phase-label">Фаза объявления</span>
+    </div>
+    <button type="button" data-action="openSheet" class="decl-open-sheet" title="Открыть лист персонажа">
+      <i class="fas fa-address-card"></i>
+    </button>
+  </div>
+
+  <div class="decl-section">
+    <label>Опиши свое действие</label>
+    <textarea name="declaration-text" placeholder="Что хочешь сделать в этом ходу?"></textarea>
+  </div>
+
+  <div class="decl-section">
+    <label>Доступные атаки</label>
+    <div class="decl-attack-list">
+      {{#each attacks}}
+      <div class="decl-attack-row">
+        <span class="decl-attack-name">{{this.name}}</span>
+        <span class="decl-attack-pool">{{this.poolLabel}}</span>
+        <button type="button" class="decl-quick-add" data-attack-id="{{this.id}}" title="Добавить действие">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="decl-section">
+    <label>Доступные защиты</label>
+    <div class="decl-attack-list">
+      {{#each defenses}}
+      <div class="decl-attack-row decl-defense-row">
+        <span class="decl-attack-name"><i class="fas fa-shield-alt"></i> {{this.name}}</span>
+        <span class="decl-attack-pool">{{this.poolLabel}}</span>
+        <button type="button" class="decl-quick-add decl-add-defense" data-defense="{{this.defense}}" title="Добавить защиту" {{#if ../hasDefense}}disabled{{/if}}>
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+
+  {{#if actionCount}}
+  <div class="decl-section">
+    <label>Объявленные действия ({{actionCount}})</label>
+    <div class="decl-actions">
+      {{#each actions}}
+      <div class="decl-action-entry {{#if this.isDefense}}defense{{/if}}">
+        <span class="decl-action-num">{{#if this.isDefense}}<i class="fas fa-shield-alt"></i>{{else}}{{math this.index "+" 1}}{{/if}}</span>
+        <span class="decl-action-name">{{this.attackName}}</span>
+        <span class="decl-action-pool">{{this.poolLabel}}</span>
+        <button type="button" class="decl-remove" data-action="removeAction" data-index="{{this.index}}" title="Remove">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      {{/each}}
+    </div>
+
+    {{#if showSplit}}
+    <div class="decl-split-info">
+      <i class="fas fa-info-circle"></i>
+      Несколько действий: пул кубиков <b>{{lowestPool}}</b> (минимальный пул{{#if woundPenalty}}, штраф ранения {{woundPenalty}}{{/if}}), распредели между {{actionCount}} действиями.
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  <div class="decl-buttons">
+    {{#if capturing}}
+    <button type="button" data-action="cancelCapture" class="decl-btn capturing">
+      <i class="fas fa-crosshairs"></i> Брось характеристику, чтобы сохранить ее…
+    </button>
+    {{else}}
+    <button type="button" data-action="addAction" class="decl-btn"><i class="fas fa-plus"></i> Добавить свое действие</button>
+    {{/if}}
+    <button type="button" data-action="confirmDeclaration" class="decl-btn confirm"><i class="fas fa-check"></i> Подтвердить действия</button>
+  </div>
+</div>

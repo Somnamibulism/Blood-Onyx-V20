@@ -1,0 +1,182 @@
+@font-face{font-family:V20Cyrillic;src:url('../fonts/DejaVuSerif.ttf')}
+.vtm-v20{font-family:V20Cyrillic,Georgia,serif;--font-primary:V20Cyrillic;--font-h1:V20Cyrillic;--font-h2:V20Cyrillic;--font-h3:V20Cyrillic;}
+.vtm-v20 :is(h1,h2,h3,h4,label,button,select,input,.item-name,.tab-button,.sheet-tabs a){font-family:V20Cyrillic,Georgia,serif!important;}
+.vtm-v20 .sheet-tabs{flex-wrap:wrap;gap:4px}.vtm-v20 .sheet-tabs a{font-size:12px;padding:6px}.vtm-v20 .ru-sect-row{display:flex;align-items:center;gap:12px;margin:0 0 8px;color:#c9b783}.vtm-v20 .ru-sect-row select{width:180px}.vtm-v20 .ru-sect-row span{margin-left:auto;font-size:10px;opacity:.6}.vtm-v20 .header-row{gap:8px}.vtm-v20 .field label{font-size:10px}.vtm-v20 .trait-label{letter-spacing:0}.vtm-v20 .arch-pop{font-family:V20Cyrillic,Georgia,serif;text-transform:none;letter-spacing:0;min-width:260px;}
+
+.vtm-v20 :not(i):not(.fas):not(.far):not(.fa-solid):not(.fa-regular){font-family:V20Cyrillic,Georgia,serif!important;}
+
+
+/* Встроенная анимация бросков: визуальные d10 без дополнительного модуля. */
+.vtm-animated-dice {position:fixed;top:10vh;left:50%;transform:translateX(-50%);z-index:11000;pointer-events:none;min-width:210px;max-width:min(90vw,720px);padding:15px 22px 19px;background:linear-gradient(160deg,rgba(30,18,19,.97),rgba(7,7,10,.97));border:1px solid #875446;border-top:2px solid #b38468;border-radius:7px;box-shadow:0 18px 50px #000c,0 0 14px #73292855;color:#e8d8bb;font-family:V20Cyrillic,Georgia,serif;text-align:center;transition:opacity .17s ease,transform .17s ease;}
+.vtm-animated-dice.leaving {opacity:0;transform:translate(-50%,-20px)}
+.vtm-animated-dice-title {font-size:12px;letter-spacing:1.2px;color:#bfa389;padding-bottom:10px;border-bottom:1px solid #79504755;}
+.vtm-animated-dice-tray {display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-height:210px;overflow:hidden;padding-top:15px;}
+.vtm-animated-die {display:grid;place-items:center;width:48px;height:52px;background:linear-gradient(150deg,#761e28,#280c13 75%);border:2px solid #ac816b;clip-path:polygon(50% 0,85% 8%,100% 31%,95% 65%,73% 100%,27% 100%,5% 65%,0 31%,15% 8%);text-shadow:0 1px 3px #000;font:bold 24px V20Cyrillic,Georgia,serif;color:#f3e2c2;box-shadow:inset 0 0 18px #1c070c;animation:vtm-dice-tumble .54s ease-out both;animation-delay:calc(var(--dice-index) * 18ms);}
+.vtm-animated-die.settled {animation:vtm-dice-land .2s ease both;}
+.vtm-animated-die.one {background:linear-gradient(130deg,#402d32,#160d11);color:#eab0a0;border-color:#a2504e;}
+.vtm-animated-die.maximum {background:linear-gradient(150deg,#a27938,#49300c);color:#fff4cf;border-color:#e2c37d;}
+.vtm-animated-dice-overflow {align-self:center;font-size:14px;color:#dcc5a9;}
+@keyframes vtm-dice-tumble {0% {transform:translateY(-38px) rotate(-60deg) scale(.65);opacity:.3} 50% {opacity:1} 85% {transform:translateY(6px) rotate(10deg)} 100% {transform:translateY(0) rotate(0) scale(1);opacity:1}}
+@keyframes vtm-dice-land {0% {transform:translateY(-4px) scale(1.08)} 100% {transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.vtm-animated-die,.vtm-animated-die.settled{animation:none}.vtm-animated-dice{transition:none}}
+
+/* V20 RU.4: denser, readable controls and searchable textual catalogs. */
+.vtm-v20 .chargen-step-bar {padding:5px 9px;gap:3px;}
+.vtm-v20 .chargen-step-pip {font-size:11px;padding:5px 7px;gap:5px;}
+.vtm-v20 .chargen-content {padding:10px 12px;}
+.vtm-v20 .chargen-step h2 {font-size:18px;margin-bottom:3px;}
+.vtm-v20 .chargen-hint {font-size:11px;margin-bottom:9px;}
+.vtm-v20 .chargen-columns {gap:10px;}
+.vtm-v20 .chargen-group h3 {font-size:13px;}
+.vtm-v20 .chargen-trait {min-height:27px;gap:5px;padding:1px 2px;}
+.vtm-v20 .chargen-trait .trait-name {font-size:12px;}
+.vtm-v20 .priority-section {gap:8px;margin-bottom:8px;padding-bottom:8px;}
+.vtm-v20 .priority-row {gap:4px;min-width:0;}
+.vtm-v20 .priority-row label {min-width:0;font-size:12px;}
+.vtm-v20 .priority-select {min-width:80px;font-size:12px;padding:3px;}
+.vtm-v20 .chargen-form-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.vtm-v20 .chargen-form-grid label {font-size:11px;}
+.vtm-v20 .chargen-form-grid select,.vtm-v20 .chargen-form-grid input {font-size:13px;min-width:0;}
+.vtm-v20 .chargen-adv-columns {gap:10px;align-items:start;}
+.vtm-v20 .chargen-adv-section {min-width:0;}
+.vtm-v20 .chargen-adv-section h3 {font-size:13px;flex-wrap:wrap;}
+.vtm-v20 .chargen-wizard .disc-entry,.vtm-v20 .chargen-wizard .bg-entry {min-height:28px;gap:4px;margin-bottom:2px;}
+.vtm-v20 .disc-name,.vtm-v20 .bg-name {font-size:12px;}
+.vtm-v20 .chargen-drop-hint {font-size:10px;padding:5px;}
+.vtm-v20 .fb-top-bar {margin-bottom:8px;padding-bottom:6px;}
+.vtm-v20 .fb-grid {gap:8px;}
+.vtm-v20 .fb-row {min-height:23px;}
+.vtm-v20 .fb-col h3 {font-size:12px;}
+.vtm-v20 .fb-col h4 {font-size:11px;}
+.vtm-v20 .chargen-nav {padding:6px 12px;}
+.vtm-v20 .chargen-catalog {margin:7px 0 4px;border:1px solid #59423a;border-radius:5px;background:rgba(9,10,13,.50);overflow:hidden;}
+.vtm-v20 .chargen-catalog > summary {font-size:11px;cursor:pointer;color:#d6bca1;padding:7px 8px;user-select:none;list-style-position:inside;}
+.vtm-v20 .chargen-catalog > summary:hover {background:#53252c55;color:#f6e8cf;}
+.vtm-v20 .chargen-catalog-search {box-sizing:border-box;width:calc(100% - 12px);margin:4px 6px 5px;min-height:27px;padding:4px 7px;font-size:12px;color:#f2e4cd;border:1px solid #705a52;background:#141418;border-radius:3px;}
+.vtm-v20 .chargen-catalog-list {max-height:180px;overflow-y:auto;padding:0 4px 5px;}
+.vtm-v20 .chargen-catalog-entry {display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 5px;border-bottom:1px solid #ffffff0f;font-size:11px;color:#eee0cb;min-height:26px;}
+.vtm-v20 .chargen-catalog-entry[hidden] {display:none!important;}
+.vtm-v20 .chargen-catalog-entry > span {overflow-wrap:anywhere;min-width:0;}
+.vtm-v20 .chargen-catalog-entry small {display:inline-block;white-space:nowrap;color:#d2aa8d;font-size:10px;}
+.vtm-v20 .chargen-catalog-entry .chargen-catalog-add {font-family:V20Cyrillic,Georgia,serif;font-size:10px!important;flex:none;width:auto;min-height:23px;padding:3px 7px;color:#eedbbf;border:1px solid #76594a;border-radius:3px;background:#53232c;cursor:pointer;}
+.vtm-v20 .chargen-catalog-entry .chargen-catalog-add:hover {border-color:#cda37c;background:#76323a;}
+.vtm-v20 .chargen-catalog-sides {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+.vtm-v20 .chargen-catalog-sides .chargen-catalog-list {max-height:220px;}
+.vtm-v20 .fb-wp-selector {display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:11px;margin:6px 0 9px;padding:8px 5px;border:1px solid #6f453c55;border-radius:4px;}
+.vtm-v20 .fb-wp-dots {display:flex;flex-wrap:nowrap;gap:4px;}
+.vtm-v20 .fb-wp-dots .dot {width:19px;height:19px;min-width:19px;cursor:pointer;}
+.vtm-v20 .wp-perm-row .dot-row[data-path="system.willpower.max"] {display:grid;grid-template-columns:repeat(10,19px);gap:3px;max-width:220px;}
+.vtm-v20 .wp-perm-row .dot-row[data-path="system.willpower.max"] .dot {width:19px;height:19px;min-width:19px;cursor:pointer;}
+.vtm-v20 .wp-temp-row .wp-track {flex-wrap:wrap;max-width:230px;gap:3px;}
+.vtm-v20 .wp-temp-row .wp-track .square {min-width:17px;min-height:17px;cursor:pointer;}
+.vtm-v20 .wp-perm-row,.vtm-v20 .wp-temp-row {align-items:center;flex-wrap:wrap;gap:8px;}
+.vtm-v20 .status-column {min-width:0;}
+@media(max-width:950px) {
+ .vtm-v20 .chargen-columns,.vtm-v20 .chargen-adv-columns {flex-wrap:wrap;}
+ .vtm-v20 .chargen-group,.vtm-v20 .chargen-adv-section {flex:1 1 220px;}
+ .vtm-v20 .chargen-form-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .vtm-v20 .priority-section {flex-wrap:wrap;}
+ .vtm-v20 .priority-row {flex:1 1 190px;}
+}
+@media(max-width:680px){
+ .vtm-v20 .chargen-form-grid,.vtm-v20 .chargen-catalog-sides {grid-template-columns:1fr;}
+ .vtm-v20 .chargen-step-pip {padding:4px;}
+ .vtm-v20 .chargen-step-pip .pip-label {display:none;}
+ .vtm-v20 .fb-grid {flex-wrap:wrap;}
+ .vtm-v20 .fb-col {flex:1 1 220px;}
+}
+
+/* Denser full character sheet. Scope to V20 only, not Foundry sidebar dialogs. */
+.vtm-v20.sheet .sheet-inner {padding:6px 9px;gap:4px;}
+.vtm-v20 .sheet-top {gap:8px;}
+.vtm-v20 .portrait-panel {flex-basis:165px;width:165px;}
+.vtm-v20 .sheet-top-right {gap:3px;}
+.vtm-v20 .sheet-header {padding-bottom:4px;gap:8px;}
+.vtm-v20 .header-row {gap:6px;}
+.vtm-v20 .header-row label {font-size:10px;}
+.vtm-v20 .header-row input,.vtm-v20 .header-row select {font-size:12px;min-height:25px;}
+.vtm-v20 .sheet-tabs .item {padding:5px 7px;font-size:11px;letter-spacing:0;}
+.vtm-v20 .section-block {margin-bottom:9px;}
+.vtm-v20 .trait-row {min-height:24px;}
+.vtm-v20 .status-columns {gap:9px;}
+.vtm-v20 .ru-sect-row {margin-bottom:4px;gap:7px;}
+.vtm-v20 .ru-sect-row select {min-height:24px;}
+@media(max-width:840px){
+ .vtm-v20 .portrait-panel {flex-basis:120px;width:120px;}
+ .vtm-v20 .sheet-tabs {flex-wrap:wrap;}
+ .vtm-v20 .sheet-tabs .item {flex:1 1 auto;}
+}
+
+/* RU.5: компактные раскрывающиеся памятки дисциплин, без перегрузки листа. */
+.vtm-v20 .discipline-guide {margin:0 5px 5px 34px;border-left:2px solid #76564a;border-bottom:1px solid #6e534433;background:#181519a6;min-width:0;}
+.vtm-v20 .discipline-guide > summary {cursor:pointer;user-select:none;font-size:10px;line-height:1.35;padding:5px 8px;color:#d3b798;letter-spacing:.12px;}
+.vtm-v20 .discipline-guide > summary:hover {color:#f6e8cf;background:#63323b55;}
+.vtm-v20 .disc-guide-counter {opacity:.8;float:right;color:#e4c5aa;margin-left:7px;font-size:10px;}
+.vtm-v20 .discipline-guide-list {display:grid;gap:5px;max-height:290px;overflow-y:auto;padding:5px 8px 10px;}
+.vtm-v20 .discipline-guide-entry {border:1px solid #604c424a;border-radius:3px;background:#09090d4a;padding:6px 7px;color:#bfb7b1;}
+.vtm-v20 .discipline-guide-entry b {font-weight:600;font-size:11px;color:#c7a999;}
+.vtm-v20 .discipline-guide-entry.known {border-color:#a4705780;color:#e6d7c7;}
+.vtm-v20 .discipline-guide-entry.known b {color:#eac89e;}
+.vtm-v20 .discipline-guide-entry p {margin:4px 0 0;font-size:11px;line-height:1.5;overflow-wrap:break-word;}
+.vtm-v20.sheet.item .power-guide-note {background:#241b1c;border-left:3px solid #ab7860;color:#ebd8c3;font-size:12px;line-height:1.55;padding:9px 10px;margin:5px 0 8px;overflow-wrap:break-word;}
+.vtm-v20.sheet.item .power-guide-note strong {color:#edcba5;}
+.vtm-v20.sheet.item .power-level.empty-power:has(.power-guide-note) {opacity:1;}
+.vtm-v20.sheet.item .power-level.empty-power:has(.power-guide-note) .power-name-input {opacity:.55;}
+.vtm-v20 .chargen-discipline-guide {margin:1px 5px 5px 0;}
+.vtm-v20 .chargen-discipline-guide .discipline-guide-list {max-height:210px;}
+.vtm-v20 .chargen-discipline-guide > summary {font-size:11px;}
+
+/* Blood Onyx ru.6: restrained Camarilla-inspired gothic attack medallions */
+.vtm-v20 .attack-row.has-img > .attack-img[src*="assets/ru/combat/"] {
+  object-fit: contain; width: 100%; height: 85px; padding: 6px 14px;
+  box-sizing: border-box; background: radial-gradient(ellipse at 50% 30%, #39262b, #161418 75%);
+  filter: drop-shadow(0 1px 5px rgba(116, 29, 48, .18));
+}
+.vtm-v20 .ru-homebrew-create { width: 100%; display:block; margin: 3px 0 8px; padding: 7px 10px;
+  border:1px dashed #75555a; background:#20191d; color:#dbc6b4; border-radius:3px; text-align:left;
+  font:inherit; font-size:12px; cursor:pointer; }
+.vtm-v20 .ru-homebrew-create:hover { background:#38232a; border-color:#a94a5d; }
+.vtm-v20 .ru-power-homebrew { margin:6px 0; border:1px solid #654049; padding:5px 8px; border-radius:3px; }
+.vtm-v20 .ru-power-homebrew summary {color:#d4bd9f;cursor:pointer;font-size:12px;}
+.vtm-v20 .ru-power-effect-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:7px 0; }
+.vtm-v20 .ru-power-effect-grid label {display:flex;flex-direction:column; gap:3px;font-size:11px;}
+.vtm-v20 .ru-power-effect-grid label.ru-effect-success {grid-column:1/-1;flex-direction:row; align-items:center; }
+.vtm-target-choice-select { width:100%;margin:10px 0; }
+.vtm-target-choice-label {display:block;color:#ddc8ad;}
+
+.vtm-v20 .ru-power-open { font-size:11px; margin:5px 0 0; padding:2px 8px; border:1px solid #76505a; color:#dbbdab; background:#2b1c23; cursor:pointer; }
+.vtm-v20 .ru-power-open:hover {border-color:#bd596c;}
+.vtm-v20 .ru-roll-resources { border-top:1px solid #69414a; padding:7px 0 0; }
+
+/* Blood Onyx ru.7: compact V20 maneuvers, without changing other tabs. */
+.vtm-v20 .tab.combat .combat-attack-header {flex-wrap:wrap;gap:5px;padding:0 0 7px;}
+.vtm-v20 .tab.combat .combat-attack-header h2 {min-width:130px;font-size:15px;}
+.vtm-v20 .tab.combat .combat-attack-header > button,
+.vtm-v20 .tab.combat .combat-attack-header .toggle-dropdown > button {padding:3px 7px;font-size:10px;min-height:25px;}
+.vtm-v20 .ru-combat-hint {font-size:11px;color:#af9d90;margin:1px 0 7px;}
+.vtm-v20 .tab.combat .ru-combat-table {display:flex;flex-direction:column;gap:3px;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row {display:grid;grid-template-columns:40px minmax(132px,1fr) minmax(240px,2.3fr) minmax(78px,auto);align-items:center;gap:6px;min-height:42px;padding:3px 7px;border-radius:3px;overflow:visible;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row:not(.has-img) {grid-template-columns:minmax(180px,1.2fr) minmax(240px,2.3fr) minmax(78px,auto);}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row.has-img > .attack-img,
+.vtm-v20 .tab.combat .ru-combat-table .attack-row.has-img > .attack-img[src*="assets/ru/combat/"] {width:36px;height:36px;padding:3px;min-width:0;border-radius:4px;object-fit:contain;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .card-header,
+.vtm-v20 .tab.combat .ru-combat-table .attack-row.has-img > .card-header {display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;padding:1px 3px;min-width:0;background:transparent;border:0;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row:not(.has-img) .attack-icon {width:28px;height:28px;min-width:28px;font-size:16px;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row:not(.has-img) .attack-name {text-align:left;background:transparent;border:0;padding:0;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .attack-name {font-size:12px;white-space:normal;overflow-wrap:anywhere;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .card-stats {display:flex;flex-flow:row wrap;align-content:center;gap:2px 9px;padding:1px 2px;font-size:10px;line-height:1.25;min-width:0;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .card-stats > span {min-width:0;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .attack-note {width:100%;color:#a99a92;font-size:10px;line-height:1.25;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .card-actions {margin:0;padding:0;align-items:center;justify-content:flex-end;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row .attack-btn {padding:3px 7px;min-height:24px;font-size:10px;white-space:nowrap;}
+.vtm-v20 .tab.combat .ru-combat-table .attack-row.res-dimmed {opacity:.62;}
+.vtm-v20 .path-select {min-height:28px;max-width:100%;padding:3px 20px 3px 5px;border:1px solid #735358;border-radius:3px;background:#211a1f;color:#dcc4a3;cursor:pointer;pointer-events:auto!important;}
+.vtm-v20 .path-select:focus {outline:1px solid #ac6270;}
+.vtm-v20 .path-select option {color:#ede0ce;background:#261d22;}
+@media(max-width:760px) {
+  .vtm-v20 .tab.combat .ru-combat-table .attack-row,
+  .vtm-v20 .tab.combat .ru-combat-table .attack-row:not(.has-img) {grid-template-columns:36px minmax(110px,1fr) minmax(76px,auto);}
+  .vtm-v20 .tab.combat .ru-combat-table .attack-row .card-stats {grid-column:1/-1;grid-row:2;padding:3px 0;}
+  .vtm-v20 .tab.combat .ru-combat-table .attack-row .card-actions {grid-column:3;grid-row:1;}
+  .vtm-v20 .tab.combat .ru-combat-table .attack-row:not(.has-img) .card-header {grid-column:1/3;}
+}

@@ -1,0 +1,44 @@
+<div class="vtm-roll vtm-combat-damage {{#if escaped}}damage-dealt{{else}}soaked{{/if}}">
+  <div class="roll-header dual-portrait">
+    <div class="roll-portrait-wrap">
+      <img class="roll-portrait" src="{{escaperImg}}" style="{{escaperPortraitStyle}}" />
+    </div>
+    <div class="roll-info">
+      <span class="roll-actor">{{title}}</span>
+      <span class="roll-label">{{escaperName}} против {{holderName}}</span>
+    </div>
+    <div class="roll-portrait-wrap">
+      <img class="roll-portrait" src="{{holderImg}}" style="{{holderPortraitStyle}}" />
+    </div>
+  </div>
+
+  <div class="combat-damage-section">
+    <div class="damage-row">
+      <span class="damage-header"><i class="fas fa-person-running"></i> {{escaperName}} ({{escLabel}}), Пул {{escPool}}, Сложность {{escDiff}}</span>
+      <div class="roll-dice">
+        {{#each escDice}}
+        <span class="die {{this.status}}">{{this.value}}</span>
+        {{/each}}
+      </div>
+      <span class="damage-subtotal">{{#if escAuto}}{{escDiceTotal}} + {{escAuto}} авто = {{/if}}Успехов: {{escTotal}}</span>
+    </div>
+
+    <div class="damage-row">
+      <span class="damage-header"><i class="fas fa-hand-back-fist"></i> {{holderName}} ({{holdLabel}}), Пул {{holdPool}}, Сложность {{holdDiff}}</span>
+      <div class="roll-dice">
+        {{#each holdDice}}
+        <span class="die {{this.status}}">{{this.value}}</span>
+        {{/each}}
+      </div>
+      <span class="damage-subtotal">{{#if holdAuto}}{{holdDiceTotal}} + {{holdAuto}} авто = {{/if}}Успехов: {{holdTotal}}</span>
+    </div>
+  </div>
+
+  <div class="combat-summary">
+    {{#if escaped}}
+    <div class="combat-hit">{{escaperName}} освобождается! ({{net}} чистых успехов)</div>
+    {{else}}
+    <div class="combat-defended"><i class="fas fa-link"></i> {{escaperName}} не может вырваться. {{continueText}}</div>
+    {{/if}}
+  </div>
+</div>
