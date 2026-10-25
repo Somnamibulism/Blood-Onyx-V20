@@ -1,0 +1,109 @@
+name: Publish Blood Onyx V20 ru.21
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "incoming/ru21-ready.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blood-onyx-ru21-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate and publish ru.21
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v1.2.0-ru.21"
+          ASSET="blood-onyx-v20-ru21.zip"
+          if [ ! -f incoming/ru21-ready.txt ]; then
+            echo "No pending ru.21 release"
+            exit 0
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists"
+            exit 1
+          fi
+          export UPDATE_JSON="$RUNNER_TEMP/ru21-update.json"
+          export UPDATE_PATCH="$RUNNER_TEMP/ru21.patch"
+          python3 - <<'PY'
+          import base64,gzip,json,os,pathlib
+          names=['incoming/ru21-data-01.txt','incoming/ru21-data-02.txt']
+          value=''.join(''.join(pathlib.Path(name).read_text(encoding='ascii').split()) for name in names)
+          decoded=gzip.decompress(base64.b64decode(value,validate=True))
+          obj=json.loads(decoded)
+          if obj.get('version')!='1.2.0-ru.21': raise SystemExit('Unexpected version')
+          p=base64.b64decode(obj['patch'],validate=True)
+          if not p.startswith(b'diff --git '): raise SystemExit('Missing git patch')
+          pathlib.Path(os.environ['UPDATE_JSON']).write_bytes(decoded)
+          pathlib.Path(os.environ['UPDATE_PATCH']).write_bytes(p)
+          print('Prepared update for',len(obj['files']),'files')
+          PY
+          git apply --check "$UPDATE_PATCH"
+          git apply "$UPDATE_PATCH"
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          obj=json.loads(pathlib.Path(os.environ['UPDATE_JSON']).read_text(encoding='utf8'))
+          m=dict(obj['manifest'])
+          if m.get('id')!='vtm-v20' or m.get('version')!='1.2.0-ru.21':
+              raise SystemExit('Bad Foundry manifest')
+          # Tests expect the source manifest before release download URL is added.
+          m.pop('download',None)
+          m.pop('manifest',None)
+          pathlib.Path('system.json').write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          bi=dict(obj['buildinfo'])
+          pathlib.Path('BUILD-INFO.json').write_text(json.dumps(bi,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          for name,digest in obj['hashes'].items():
+              p=pathlib.PurePosixPath(name)
+              if p.is_absolute() or '..' in p.parts or '\\' in name:
+                  raise SystemExit('Unsafe file name '+name)
+              f=pathlib.Path(name)
+              if not f.is_file() or hashlib.sha256(f.read_bytes()).hexdigest()!=digest:
+                  raise SystemExit('File content mismatch: '+name)
+          print('All',len(obj['hashes']),'source files verified')
+          PY
+          node --test tests/*.test.mjs
+          python3 - <<'PY'
+          import json,pathlib,os,zipfile
+          obj=json.loads(pathlib.Path(os.environ['UPDATE_JSON']).read_text(encoding='utf8'))
+          manifest=obj['manifest']
+          pathlib.Path('system.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          members=obj['files']
+          dirs=obj['dirs']
+          for name in members+dirs:
+              p=pathlib.PurePosixPath(name)
+              if not name or p.is_absolute() or '..' in p.parts or '\\' in name:
+                  raise SystemExit('Unsafe package member '+name)
+          zip_path=pathlib.Path(os.environ['RUNNER_TEMP'])/'blood-onyx-v20-ru21.zip'
+          with zipfile.ZipFile(zip_path,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              z.writestr('vtm-v20/','')
+              for d in sorted(set(dirs)): z.writestr('vtm-v20/'+d.rstrip('/')+'/','')
+              for name in sorted(members):
+                  f=pathlib.Path(name)
+                  if not f.is_file(): raise SystemExit('Missing source '+name)
+                  z.write(f,'vtm-v20/'+name)
+          with zipfile.ZipFile(zip_path) as z:
+              if z.testzip() is not None: raise SystemExit('Corrupt release archive')
+          print('Prepared ru.21 release ZIP:',zip_path.stat().st_size,'bytes')
+          PY
+          git rm -- incoming/ru21-ready.txt incoming/ru21-data-01.txt incoming/ru21-data-02.txt
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release Blood Onyx V20 1.2.0-ru.21"
+          git push origin HEAD:main
+          gh release create "$TAG" "$RUNNER_TEMP/$ASSET" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.21" --notes-file CHANGELOG-RU.21.md
+          echo "Published $TAG"
