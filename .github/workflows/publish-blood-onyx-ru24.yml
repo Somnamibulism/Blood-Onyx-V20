@@ -37,8 +37,8 @@ jobs:
 
           python3 - <<'PY'
           import base64,hashlib,io,json,pathlib,tarfile
-          p=pathlib.Path('incoming/ru24-data.txt')
-          decoded=base64.b64decode(''.join(p.read_text(encoding='ascii').split()),validate=True)
+          parts=[pathlib.Path('incoming/ru24-data-%02d.txt'%i) for i in range(1,5)]
+          decoded=base64.b64decode(''.join(''.join(p.read_text(encoding='ascii').split()) for p in parts),validate=True)
           with tarfile.open(fileobj=io.BytesIO(decoded),mode='r:gz') as t:
               meta=json.load(t.extractfile('__release.json'))
               if meta.get('version')!='1.2.0-ru.24': raise SystemExit('Unexpected release version')
@@ -107,7 +107,7 @@ jobs:
           print('Built release ZIP:',output.stat().st_size,'bytes')
           PY
 
-          git rm -- incoming/ru24-data.txt incoming/ru24-ready.txt
+          git rm -- incoming/ru24-data-01.txt incoming/ru24-data-02.txt incoming/ru24-data-03.txt incoming/ru24-data-04.txt incoming/ru24-ready.txt
           git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
