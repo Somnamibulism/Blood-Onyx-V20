@@ -78,7 +78,7 @@ jobs:
           if buildinfo.get('build_version')!='1.2.0-ru.24':
               raise SystemExit('Unexpected build info version')
           buildinfo['version']='1.2.0-ru.24'
-          buildinfo_file.write_text(json.dumps(buildinfo,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
+          buildinfo_file.write_text(json.dumps(buildinfo,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
           # Metadata drives release members, avoiding stray development files.
           pathlib.Path('/tmp/ru24-release.json').write_text(json.dumps(meta),encoding='utf-8')
