@@ -76,13 +76,13 @@ function signed(value) {
 // RAW Celerity extras park far below any real initiative so they flush
 // after everyone has acted; label them as what they are
 function slotLabel(init) {
-  return init <= -900 ? 'end of round' : `initiative ${init}`;
+  return init <= -900 ? 'конец раунда' : `инициатива ${init}`;
 }
 
 function traitLabel(path) {
   if (!path) return '';
-  if (path === 'willpower') return 'Willpower';
-  if (path === 'humanity') return 'Humanity';
+  if (path === 'willpower') return 'Воля';
+  if (path === 'humanity') return 'Человечность';
   const [, key] = path.split('.');
   if (!key) return path;
   return game.i18n.localize(`VTM.${key.charAt(0).toUpperCase() + key.slice(1)}`);
@@ -125,9 +125,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     window: {
       resizable: true,
       controls: [
-        { icon: "fas fa-magic", label: "Chargen", action: "toggleChargen" },
-        { icon: "fas fa-file-export", label: "Export Sheet", action: "exportSheet" },
-        { icon: "fas fa-heart-circle-plus", label: "Health Levels", action: "manageHealth" },
+        { icon: "fas fa-magic", label: "Создание персонажа", action: "toggleChargen" },
+        { icon: "fas fa-file-export", label: "Экспорт листа", action: "exportSheet" },
+        { icon: "fas fa-heart-circle-plus", label: "Уровни здоровья", action: "manageHealth" },
       ]
     },
     form: { submitOnChange: true },
@@ -452,7 +452,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
     for (const w of items.filter(i => i.type === 'weapon' && i.system.equipped)) {
-      const isRanged = !!w.system.range;
+      const isRanged = !!w.system.firearm || !!w.system.range;
+      const bookWeapon = WEAPONS.find(ref => canonicalName(ref.name) === canonicalName(w.name));
+      const modeData = bookWeapon?.system || {};
       const clawStrike = /^(feral claws|звериные когти|когти зверя|удар когтями)$/i.test(canonicalName(w.name));
       const skillKey = clawStrike ? 'brawl' : isRanged ? 'firearms' : 'melee';
       const skillVal = effectiveTraitValue(actor, `abilities.${skillKey}`);
@@ -469,7 +471,10 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         damageFormula: w.system.damage,
         skill: `abilities.${skillKey}`,
         isRanged, range: w.system.range, capacity: w.system.capacity,
-        rate: w.system.rate, fullAuto: w.system.fullAuto || '', burst: !!w.system.burst, firearm: !!w.system.firearm, ammoLabel: ammoLabel(w.system),
+        rate: w.system.rate || modeData.rate || '',
+        fullAuto: w.system.fullAuto || modeData.fullAuto || '',
+        burst: !!(w.system.burst || modeData.burst), firearm: !!w.system.firearm,
+        ammoLabel: ammoLabel(w.system),
         offHand: !!w.system.offHand,
         note: w.system.offHand ? (ctx.ambidextrous ? 'Off hand (Ambidextrous: no penalty)' : 'Off hand: +1 difficulty') : '',
       });
@@ -766,12 +771,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Health
     const healthDescs = {
-      bruised: 'No penalties.', hurt: 'No movement hindrance.',
-      injured: 'Halve maximum running speed.',
-      wounded: 'Move or attack, not both. Doing both costs -1 die per yard moved.',
-      mauled: 'May only hobble about.', crippled: 'May only crawl.',
-      incapacitated: 'Cannot move. Likely unconscious. At 0 blood, enter Torpor.',
-      torpor: 'Deathlike suspended animation. Cannot act. May be revived by blood.',
+      bruised: 'Без штрафов.', hurt: 'Передвижение без ограничений.',
+      injured: 'Максимальная скорость бега уменьшается вдвое.',
+      wounded: 'Можно двигаться или атаковать. Совмещение даёт −1 куб за каждый ярд перемещения.',
+      mauled: 'Можно только медленно ковылять.', crippled: 'Можно только ползти.',
+      incapacitated: 'Нельзя двигаться; вероятна потеря сознания. При 0 крови наступает торпор.',
+      torpor: 'Торпор: персонаж обездвижен и не действует. Может пробудиться от крови.',
     };
     ctx.healthTrack = VTM.healthLevels.map(h => ({
       key: h.key,
@@ -792,7 +797,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }));
     ctx.healthTrack.splice(1, 0, ...extraRows);
     if (actor.type === 'vampire') {
-      ctx.healthTrack.push({ key: 'torpor', label: 'Torpor', penalty: null, desc: healthDescs.torpor, infoOnly: true });
+      ctx.healthTrack.push({ key: 'torpor', label: 'Торпор', penalty: null, desc: healthDescs.torpor, infoOnly: true });
     }
 
     const woundsSummary = countDamage(sys);
@@ -1029,7 +1034,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     this._syncChargenButton();
     this._syncCompactButton();
-    this._syncWindowControlIcons();
     el.classList.toggle('compact-combat', this._compactMode);
 
     if (this._chargen) {
@@ -1241,6 +1245,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         });
       }));
 
+    el.querySelectorAll('.ru-roll-initiative').forEach(btn => btn.addEventListener('click', () => this._rollInitiativeFromSheet()));
     el.querySelector('.jump-btn')?.addEventListener('click', () => this._rollJump());
     el.querySelector('.fall-btn')?.addEventListener('click', () => this._rollFalling());
     el.querySelector('.throw-btn')?.addEventListener('click', () => this._rollThrowing());
@@ -1545,7 +1550,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }
             this._saveAllocations();
             const atk = this._attacks?.find(a => a.id === attackId);
-            this._declActions.push({ attackId, text: `Reload ${atk?.name || 'weapon'}`, reload: true, alloc: 1 });
+            this._declActions.push({ attackId, text: `Перезарядка: ${atk?.name || 'оружие'}`, reload: true, alloc: 1 });
             this.render();
             return;
           }
@@ -1791,12 +1796,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const icon = btn.querySelector('i') || btn;
     if (this._chargen) {
       icon.className = 'fas fa-arrow-left';
-      btn.setAttribute('aria-label', 'Exit');
-      btn.title = 'Exit';
+      btn.setAttribute('aria-label', 'Выйти');
+      btn.title = 'Выйти';
     } else {
       icon.className = 'fas fa-magic';
-      btn.setAttribute('aria-label', 'Chargen');
-      btn.title = 'Chargen';
+      btn.setAttribute('aria-label', 'Создание персонажа');
+      btn.title = 'Создание персонажа';
     }
   }
 
@@ -1812,7 +1817,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const count = sys.health.extra?.length ?? 0;
 
     const choice = await foundry.applications.api.DialogV2.wait({
-      window: { title: `${actor.name}: Health Levels` },
+      window: { title: `${actor.name}: уровни здоровья` },
       content: `<p>Current track: <strong>${7 + count}</strong> levels (${count} extra Bruised).</p>
         <p style="font-size: 12px; opacity: 0.8;">Added levels are always of the Bruised variant.</p>`,
       buttons: [
@@ -1862,46 +1867,16 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const icon = btn.querySelector('i');
     if (this._compactMode) {
       icon.className = 'fas fa-expand-alt';
-      btn.title = 'Full Sheet';
+      btn.title = 'Полный лист';
     } else {
       icon.className = 'fas fa-crosshairs';
-      btn.title = 'Combat Mode';
+      btn.title = 'Компактный боевой режим';
     }
   }
 
 
-  // Core v13 header buttons remain real Foundry controls; the SVG is merely
-  // a font-independent visible icon, so clicks and window behavior survive.
-  _syncWindowControlIcons() {
-    const header = this.element.querySelector('.window-header, header.window-header');
-    if (!header) return;
-    const icons = {
-      close: '<path d="M18 6 6 18M6 6l12 12"/>',
-      minimize: '<path d="M5 12h14"/>',
-      maximize: '<rect x="4" y="4" width="16" height="16" rx="2"/>',
-      popout: '<path d="M13 5h6v6M19 5l-9 9"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
-      compact: this._compactMode ? '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3m13 5h3a2 2 0 0 0 2-2v-3"/>' : '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/>',
-      chargen: this._chargen ? '<path d="m15 18-6-6 6-6"/><path d="M20 12H9"/>' : '<path d="m5 19 14-14M14 5l5 5M4 4l1 3m9-5 1 3M2 14l3 1"/>',
-      export: '<path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/>',
-      health: '<path d="M20.8 8.1c0 4.7-8.8 10.9-8.8 10.9S3.2 12.8 3.2 8.1a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"/><path d="M12 7v7m-3.5-3.5h7"/>',
-    };
-    for (const control of header.querySelectorAll('button, a')) {
-      const action = (control.dataset.action || '').toLowerCase();
-      const classNames = String(control.className || '').toLowerCase();
-      const tip = `${control.getAttribute('title') || ''} ${control.getAttribute('aria-label') || ''} ${control.querySelector('i')?.className || ''}`.toLowerCase();
-      let kind = ({ togglecompact: 'compact', togglechargen: 'chargen', exportsheet: 'export', managehealth: 'health' })[action];
-      if (!kind) {
-        if (action === 'close' || /window-close/.test(classNames) || /\bclose\b|закрыть/.test(tip)) kind = 'close';
-        else if (action === 'minimize' || /window-minimize/.test(classNames) || /minimize|свернуть/.test(tip)) kind = 'minimize';
-        else if (action === 'maximize' || /window-maximize/.test(classNames) || /maximize|развернуть/.test(tip)) kind = 'maximize';
-        else if (action === 'popout' || /pop.?out/.test(classNames)) kind = 'popout';
-      }
-      if (!kind) continue;
-      control.querySelector('.vtm-control-svg')?.remove();
-      control.insertAdjacentHTML('beforeend', `<svg class="vtm-control-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[kind]}</svg>`);
-      control.classList.add('vtm-control-icon-ready');
-    }
-  }
+  // Foundry V13 owns all window-header icons. Never inject additional SVGs:
+  // standard Font Awesome icons are already supplied by core controls.
 
   _bindInlineLibraries(el) {
     for (const picker of el.querySelectorAll('.ru-library-picker')) {
@@ -2041,7 +2016,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const current = ammoRemaining(item.system);
     if (current <= 0) {
-      ui.notifications.warn(`${item.name} is out of ammunition.`);
+      ui.notifications.warn(`У оружия «${item.name}» закончились патроны.`);
       return false;
     }
 
@@ -2075,7 +2050,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const rate = parseInt(atk.rate) || 0;
     const used = this._bulletsDeclared(attackId);
     if (rate > 0 && used >= rate) {
-      ui.notifications.warn(`${atk.name}: rate of fire is ${rate} rounds per turn.`);
+      ui.notifications.warn(`${atk.name}: темп стрельбы ограничен ${rate} выстрелами за ход.`);
       return;
     }
     let plan = { mode: 'single', rounds: 1 };
@@ -2089,7 +2064,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (plan.mode !== 'single') {
       decl.fireMode = plan.mode;
       decl.fireRounds = plan.rounds;
-      decl.text = plan.mode === 'burst' ? `${atk.name} (Burst)` : `${atk.name} (Full Auto x${plan.rounds})`;
+      decl.text = plan.mode === 'burst' ? `${atk.name} (короткая очередь)` : `${atk.name} (автоогонь ×${plan.rounds})`;
     }
     this._declActions.push(decl);
     this.render();
@@ -2147,7 +2122,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (mode === 'single') return { mode: 'single', rounds: 1 };
 
     if (mode === 'auto' && this.document.getFlag('vtm-v20', 'targetingEnabled') === true) {
-      ui.notifications.warn("Can't target a specific area while auto firing.");
+      ui.notifications.warn('При автоматическом огне нельзя выцеливать конкретную часть тела.');
       return null;
     }
     if (mode === 'burst') return { mode: 'burst', rounds: 3 };
@@ -2163,40 +2138,92 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async _chooseRangedManeuver(mode) {
-    const candidates = (this._attacks || []).filter(atk => {
-      // Only real equipped ranged weapons, not supernatural ranged powers.
-      const item = this.document.items.get(atk.id);
-      if (!atk.isRanged || item?.type !== 'weapon' || !item.system.equipped) return false;
-      if (mode === 'burst') return !!fireModeInfo(atk)?.burst;
-      if (mode === 'auto') return !!fireModeInfo(atk)?.auto;
-      return true;
-    });
+    // Read the equipped gear first. Cached attack lists can be out of date just
+    // after equipping items or after a migrated character sheet re-renders.
+    const equippedWeapons = [...this.document.items].filter(item =>
+      item.type === 'weapon' && item.system.equipped && (!!item.system.firearm || !!item.system.range));
+    if (!equippedWeapons.length) {
+      ui.notifications.warn('Нет экипированного стрелкового оружия. Открой «Инвентарь» и проверь отметку «Экипировано» у оружия.');
+      return;
+    }
+    const candidates = equippedWeapons.map(item => {
+      const book = WEAPONS.find(ref => canonicalName(ref.name) === canonicalName(item.name));
+      const info = {
+        id: item.id, name: item.name, isRanged: true,
+        rate: item.system.rate || book?.system.rate || '',
+        burst: !!(item.system.burst || book?.system.burst),
+        fullAuto: item.system.fullAuto || book?.system.fullAuto || '',
+        ammoLabel: ammoLabel(item.system),
+      };
+      return { item, info, supported: mode === 'burst' ? !!fireModeInfo(info)?.burst
+        : mode === 'auto' ? !!fireModeInfo(info)?.auto : true };
+    }).filter(c => c.supported);
     if (!candidates.length) {
-      ui.notifications.warn('Нет экипированного дальнобойного оружия с подходящим режимом.');
+      const list = equippedWeapons.map(item => item.name).join(', ');
+      ui.notifications.warn(`Оружие экипировано (${list}), но у него нет режима «${mode === 'burst' ? 'короткая очередь' : 'автоматический огонь'}». Проверь «Темп стрельбы» и режимы в карточке оружия.`);
       return;
     }
     const label = { single: 'Одиночный выстрел', burst: 'Короткая очередь (3 патрона)', auto: 'Длинная очередь (магазин)', reload: 'Перезарядка' }[mode];
     const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const html = `<form class="ru-ranged-picker"><label>Оружие для манёвра «${label}»</label><select name="weapon" style="width:100%">${candidates.map(atk =>
-      `<option value="${esc(atk.id)}">${esc(atk.name)}${atk.ammoLabel ? ` (${esc(atk.ammoLabel)})` : ''}</option>`).join('')}</select><p class="ru-ranged-note">Используются существующие правила V20: сложность, темп стрельбы, запас патронов и объявление действий.</p></form>`;
+    const html = `<form class="ru-ranged-picker"><label>Оружие для манёвра «${label}»</label><select name="weapon" style="width:100%">${candidates.map(({ item, info }) =>
+      `<option value="${esc(item.id)}">${esc(item.name)}${info.ammoLabel ? ` (${esc(info.ammoLabel)})` : ''}</option>`).join('')}</select><p class="ru-ranged-note">Учитываются темп стрельбы, боезапас, сложность и объявление действий.</p></form>`;
     const chosen = await new Promise(resolve => new Dialog({
       title: label, content: html,
       buttons: { choose: { label: 'Выбрать', callback: dlg => resolve(dlg[0].querySelector('[name="weapon"]')?.value || null) } },
       default: 'choose', close: () => resolve(null),
     }, { classes: ['vtm-v20', 'dialog'], width: 410 }).render(true));
     if (!chosen) return;
+    // The existing buttons handle V20 combat declaration, ammo and attack flow.
+    // Rerender if a quick action was invoked before the sheet refreshed.
     const selector = mode === 'reload' ? `.reload-btn[data-attack-id="${CSS.escape(chosen)}"]`
       : `.attack-btn:not(.reload-btn)[data-attack-id="${CSS.escape(chosen)}"]`;
-    const button = this.element?.querySelector(selector);
-    if (!button || button.disabled) return ui.notifications.warn('Манёвр сейчас недоступен.');
+    let button = this.element?.querySelector(selector);
+    if (!button) {
+      await this.render({ force: true });
+      button = this.element?.querySelector(selector);
+    }
+    if (!button || button.disabled) return ui.notifications.warn('Этот манёвр сейчас недоступен. Проверь фазу боя и карточку оружия.');
     if (mode !== 'reload') button.dataset.forcedFireMode = mode;
     button.click();
   }
 
+  async _rollInitiativeFromSheet() {
+    const actor = this.document;
+    const combat = game.combat;
+    const combatant = combat?.combatants?.find(cb => cb.actor?.id === actor.id && !cb.defeated);
+    if (combatant) {
+      try {
+        // Reuse core Foundry combat initiative, including the V20 patch hook
+        // for wound penalty and passive Celerity. Do not create a second ledger.
+        if (combatant.getFlag('vtm-v20', 'initPatched')) {
+          await combatant.unsetFlag('vtm-v20', 'initPatched');
+        }
+        await combat.rollInitiative([combatant.id]);
+        ui.notifications.info(`${actor.name}: инициатива обновлена в трекере боя.`);
+      } catch (err) {
+        console.error('V20 | Initiative roll failed', err);
+        ui.notifications.error('Не удалось бросить инициативу. Проверь права доступа к бою.');
+      }
+      return;
+    }
+    // Useful outside combat as a normal dice roll, but cannot add a combatant
+    // without knowing which of this actor's tokens should enter the encounter.
+    const dex = Number(actor.system.attributes?.dexterity) || 0;
+    const wits = Number(actor.system.attributes?.wits) || 0;
+    const cel = celerityRawMode() ? 0 : Math.max(celerityLevel(actor) - (actor.getFlag('vtm-v20', 'celerityRawActions') || 0), 0);
+    const wounds = Number(actor.system.woundPenalty) || 0;
+    const result = await (new Roll(`1d10 + ${dex} + ${wits} + ${cel} + (${wounds})`)).evaluate();
+    await result.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor: `<b>Инициатива V20</b>: Ловкость ${dex} + Сообразительность ${wits} + Стремительность ${cel} ${wounds < 0 ? `− штраф ранения ${Math.abs(wounds)}` : ''}. Это свободный бросок, персонаж ещё не добавлен в трекер боя.`,
+    });
+    ui.notifications.info('Бросок инициативы отправлен в чат. Для общего порядка ходов добавь токен во вкладке «Бой».');
+  }
+
   static TARGETING_CHOICES = {
-    medium: { label: 'Medium', hint: 'Limb, briefcase', difficultyMod: 1, damageMod: 0 },
-    small: { label: 'Small', hint: 'Hand, cellphone', difficultyMod: 2, damageMod: 1 },
-    precise: { label: 'Precise', hint: 'Eye, heart, lock', difficultyMod: 3, damageMod: 2 },
+    medium: { label: 'Средняя цель', hint: 'Конечность, портфель', difficultyMod: 1, damageMod: 0 },
+    small: { label: 'Маленькая цель', hint: 'Кисть, телефон', difficultyMod: 2, damageMod: 1 },
+    precise: { label: 'Точная цель', hint: 'Глаз, сердце, замок', difficultyMod: 3, damageMod: 2 },
   };
 
   _getTargetingData() {
@@ -2205,7 +2232,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const c = choices[this._targetingChoice] || choices.medium;
     const headshot = !!this._targetingHeadshot
       && (this._targetingChoice === 'small' || this._targetingChoice === 'precise');
-    return { size: this._targetingChoice, ...c, headshot, label: headshot ? `${c.label} (Head)` : c.label };
+    return { size: this._targetingChoice, ...c, headshot, label: headshot ? `${c.label} (голова)` : c.label };
   }
 
   _syncTargetingDrawer(open) {
@@ -2738,7 +2765,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const capacity = parseAmmoCapacity(item.system.capacity);
     if (capacity === null) {
-      ui.notifications.warn(`${item.name} has no magazine capacity to reload.`);
+      ui.notifications.warn(`У оружия «${item.name}» не указана ёмкость магазина.`);
       return;
     }
 
@@ -4425,7 +4452,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             if (capacity !== null) {
               const current = ammoRemaining(item.system);
               if (current <= 0) {
-                ui.notifications.warn(`${item.name} is out of ammunition.`);
+                ui.notifications.warn(`У оружия «${item.name}» закончились патроны.`);
                 return;
               }
               if (action.fireMode === 'burst' && current < 3) {

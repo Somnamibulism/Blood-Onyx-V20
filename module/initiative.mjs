@@ -507,8 +507,8 @@ function openDeferredDialog(combat, combatant, idx, init) {
 function promptRoundEnd(combat, { allYielded = false } = {}) {
   const round = combat.round || 1;
   const msg = allYielded
-    ? `Everyone has yielded. Round ${round} is over.`
-    : `All combatants have acted. Round ${round} is over.`;
+    ? `Everyone has yielded. Раунд ${round} завершён.`
+    : `Все участники завершили действия. Раунд ${round} завершён.`;
   new Dialog({
     title: `Round ${round} Complete`,
     content: `
@@ -591,7 +591,7 @@ export function renderInitiativeTracker(app, html) {
   controls.className = 'vtm-phase-controls';
 
   if (phase === 'initiative' && hasInit) {
-    controls.innerHTML = `<button type="button" class="vtm-phase-btn begin-declaration"><i class="fas fa-scroll"></i> Begin Declarations</button>`;
+    controls.innerHTML = `<button type="button" class="vtm-phase-btn begin-declaration"><i class="fas fa-scroll"></i> Начать объявление действий</button>`;
     // Use game.combat at click time, not a captured reference
     controls.querySelector('.begin-declaration').addEventListener('click', async () => {
       const c = game.combat;
@@ -602,18 +602,18 @@ export function renderInitiativeTracker(app, html) {
   } else if (phase === 'declaration') {
     const curId = combat.getFlag('vtm-v20', 'currentDeclarer');
     const cur = combat.combatants.get(curId);
-    controls.innerHTML = `<div class="vtm-phase-label"><i class="fas fa-scroll"></i> Declaring: <b>${cur?.name || '...'}</b></div>`;
+    controls.innerHTML = `<div class="vtm-phase-label"><i class="fas fa-scroll"></i> Объявляет действия: <b>${cur?.name || '...'}</b></div>`;
   } else if (phase === 'resolution') {
     const dr = combat.getFlag('vtm-v20', 'deferredResolver');
     if (dr) {
       const cb = combat.combatants.get(dr.combatantId);
-      controls.innerHTML = `<div class="vtm-phase-label"><i class="fas fa-wind"></i> Deferred: <b>${cb?.name || '...'}</b> (${dr.init <= -900 ? 'end of round' : `init ${dr.init}`})</div>`;
+      controls.innerHTML = `<div class="vtm-phase-label"><i class="fas fa-wind"></i> Отложенное действие: <b>${cb?.name || '...'}</b> (${dr.init <= -900 ? 'конец раунда' : `иниц. ${dr.init}`})</div>`;
     } else {
       const curId = combat.getFlag('vtm-v20', 'currentResolver');
       const cur = combat.combatants.get(curId);
       const interrupting = (combat.getFlag('vtm-v20', 'interruptStack') || []).length > 0;
       const finalCall = combat.getFlag('vtm-v20', 'finalCall');
-      const label = finalCall ? 'Final call' : interrupting ? 'Interrupt' : 'Acting';
+      const label = finalCall ? 'Последний вызов' : interrupting ? 'Прерывание' : 'Действует';
       const icon = finalCall ? 'fa-hourglass-end' : interrupting ? 'fa-bolt' : 'fa-fist-raised';
       controls.innerHTML = `<div class="vtm-phase-label"><i class="fas ${icon}"></i> ${label}: <b>${cur?.name || '...'}</b></div>`;
     }

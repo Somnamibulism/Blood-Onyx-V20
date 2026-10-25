@@ -1241,24 +1241,7 @@
   grid-template-columns:repeat(10,minmax(0,19px));
   max-width:100%;
 }
-/* Header icons are SVG elements inserted without changing Foundry's actions. */
-.vtm-v20.sheet.actor.vampire .window-header .vtm-control-icon-ready > i { display:none!important; }
-.vtm-v20.sheet.actor.vampire .window-header .vtm-control-svg {
-  display:block;
-  width:16px;
-  height:16px;
-  flex:0 0 16px;
-  color:inherit;
-  pointer-events:none;
-}
-.vtm-v20.sheet.actor.vampire .window-header .vtm-control-icon-ready {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width:24px;
-  min-height:24px;
-  line-height:1;
-}
+/* Stock Foundry 13 window controls and their Font Awesome icons are used unchanged. */
 @media (max-width:810px) {
   .vtm-v20.sheet.actor.vampire .portrait-panel {flex-basis:112px;width:112px;}
   .vtm-v20.sheet.actor.vampire .status-bar {grid-template-columns:repeat(2,minmax(0,1fr));}
