@@ -14,6 +14,25 @@
 </div>
 {{/if}}
 
+{{!-- Compact identity bar is accessible on every sheet tab. --}}
+<div class="ru-persistent-identity" aria-label="Краткие сведения о персонаже">
+  <img src="{{actor.img}}" alt="" class="ru-identity-portrait" />
+  <div class="ru-identity-name" title="{{actor.name}}">{{actor.name}}</div>
+  {{#if isVampire}}
+  <div class="ru-identity-field" title="Клан"><span>Клан</span><strong>{{clanDisplay}}</strong></div>
+  <div class="ru-identity-field ru-gen-field" title="Поколение"><span>Поколение</span><strong>{{system.generation}}</strong></div>
+  {{/if}}
+  <div class="ru-identity-field" title="Натура"><span>Натура</span><strong>{{natureDisplay}}</strong></div>
+  <div class="ru-identity-field" title="Маска"><span>Маска</span><strong>{{demeanorDisplay}}</strong></div>
+  <div class="ru-identity-more">
+    {{#if system.sire}}<span title="Сир: {{system.sire}}">Сир: <b>{{system.sire}}</b></span>{{/if}}
+    {{#if system.concept}}<span title="Концепция: {{system.concept}}">Концепция: <b>{{system.concept}}</b></span>{{/if}}
+    {{#if system.apparentAge}}<span title="Возраст: {{system.apparentAge}} / {{system.trueAge}}">Возраст: <b>{{system.apparentAge}}{{#if system.trueAge}} / {{system.trueAge}}{{/if}}</b></span>{{/if}}
+    {{#if system.chronicle}}<span title="Хроника: {{system.chronicle}}">Хроника: <b>{{system.chronicle}}</b></span>{{/if}}
+  </div>
+  <div class="ru-identity-vitals" title="Здоровье, временная Воля и кровь"><span><i class="fas fa-heart"></i> {{healthSummary}}</span><span><i class="fas fa-brain"></i> {{system.willpower.value}}/{{system.willpower.max}}</span>{{#if isVampire}}<span><i class="fas fa-tint"></i> {{system.blood.value}}/{{system.blood.max}}</span>{{/if}}</div>
+</div>
+
 {{!-- TABS --}}
 <nav class="sheet-tabs" data-group="primary">
   <a class="item" data-tab="overview" aria-label="Общие сведения о персонаже"><i class="fas fa-user-circle"></i> Общее</a>
@@ -161,17 +180,6 @@
 </div>
   </div>{{!-- .sheet-top-right --}}
 </div>{{!-- .sheet-top --}}
-
-
-    <div class="ru-overview-footer">
-<div class="money-section">
-    <i class="fas fa-dollar-sign money-sign"></i>
-    <span class="money-amount">{{moneyDisplay}}</span>
-    {{#if isGM}}
-    <a class="money-edit" title="Edit Money"><i class="fas fa-pencil-alt"></i></a>
-    {{/if}}
-  </div>
-    </div>
   </div>
 
   {{!-- STATS --}}
@@ -758,6 +766,16 @@
           <i class="fas fa-ruler-horizontal"></i>
           <span>Длина оружия</span>
         </button>
+      </div>
+      <div class="ru-combat-quick-maneuvers" aria-label="Дальний бой и восстановление">
+        <span class="ru-quick-label">Дальний бой</span>
+        <button type="button" class="ru-ranged-maneuver" data-mode="single"><i class="fas fa-crosshairs"></i> Выстрел</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="burst"><i class="fas fa-list"></i> Короткая очередь</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="auto"><i class="fas fa-burst"></i> Длинная очередь</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="reload"><i class="fas fa-rotate"></i> Перезарядка</button>
+        <span class="ru-quick-label">Восстановление</span>
+        <button type="button" class="ru-combat-soak"><i class="fas fa-shield-alt"></i> Поглощение</button>
+        {{#if isVampire}}<button type="button" class="ru-combat-heal"><i class="fas fa-heart"></i> Исцеление кровью</button>{{/if}}
       </div>
       <p class="ru-combat-hint">{{maneuverGuide}}</p>
       <div class="attack-list ru-combat-table">

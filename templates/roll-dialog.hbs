@@ -1,6 +1,6 @@
 <form class="vtm-roll-dialog ru-compact-roll">
   <div class="form-group">
-    <label>Первая характеристика</label>
+    <label>Атрибут</label>
     <select name="primary">
       <option value="">— Нет —</option>
       <optgroup label="Атрибуты">
@@ -8,40 +8,13 @@
         <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
         {{/each}}
       </optgroup>
-      <optgroup label="Способности">
-        {{#each abilOpts}}
-        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
-        {{/each}}
-      </optgroup>
-      <optgroup label="Добродетели">
-        {{#each virtOpts}}
-        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
-        {{/each}}
-      </optgroup>
-      <optgroup label="Другое">
-        {{#each otherOpts}}
-        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
-        {{/each}}
-      </optgroup>
-      {{#if bgOpts.length}}
-      <optgroup label="Дополнения">
-        {{#each bgOpts}}
-        <option value="{{this.key}}" {{#if (eq this.key ../trait)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
-        {{/each}}
-      </optgroup>
-      {{/if}}
     </select>
   </div>
 
   <div class="form-group">
-    <label>Вторая характеристика</label>
+    <label>Способность / проверка</label>
     <select name="secondary">
       <option value="">— Нет —</option>
-      <optgroup label="Атрибуты">
-        {{#each attrOpts}}
-        <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>
-        {{/each}}
-      </optgroup>
       <optgroup label="Способности">
         {{#each abilOpts}}
         <option value="{{this.key}}" {{#if (eq this.key ../trait2)}}selected{{/if}}>{{this.label}} ({{this.value}})</option>

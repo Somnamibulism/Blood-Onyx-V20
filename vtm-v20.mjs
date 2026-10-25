@@ -347,10 +347,11 @@ function patchWindowHeaderControl(control) {
 
 function patchUiIcons(root = document) {
   const base = root instanceof Element || root instanceof Document ? root : document;
-  for (const control of base.querySelectorAll('.window-header button, .window-header a, .app-header button, .app-header a')) {
-    patchWindowHeaderControl(control);
-  }
-  for (const item of base.querySelectorAll('.context li, .context-menu li, .dropdown-menu li, [role="menu"] li, [data-tooltip] i, .directory-header button i, .window-header i, .app-header i, li i, button i, a i')) {
+  // Do NOT patch window header controls globally. Actor sheets add their own
+  // header SVGs, while core Foundry windows already have icons. Patching both
+  // caused duplicated/overlaid controls across many windows.
+  for (const item of base.querySelectorAll('.context li, .context-menu li, .dropdown-menu li, [role="menu"] li, [data-tooltip] i, .directory-header button i, li i, button i, a i')) {
+    if (item.closest('.window-header, .app-header')) continue;
     patchUiGlyphElement(item);
   }
 }
@@ -574,6 +575,13 @@ Hooks.once('init', () => {
   });
   applySheetTheme();
 
+  game.settings.register('vtm-v20', 'tokenNamesVisibleMigrated', {
+    scope: 'world',
+    config: false,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('vtm-v20', 'movementBarMigrated', {
     scope: 'world',
     config: false,
@@ -664,6 +672,38 @@ Hooks.once('init', () => {
   ]);
 });
 
+async function ensureTokenNamesVisible() {
+  if (!game.user?.isGM) return;
+  const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
+  const actorUpdates = [];
+  for (const actor of game.actors ?? []) {
+    const current = Number(actor.prototypeToken?.displayName ?? -1);
+    if (current !== ALWAYS) actorUpdates.push({ _id: actor.id, 'prototypeToken.displayName': ALWAYS });
+  }
+  if (actorUpdates.length) await Actor.updateDocuments(actorUpdates);
+
+  for (const scene of game.scenes ?? []) {
+    const updates = [];
+    for (const token of scene.tokens ?? []) {
+      const current = Number(token.displayName ?? -1);
+      if (current !== ALWAYS) updates.push({ _id: token.id, displayName: ALWAYS });
+    }
+    if (updates.length) await scene.updateEmbeddedDocuments('Token', updates);
+  }
+}
+
+Hooks.on('preCreateActor', (actor, data) => {
+  const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
+  const current = Number(data.prototypeToken?.displayName ?? actor.prototypeToken?.displayName ?? -1);
+  if (current !== ALWAYS) actor.updateSource({ prototypeToken: { ...(data.prototypeToken || actor.prototypeToken || {}), displayName: ALWAYS } });
+});
+
+Hooks.on('preCreateToken', (document, data) => {
+  const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
+  const current = Number(data.displayName ?? document.displayName ?? -1);
+  if (current !== ALWAYS) document.updateSource({ displayName: ALWAYS });
+});
+
 Hooks.once('ready', () => {
   registerGlobalUiIconPatcher();
   populateCompendiums().catch(error => { console.error('V20 | Library bootstrap failed',error); ui.notifications.error('Не удалось заполнить библиотеки V20. Откройте вкладку Библиотеки и нажмите «Восстановить».'); });
@@ -671,6 +711,15 @@ Hooks.once('ready', () => {
   bindTargetEffectSockets();
   bindInitiativeSocketHandlers();
   registerWoundTokenHover();
+
+  // One-time: show token names on the canvas for easier scene use.
+  if (game.user.isGM && !game.settings.get('vtm-v20', 'tokenNamesVisibleMigrated')) {
+    (async () => {
+      await ensureTokenNamesVisible();
+      await game.settings.set('vtm-v20', 'tokenNamesVisibleMigrated', true);
+      console.log('VtM V20 | Token names migrated to always visible');
+    })();
+  }
 
   // One-time: token bars bound to blood switch to the movement rate
   if (game.user.isGM && !game.settings.get('vtm-v20', 'movementBarMigrated')) {

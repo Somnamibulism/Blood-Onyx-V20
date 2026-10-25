@@ -243,11 +243,11 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const flankMode = actor.getFlag('vtm-v20', 'flankMode');
     ctx.flankAttack = flankMode === 'flank';
     ctx.rearAttack = flankMode === 'rear';
-    ctx.posLabel = flankMode === 'rear' ? 'Rear +2' : flankMode === 'flank' ? 'Flank +1' : 'Position';
+    ctx.posLabel = flankMode === 'rear' ? 'Сзади +2' : flankMode === 'flank' ? 'Фланг +1' : 'Позиция';
     const rangeMode = actor.getFlag('vtm-v20', 'rangeMode');
     ctx.rangePointBlank = rangeMode === 'pointblank';
     ctx.rangeMax = rangeMode === 'max';
-    ctx.rangeLabel = rangeMode === 'pointblank' ? 'Point Blank' : rangeMode === 'max' ? 'Max Range' : 'Range';
+    ctx.rangeLabel = rangeMode === 'pointblank' ? 'В упор' : rangeMode === 'max' ? 'Предельная' : 'Дистанция';
     ctx.multiOpp = actor.getFlag('vtm-v20', 'multiOpp') || 0;
     ctx.weaponLength = actor.getFlag('vtm-v20', 'weaponLength') === true;
 
@@ -795,6 +795,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ctx.healthTrack.push({ key: 'torpor', label: 'Torpor', penalty: null, desc: healthDescs.torpor, infoOnly: true });
     }
 
+    const woundsSummary = countDamage(sys);
+    ctx.healthSummary = `${woundsSummary.bash + woundsSummary.leth + woundsSummary.agg} ран.`;
+
     // Soak
     const stamina = effectiveTraitValue(actor, 'attributes.stamina');
     const fort = items.find(i => i.type === 'discipline' && canonicalName(i.name).toLowerCase() === 'fortitude');
@@ -854,6 +857,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     ctx.config = VTM;
     ctx.clanChoices = clanOptions(VTM.clans).map(value => ({value, label: displayName(value)}));
+    ctx.clanDisplay = displayName(sys.clan || '—');
+    ctx.natureDisplay = displayName(sys.nature || '—');
+    ctx.demeanorDisplay = displayName(sys.demeanor || '—');
 
     // Path, bearing, virtues
     const pathKey = sys.pathName || 'Humanity';
@@ -1179,93 +1185,22 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         this.document.update({ 'system.willpower.value': val === cur ? val - 1 : val });
       }));
 
-    // -- Trait selection & quick-roll dice button ---
-    // The popup lives on document.body so it escapes the sheet's overflow:hidden
-    if (this._rollQuickEl) this._rollQuickEl.remove();
-    const rqEl = document.createElement('div');
-    rqEl.className = 'roll-quick-float';
-    rqEl.innerHTML = '<button type="button" title="Roll"><i class="fas fa-dice-d20"></i></button>';
-    document.body.appendChild(rqEl);
-    this._rollQuickEl = rqEl;
-
-    const positionDice = () => {
-      const rect = this.element.getBoundingClientRect();
-      rqEl.style.top = `${rect.top + rect.height / 2}px`;
-      rqEl.style.left = `${rect.right + 10}px`;
-    };
-
-    const showDice = () => { positionDice(); rqEl.classList.add('visible'); };
-    const hideDice = () => { rqEl.classList.remove('visible'); };
-
-    const clearSelect = () => {
-      el.querySelectorAll('.trait-row.selected').forEach(s => s.classList.remove('selected'));
-      this._rollSelect = null;
-      hideDice();
-    };
-
-    const doRoll = (attr, abil) => {
-      clearSelect();
-      game.vtm.rollDicePool(this.document, {
-        trait: attr?.key,
-        trait2: abil?.key,
-        label: [attr?.label, abil?.label].filter(Boolean).join(' + ')
-      });
-    };
-
-    el.querySelectorAll('.rollable').forEach(lbl => {
-      lbl.addEventListener('click', () => {
-        const key = lbl.dataset.roll;
-        const label = lbl.dataset.label || key;
-        const isAttr = key.startsWith('attributes.');
-        const isAbil = key.startsWith('abilities.');
-
-        // Virtues / other: direct roll, no selection
-        if (!isAttr && !isAbil) {
-          clearSelect();
-          game.vtm.rollDicePool(this.document, { trait: key, label });
-          return;
-        }
-
-        const type = isAttr ? 'attr' : 'abil';
-        const cur = this._rollSelect;
-
-        // Clicking the already-selected trait: deselect
-        if (cur && cur.key === key) { clearSelect(); return; }
-
-        // One attr + one abil: open the roll dialog with both
-        if (cur && cur.type !== type) {
-          const attr = type === 'attr' ? { key, label } : cur;
-          const abil = type === 'abil' ? { key, label } : cur;
-          doRoll(attr, abil);
-          return;
-        }
-
-        // Same type or first pick: (re)select this trait
-        el.querySelectorAll('.trait-row.selected').forEach(s => s.classList.remove('selected'));
-        lbl.closest('.trait-row').classList.add('selected');
-        this._rollSelect = { key, label, type };
-        showDice();
+    // One click on a trait opens the full pool dialog directly. The second
+    // trait can be selected inside the dialog; no detached die or selection state.
+    this._rollQuickEl?.remove();
+    this._rollQuickEl = null;
+    this._rollSelect = null;
+    el.querySelectorAll('.rollable').forEach(labelEl => {
+      labelEl.addEventListener('click', () => {
+        const key = labelEl.dataset.roll;
+        if (!key) return;
+        game.vtm.rollDicePool(this.document, {
+          trait: key.startsWith('attributes.') ? key : '',
+          trait2: key.startsWith('attributes.') ? '' : key,
+          label: labelEl.dataset.label || key,
+        });
       });
     });
-
-    // Dice button: roll with the single selected trait
-    rqEl.querySelector('button').addEventListener('click', () => {
-      const sel = this._rollSelect;
-      if (!sel) return;
-      doRoll(sel.type === 'attr' ? sel : null, sel.type === 'abil' ? sel : null);
-    });
-
-    // Click anywhere else on the sheet clears the selection
-    el.addEventListener('click', e => {
-      if (!e.target.closest('.rollable')) clearSelect();
-    });
-
-    // Restore selection that survived a re-render
-    if (this._rollSelect) {
-      const prev = el.querySelector(`.trait-label[data-roll="${this._rollSelect.key}"]`);
-      if (prev) { prev.closest('.trait-row').classList.add('selected'); showDice(); }
-      else this._rollSelect = null;
-    }
 
     el.querySelectorAll('.soak-btn').forEach(btn => {
       btn.addEventListener('click', () => this._rollSoak());
@@ -1369,7 +1304,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     });
 
-    el.querySelector('.money-edit')?.addEventListener('click', () => this._editMoney());
 
     el.querySelector('.blood-spend')?.addEventListener('click', () => {
       const cur = this.document.system.blood.value;
@@ -1411,14 +1345,22 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         item.update({ 'system.equipped': !item.system.equipped });
       }));
 
+    el.querySelectorAll('.ru-ranged-maneuver').forEach(btn => {
+      btn.addEventListener('click', () => this._chooseRangedManeuver(btn.dataset.mode));
+    });
+    el.querySelector('.ru-combat-soak')?.addEventListener('click', () => this._rollSoak());
+    el.querySelector('.ru-combat-heal')?.addEventListener('click', () => this._healWithBlood());
+
     el.querySelectorAll('.attack-btn:not(.reload-btn):not(.defense-roll-btn):not(.action-roll-btn)').forEach(btn =>
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         const attackId = btn.dataset.attackId;
+        const forcedMode = btn.dataset.forcedFireMode || null;
+        delete btn.dataset.forcedFireMode;
         try {
           // Declaration phase: add this attack to the declaration
           if (this._declCombat && !this._declFullDefense) {
-            await this._declAddAttack(attackId);
+            await this._declAddAttack(attackId, forcedMode);
             return;
           }
           // Resolution phase: use the declared pool (skip reloads, they have their own button)
@@ -1457,7 +1399,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             else await clinchEscape(this.document);
             return;
           }
-          const plan = await this._promptFireMode(atk);
+          const plan = await this._promptFireMode(atk, { forcedMode });
           if (!plan) return;
           const targeting = this._getTargetingData();
           if (!(await this._spendAttackAmmo(atk, { dryRun: true, count: plan.rounds }))) return;
@@ -1466,7 +1408,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (result !== false) await this._spendAttackAmmo(atk, { count: plan.rounds });
         } catch (err) {
           console.error('VtM V20 | Attack failed', err);
-          ui.notifications.error('Attack failed. Check the console for details.');
+          ui.notifications.error('Ошибка атаки. Подробности в консоли Foundry.');
         } finally {
           btn.disabled = false;
         }
@@ -1509,7 +1451,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (result !== false) await this._spendAttackAmmo(atk, { count: plan.rounds });
         } catch (err) {
           console.error('VtM V20 | Attack failed', err);
-          ui.notifications.error('Attack failed. Check the console for details.');
+          ui.notifications.error('Ошибка атаки. Подробности в консоли Foundry.');
         } finally {
           btn.disabled = false;
         }
@@ -1598,7 +1540,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           // Declaration phase: add a reload action (one per weapon max)
           if (this._declCombat && !this._declFullDefense) {
             if (this._declActions.some(a => a.attackId === attackId && a.reload)) {
-              ui.notifications.warn('Reload already declared for this weapon.');
+              ui.notifications.warn('Перезарядка этого оружия уже объявлена.');
               return;
             }
             this._saveAllocations();
@@ -2127,7 +2069,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return Math.max(base - (inDecl ? this._bulletsDeclared(atk.id) : 0), 0);
   }
 
-  async _declAddAttack(attackId) {
+  async _declAddAttack(attackId, forcedMode = null) {
     const atk = this._attacks?.find(a => a.id === attackId);
     if (!atk) return;
     const rate = parseInt(atk.rate) || 0;
@@ -2137,8 +2079,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     let plan = { mode: 'single', rounds: 1 };
-    if (fireModeInfo(atk)) {
-      plan = await this._promptFireMode(atk, { budget: rate > 0 ? rate - used : null });
+    if (fireModeInfo(atk) || forcedMode) {
+      plan = await this._promptFireMode(atk, { budget: rate > 0 ? rate - used : null, forcedMode });
       if (!plan) return;
     }
     this._saveAllocations();
@@ -2153,9 +2095,15 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.render();
   }
 
-  async _promptFireMode(atk, { budget = null } = {}) {
+  async _promptFireMode(atk, { budget = null, forcedMode = null } = {}) {
     const info = fireModeInfo(atk);
-    if (!info) return { mode: 'single', rounds: 1 };
+    if (!info) {
+      if (forcedMode && forcedMode !== 'single') {
+        ui.notifications.warn('Выбранное оружие не поддерживает такой режим огня.');
+        return null;
+      }
+      return { mode: 'single', rounds: 1 };
+    }
     const ammo = this._plannedAmmo(atk);
     const cap = budget === null ? (info.rateNum || 1) : budget;
     const avail = ammo;
@@ -2163,15 +2111,23 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const mag = this.document.items.get(atk.id);
     const magSize = mag ? parseAmmoCapacity(mag.system.capacity) : null;
     const canAuto = info.auto && magSize !== null && avail >= Math.ceil(magSize / 2);
-    if (!canBurst && !canAuto) return { mode: 'single', rounds: 1 };
+    if (forcedMode === 'burst' && !canBurst) {
+      ui.notifications.warn('Короткая очередь недоступна: проверь режим оружия и наличие трёх патронов.');
+      return null;
+    }
+    if (forcedMode === 'auto' && !canAuto) {
+      ui.notifications.warn('Длинная очередь недоступна: требуется автоматический огонь и не менее половины магазина.');
+      return null;
+    }
+    if (!canBurst && !canAuto && !forcedMode) return { mode: 'single', rounds: 1 };
 
-    const mode = await new Promise(resolve => {
+    const mode = forcedMode || await new Promise(resolve => {
       const buttons = {
-        single: { icon: '<i class="fas fa-bullseye"></i>', label: 'Single Shot', callback: () => resolve('single') },
+        single: { icon: '<i class="fas fa-bullseye"></i>', label: 'Одиночный выстрел', callback: () => resolve('single') },
       };
       if (canBurst) buttons.burst = {
         icon: '<i class="fas fa-ellipsis-h"></i>',
-        label: 'Three-Round Burst (+2 dice, +1 diff)',
+        label: 'Короткая очередь (+2 куба, +1 сложность)',
         callback: () => resolve('burst'),
       };
       if (canAuto) buttons.auto = {
@@ -2181,7 +2137,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       };
       new Dialog({
         title: `${this.document.name}: ${atk.name}`,
-        content: '<p style="margin:8px 0;color:#ddd;">Fire mode?</p>',
+        content: '<p style="margin:8px 0;color:#ddd;">Выбери режим стрельбы:</p>',
         buttons,
         default: 'single',
         close: () => resolve(null),
@@ -2204,6 +2160,37 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     // RAW V20: empty the whole remaining magazine, +10 dice / +2 difficulty.
     return { mode: 'auto', rounds: avail };
+  }
+
+  async _chooseRangedManeuver(mode) {
+    const candidates = (this._attacks || []).filter(atk => {
+      // Only real equipped ranged weapons, not supernatural ranged powers.
+      const item = this.document.items.get(atk.id);
+      if (!atk.isRanged || item?.type !== 'weapon' || !item.system.equipped) return false;
+      if (mode === 'burst') return !!fireModeInfo(atk)?.burst;
+      if (mode === 'auto') return !!fireModeInfo(atk)?.auto;
+      return true;
+    });
+    if (!candidates.length) {
+      ui.notifications.warn('Нет экипированного дальнобойного оружия с подходящим режимом.');
+      return;
+    }
+    const label = { single: 'Одиночный выстрел', burst: 'Короткая очередь (3 патрона)', auto: 'Длинная очередь (магазин)', reload: 'Перезарядка' }[mode];
+    const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const html = `<form class="ru-ranged-picker"><label>Оружие для манёвра «${label}»</label><select name="weapon" style="width:100%">${candidates.map(atk =>
+      `<option value="${esc(atk.id)}">${esc(atk.name)}${atk.ammoLabel ? ` (${esc(atk.ammoLabel)})` : ''}</option>`).join('')}</select><p class="ru-ranged-note">Используются существующие правила V20: сложность, темп стрельбы, запас патронов и объявление действий.</p></form>`;
+    const chosen = await new Promise(resolve => new Dialog({
+      title: label, content: html,
+      buttons: { choose: { label: 'Выбрать', callback: dlg => resolve(dlg[0].querySelector('[name="weapon"]')?.value || null) } },
+      default: 'choose', close: () => resolve(null),
+    }, { classes: ['vtm-v20', 'dialog'], width: 410 }).render(true));
+    if (!chosen) return;
+    const selector = mode === 'reload' ? `.reload-btn[data-attack-id="${CSS.escape(chosen)}"]`
+      : `.attack-btn:not(.reload-btn)[data-attack-id="${CSS.escape(chosen)}"]`;
+    const button = this.element?.querySelector(selector);
+    if (!button || button.disabled) return ui.notifications.warn('Манёвр сейчас недоступен.');
+    if (mode !== 'reload') button.dataset.forcedFireMode = mode;
+    button.click();
   }
 
   static TARGETING_CHOICES = {
@@ -4729,12 +4716,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const actor = this.document;
     const dmgType = await new Promise(resolve => {
       new Dialog({
-        title: 'Soak: Damage Type',
+        title: 'Поглощение: тип урона',
         content: '<p style="margin:8px 0">What type of damage are you soaking?</p>',
         buttons: {
-          bashing: { label: 'Bashing', callback: () => resolve('bashing') },
-          lethal: { label: 'Lethal', callback: () => resolve('lethal') },
-          aggravated: { label: 'Aggravated', callback: () => resolve('aggravated') },
+          bashing: { label: 'Дробящий', callback: () => resolve('bashing') },
+          lethal: { label: 'Летальный', callback: () => resolve('lethal') },
+          aggravated: { label: 'Аггравированный', callback: () => resolve('aggravated') },
         },
         default: 'lethal',
         close: () => resolve(null),
@@ -4746,12 +4733,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (dmgType === 'aggravated' && actor.type === 'vampire') {
       fireOrSunlight = await new Promise(resolve => {
         new Dialog({
-          title: 'Aggravated Damage Source',
-          content: `<p style="margin:8px 0">Is this aggravated damage from <b>sunlight or fire</b>?</p>
-            <p style="font-size:11px;color:#999">If yes, armor will not protect against this damage.</p>`,
+          title: 'Источник аггравированного урона',
+          content: `<p style="margin:8px 0">Это аггравированный урон от <b>солнца или огня</b>?</p>
+            <p style="font-size:11px;color:#999">При таком уроне обычная броня не защищает.</p>`,
           buttons: {
-            yes: { icon: '<i class="fas fa-fire"></i>', label: 'Sunlight / Fire', callback: () => resolve(true) },
-            no: { icon: '<i class="fas fa-paw"></i>', label: 'Teeth / Claws / Other', callback: () => resolve(false) },
+            yes: { icon: '<i class="fas fa-fire"></i>', label: 'Солнце / огонь', callback: () => resolve(true) },
+            no: { icon: '<i class="fas fa-paw"></i>', label: 'Зубы / когти / другое', callback: () => resolve(false) },
           },
           default: 'no',
           close: () => resolve(false),
@@ -4761,14 +4748,14 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const soakData = computeSoakPool(actor, { dmgType, fireOrSunlight });
     if (!soakData.canSoak) {
-      return ui.notifications.warn('Cannot soak this damage type.');
+      return ui.notifications.warn('Этот тип урона поглотить нельзя.');
     }
 
     let { pool, parts, difficulty } = soakData;
-    let label = `Soak ${dmgType} (${parts.join(' + ')})`;
+    let label = `Поглощение: ${dmgType} (${parts.join(' + ')})`;
     if (adjust) {
       const adj = await promptRollAdjust({
-        title: `Soak ${dmgType}`,
+        title: `Поглощение: ${dmgType}`,
         pool, poolLabel: parts.join(' + '), difficulty,
       });
       if (!adj) return;
@@ -4842,9 +4829,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `blood-buff-toggle${this._bloodBuffOpen ? ' active' : ''}${hasAnyBuff ? ' has-buffs' : ''}`;
-    btn.title = inDecl ? 'Cannot enhance during declaration' : 'Enhance Physical Attributes';
+    btn.title = inDecl ? 'Нельзя усиливать характеристики при объявлении действий' : 'Усиление физических атрибутов кровью (Blood Buff)';
     btn.disabled = inDecl;
-    btn.innerHTML = '<i class="fas fa-tint"></i>';
+    btn.innerHTML = '<i class="fas fa-arrow-up"></i><span>Усилить кровью</span>';
     btn.addEventListener('click', () => {
       if (this._declCombat) return;
       this._bloodBuffOpen = !this._bloodBuffOpen;
@@ -4924,7 +4911,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const buffs = actor.getFlag('vtm-v20', 'bloodBuffs') || {};
     const decay = actor.getFlag('vtm-v20', 'bloodBuffDecay') || {};
     const physAttrs = ['strength', 'dexterity', 'stamina'];
-    const labels = { strength: 'Str', dexterity: 'Dex', stamina: 'Sta' };
+    const labels = { strength: 'Сила', dexterity: 'Ловкость', stamina: 'Выносливость' };
     const freeLimit = (sys.traitMax || 5) + 1;
 
     const inCombat = !!this._resCombat;
@@ -4934,8 +4921,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     drawer.innerHTML = `
       <div class="blood-buff-drawer-header">
-        <i class="fas fa-tint"></i> Enhance
+        <i class="fas fa-tint"></i> Усиление атрибутов кровью
       </div>
+      <p class="blood-buff-explain">Каждая «+» тратит 1 пункт крови и добавляет 1 точку к выбранному физическому атрибуту. «−» снимает усиление, но потраченную кровь не возвращает. Лимит: ${sys.bloodPerTurn || 1} крови за ход.</p>
       ${physAttrs.map(attr => {
         const base = sys.attributes[attr] || 0;
         const buff = buffs[attr] || 0;
@@ -4945,7 +4933,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         let decayTag = '';
         if (total > freeLimit && lastSpent !== undefined && round > lastSpent) {
           const turns = lastSpent + 3 - round;
-          if (turns > 0) decayTag = `<span class="blood-buff-decay" title="Overflow decays in ${turns} turn${turns > 1 ? 's' : ''}"><i class="fas fa-hourglass-half"></i> ${turns}</span>`;
+          if (turns > 0) decayTag = `<span class="blood-buff-decay" title="Дополнительное усиление спадёт через ${turns} ход(ов)"><i class="fas fa-hourglass-half"></i> ${turns}</span>`;
         }
         return `<div class="blood-buff-row" data-attr="${attr}">
           <span class="blood-buff-label">${labels[attr]}</span>
@@ -5026,59 +5014,49 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const current = buffs[attr] || 0;
     const total = base + current;
 
-    if (total >= 10) return ui.notifications.warn('Cannot exceed 10.');
-    if ((sys.blood?.value || 0) < 1) return ui.notifications.warn('No blood to spend.');
+    if (total >= 10) return ui.notifications.warn('Атрибут не может превышать 10.');
+    if ((sys.blood?.value || 0) < 1) return ui.notifications.warn('Недостаточно крови для усиления.');
 
     const inCombat = !!(this._resCombat || this._declCombat);
     if (inCombat && this._bloodBudgetLeft() <= 0) {
       return ui.notifications.warn(`No blood budget left this turn.`);
     }
 
-    this._playHealAnimation();
+    // One atomic actor update instead of 2-3 setFlag calls. Each flag update
+    // used to render this entire 7-tab sheet and rebuild the drawer again.
     buffs[attr] = current + 1;
-    await actor.update({ 'system.blood.value': (sys.blood.value || 0) - 1 });
-    await actor.setFlag('vtm-v20', 'bloodBuffs', buffs);
-    if (inCombat) this._resBloodSpent++;
-
-    // Track when blood was last spent on an overflow attribute
+    const updates = {
+      'system.blood.value': (sys.blood.value || 0) - 1,
+      'flags.vtm-v20.bloodBuffs': buffs,
+    };
     const freeLimit = (sys.traitMax || 5) + 1;
     if (base + current + 1 > freeLimit && game.combat) {
       const decay = foundry.utils.deepClone(actor.getFlag('vtm-v20', 'bloodBuffDecay') || {});
       decay[attr] = game.combat.round || 1;
-      await actor.setFlag('vtm-v20', 'bloodBuffDecay', decay);
+      updates['flags.vtm-v20.bloodBuffDecay'] = decay;
     }
+    await actor.update(updates);
+    if (inCombat) this._resBloodSpent++;
   }
 
   async _bloodBuffRemove(attr) {
     const actor = this.document;
-    const buffs = foundry.utils.deepClone(actor.getFlag('vtm-v20', 'bloodBuffs') || {});
-    if (!buffs[attr]) return;
+    const oldBuffs = actor.getFlag('vtm-v20', 'bloodBuffs') || {};
+    if (!oldBuffs[attr]) return;
+    const buffs = foundry.utils.deepClone(oldBuffs);
     buffs[attr] -= 1;
-
-    // Clean up decay tracking if no longer in overflow
+    const updates = {};
     const base = actor.system.attributes?.[attr] || 0;
     const freeLimit = (actor.system.traitMax || 5) + 1;
     if (base + buffs[attr] <= freeLimit) {
-      const decay = actor.getFlag('vtm-v20', 'bloodBuffDecay');
-      if (decay?.[attr] !== undefined) {
-        const others = Object.keys(decay).filter(k => k !== attr);
-        if (!others.length) await actor.unsetFlag('vtm-v20', 'bloodBuffDecay');
-        else await actor.update({ [`flags.vtm-v20.bloodBuffDecay.-=${attr}`]: null });
+      const decay = actor.getFlag('vtm-v20', 'bloodBuffDecay') || {};
+      if (Object.prototype.hasOwnProperty.call(decay, attr)) {
+        updates[`flags.vtm-v20.bloodBuffDecay.-=${attr}`] = null;
       }
     }
-
-    if (buffs[attr] <= 0) {
-      // Foundry's setFlag merges, so setting {} won't delete existing keys.
-      // Use the -=key syntax or unsetFlag to actually remove data.
-      const remaining = Object.keys(buffs).filter(k => k !== attr && buffs[k] > 0);
-      if (!remaining.length) {
-        await actor.unsetFlag('vtm-v20', 'bloodBuffs');
-      } else {
-        await actor.update({ [`flags.vtm-v20.bloodBuffs.-=${attr}`]: null });
-      }
-    } else {
-      await actor.setFlag('vtm-v20', 'bloodBuffs', buffs);
-    }
+    if (buffs[attr] <= 0) updates[`flags.vtm-v20.bloodBuffs.-=${attr}`] = null;
+    else updates[`flags.vtm-v20.bloodBuffs.${attr}`] = buffs[attr];
+    await actor.update(updates);
   }
 
   // -- Healing with blood --------------------------------------------------
@@ -5144,7 +5122,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           return;
         }
         if (inCombat && this._bloodBudgetLeft() <= 0) {
-          return ui.notifications.warn('No blood budget left this turn.');
+          return ui.notifications.warn('На этот ход лимит расхода крови уже исчерпан.');
         }
         await actor.update({ 'system.blood.value': blood.value - 1 });
         await actor.setFlag('vtm-v20', 'activeDisciplines', [...active, key]);
@@ -5219,7 +5197,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return;
     }
     if (inCombat && this._bloodBudgetLeft() <= 0) {
-      return ui.notifications.warn('No blood budget left this turn.');
+      return ui.notifications.warn('На этот ход лимит расхода крови уже исчерпан.');
     }
     await actor.update({ 'system.blood.value': blood.value - 1 });
     await actor.setFlag('vtm-v20', choice === 'burst' ? 'celerityBurst' : 'celerityActions', true);
@@ -5594,7 +5572,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   async _healWithBlood() {
     if (this._resCombat) {
-      return ui.notifications.warn('Healing must be declared during the declaration phase.');
+      return ui.notifications.warn('В бою лечение необходимо объявить в фазе объявления действий.');
     }
     const actor = this.document;
     const sys = actor.system;
@@ -5604,7 +5582,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const dmg = countDamage(sys);
     const normal = dmg.bash + dmg.leth;
 
-    if (!normal) return ui.notifications.info('No bashing or lethal damage to heal.');
+    if (!normal) return ui.notifications.info('Нет дробящих или летальных повреждений для лечения.');
     if (!blood) return ui.notifications.warn(`${actor.name} has no blood to spend.`);
 
     const max = Math.min(blood, perTurn, normal);
@@ -5655,7 +5633,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const dmg = countDamage(sys);
     const normal = dmg.bash + dmg.leth;
 
-    if (!normal) return ui.notifications.info('No bashing or lethal damage to heal.');
+    if (!normal) return ui.notifications.info('Нет дробящих или летальных повреждений для лечения.');
     if (!blood) return ui.notifications.warn(`${actor.name} has no blood to spend.`);
 
     const max = Math.min(blood, perTurn, normal);
@@ -5745,7 +5723,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const content = `
       <form class="vtm-roll-dialog jump-dialog">
         <div class="form-group">
-          <label>Blood Points to Spend (heals 1 level each)</label>
+          <label>Потратить кровь (1 пункт лечит 1 уровень повреждений)</label>
           <input type="hidden" name="amount" value="1" />
           <div class="diff-buttons">${opts}</div>
         </div>
@@ -5753,12 +5731,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     return new Promise(resolve => {
       new Dialog({
-        title: 'Heal with Blood',
+        title: 'Исцеление кровью',
         content,
         buttons: {
           heal: {
             icon: '<i class="fas fa-tint"></i>',
-            label: 'Heal',
+            label: 'Исцелить',
             callback: html => resolve(parseInt(html[0].querySelector('[name="amount"]').value) || 1),
           }
         },
@@ -5791,7 +5769,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const pullDiff = actor.type === 'vampire' ? 5 : 9;
 
     const options = Object.entries(sources)
-      .map(([k, s]) => `<option value="${k}">${s.label}: ${s.levels}/turn</option>`)
+      .map(([k, s]) => `<option value="${k}">${s.label}: ${s.levels} ур./ход</option>`)
       .join('');
     const choice = await new Promise(resolve => {
       new Dialog({
@@ -5955,9 +5933,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const sizes = VampireSheet.FIRE_SIZES;
 
     const heatOptions = Object.entries(heats)
-      .map(([k, h]) => `<option value="${k}">${h.label}: soak diff ${h.diff}</option>`).join('');
+      .map(([k, h]) => `<option value="${k}">${h.label}: сложность поглощения ${h.diff}</option>`).join('');
     const sizeOptions = Object.entries(sizes)
-      .map(([k, s]) => `<option value="${k}">${s.label}: ${s.levels}/turn</option>`).join('');
+      .map(([k, s]) => `<option value="${k}">${s.label}: ${s.levels} ур./ход</option>`).join('');
 
     const choice = await new Promise(resolve => {
       new Dialog({
@@ -5971,7 +5949,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         </div>`,
         buttons: {
           burn: {
-            icon: '<i class="fas fa-fire"></i>', label: 'Burn One Turn',
+            icon: '<i class="fas fa-fire"></i>', label: 'Рассчитать урон за ход',
             callback: html => resolve({
               heat: html.find('[name="fire-heat"]').val(),
               size: html.find('[name="fire-size"]').val(),
@@ -6482,17 +6460,17 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   // -- Sunlight ------------------------------------------------------------
 
   static SUN_INTENSITIES = {
-    faint: { label: 'Faint: closed curtain, heavy cloud, twilight', diff: 3 },
-    protected: { label: 'Fully protected: heavy clothes, sunglasses, gloves, hat', diff: 5 },
-    indirect: { label: 'Indirect: through a window or light curtains', diff: 7 },
-    cloudy: { label: 'Cloudy day outside, one direct ray, mirror reflection', diff: 9 },
-    direct: { label: 'Direct rays from an unobscured sun', diff: 10 },
+    faint: { label: 'Слабый свет: плотные шторы, густая облачность, сумерки', diff: 3 },
+    protected: { label: 'Полная защита: плотная одежда, очки, перчатки, головной убор', diff: 5 },
+    indirect: { label: 'Непрямой свет: через окно или тонкую занавеску', diff: 7 },
+    cloudy: { label: 'Облачный день снаружи, прямой луч, отражение в зеркале', diff: 9 },
+    direct: { label: 'Прямые лучи незакрытого солнца', diff: 10 },
   };
 
   static SUN_EXPOSURES = {
-    small: { label: 'Small part exposed: a hand, part of the face', levels: 1 },
-    large: { label: 'Large part exposed: a leg, an arm, the whole head', levels: 2 },
-    half: { label: 'Half the body or more exposed, thin clothing', levels: 3 },
+    small: { label: 'Открыт небольшой участок: кисть, часть лица', levels: 1 },
+    large: { label: 'Открыт большой участок: нога, рука, вся голова', levels: 2 },
+    half: { label: 'Открыта половина тела или больше, тонкая одежда', levels: 3 },
   };
 
   async _rollSunlight() {
@@ -6501,23 +6479,23 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const exposures = VampireSheet.SUN_EXPOSURES;
 
     const intensityOptions = Object.entries(intensities)
-      .map(([k, h]) => `<option value="${k}">${h.label}: soak diff ${h.diff}</option>`).join('');
+      .map(([k, h]) => `<option value="${k}">${h.label}: сложность поглощения ${h.diff}</option>`).join('');
     const exposureOptions = Object.entries(exposures)
-      .map(([k, s]) => `<option value="${k}">${s.label}: ${s.levels}/turn</option>`).join('');
+      .map(([k, s]) => `<option value="${k}">${s.label}: ${s.levels} ур./ход</option>`).join('');
 
     const choice = await new Promise(resolve => {
       new Dialog({
-        title: `${actor.name}: Sunlight`,
+        title: `${actor.name}: Солнечный свет`,
         content: `<div style="margin:6px 0;color:#ddd;">
-          <p>Aggravated damage every turn in the light. Only Fortitude soaks it.</p>
-          <label style="display:block;margin:6px 0 2px;">Intensity of Light</label>
+          <p>На свету каждый ход наносится аггравированный урон. Поглощать его можно только Стойкостью.</p>
+          <label style="display:block;margin:6px 0 2px;">Интенсивность света</label>
           <select name="sun-intensity" style="width:100%;">${intensityOptions}</select>
-          <label style="display:block;margin:6px 0 2px;">Exposure</label>
+          <label style="display:block;margin:6px 0 2px;">Открытый участок тела</label>
           <select name="sun-exposure" style="width:100%;">${exposureOptions}</select>
         </div>`,
         buttons: {
           burn: {
-            icon: '<i class="fas fa-cloud-sun"></i>', label: 'Burn One Turn',
+            icon: '<i class="fas fa-cloud-sun"></i>', label: 'Рассчитать урон за ход',
             callback: html => resolve({
               intensity: html.find('[name="sun-intensity"]').val(),
               exposure: html.find('[name="sun-exposure"]').val(),
@@ -6545,7 +6523,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let soakDice = [];
     let soaked = 0;
     let soakSkipped = true;
-    let soakLabel = 'No Fortitude: sunlight cannot be soaked';
+    let soakLabel = 'Нет Стойкости: солнечный свет не поглощается';
     if (fortLevel > 0) {
       roll = new Roll(`${fortLevel}d10`);
       await roll.evaluate();
@@ -6553,7 +6531,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       soakDice = t.dice;
       soaked = t.outcome === 'botch' ? 0 : t.total;
       soakSkipped = false;
-      soakLabel = `Fortitude ${fortLevel} only, diff ${intensity.diff}`;
+      soakLabel = `Только Стойкость ${fortLevel}, сложность ${intensity.diff}`;
     }
 
     const net = Math.max(incoming - soaked, 0);
@@ -6564,18 +6542,18 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const cond = getCondition(actor);
 
     const chatHtml = await renderDamageCard({
-      attackerName: 'Sunlight', attackerImg: actor.img,
+      attackerName: 'Солнечный свет', attackerImg: actor.img,
       attackerPortraitStyle: this._portraitStyle(),
       defenderName: actor.name, defenderImg: actor.img,
       defenderPortraitStyle: this._portraitStyle(),
       weaponName: intensity.label, damageType: dmgType,
-      dmgPool: incoming, dmgLabel: `${exposure.label}${setite ? ' + 2 Followers of Set' : ''}, per turn in the light`,
+      dmgPool: incoming, dmgLabel: `${exposure.label}${setite ? ' +2 Последователи Сета' : ''}, за каждый ход на свету`,
       dmgDice: [], dmgSuccesses: incoming,
       soakPool: fortLevel, soakDifficulty: intensity.diff, soakLabel,
       soakDice, soakSuccesses: soaked, soakSkipped,
       netDamage: net, noDamage: net === 0,
       healthAudit,
-      damageAdjustment: setite ? 'Followers of Set: sunlight deals two additional health levels.' : null,
+      damageAdjustment: setite ? 'Последователи Сета: +2 уровня урона от солнечного света.' : null,
       condition: cond, penalty: actor.system.woundPenalty ? `${actor.system.woundPenalty}` : null,
     });
 

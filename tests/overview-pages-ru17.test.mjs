@@ -16,19 +16,20 @@ test('Overview is a single page alongside the six existing sheets', () => {
   }
   assert.match(template, /<div class="tab overview" data-group="primary" data-tab="overview">/);
   assert.equal((template.match(/class="sheet-top"/g) ?? []).length, 1);
-  assert.equal((template.match(/class="money-section"/g) ?? []).length, 1);
+  assert.equal((template.match(/class="money-section"/g) ?? []).length, 0); // currency UI removed in ru.22
 });
 
 test('Overview owns the identity fields and resources, other pages are not inside the header', () => {
   const general = template.split('class="tab overview"')[1].split('{{!-- STATS --}}')[0];
-  for (const required of ['class="portrait-panel"', 'name="name"', 'name="system.clan"', 'name="system.sire"', 'class="status-bar"', 'class="wp-track"', 'class="money-section"']) {
+  for (const required of ['class="portrait-panel"', 'name="name"', 'name="system.clan"', 'name="system.sire"', 'class="status-bar"', 'class="wp-track"']) {
     assert.ok(general.includes(required), required);
   }
   const firstTab = template.indexOf('data-tab="overview"', template.indexOf('<section class="sheet-body">'));
   const stats = template.indexOf('data-tab="stats"', firstTab);
   assert.ok(stats > firstTab, 'Stats follows overview as a sibling page');
   const firstHeader = template.indexOf('class="sheet-top"');
-  assert.ok(firstHeader > template.indexOf('<section class="sheet-body">'), 'Identity is not permanently above pages');
+  assert.ok(firstHeader > template.indexOf('<section class="sheet-body">'), 'Full overview remains a separate page');
+  assert.ok(template.indexOf('class="ru-persistent-identity"') < template.indexOf('<nav class="sheet-tabs"'), 'Compact identity is on every tab');
 });
 
 test('Switching pages restores top scrolling and does not require edit access', () => {

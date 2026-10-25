@@ -136,6 +136,12 @@ export async function rollDicePool(actor, { trait, trait2, label, pool, difficul
       label: ovLabel,
     };
   } else {
+  // The roll dialog offers attributes on the left and abilities / standalone
+  // traits on the right. Accept old calls in either order without losing a die.
+  if (!String(trait || '').startsWith('attributes.')) {
+    if (String(trait2 || '').startsWith('attributes.')) [trait, trait2] = [trait2, trait];
+    else if (trait && !trait2) [trait, trait2] = ['', trait];
+  }
   const sys = actor.system;
   const baseDifficulty = Number(difficulty) || 6;
 

@@ -35,7 +35,33 @@ function localizeApplication(app,html) {
   const actorName=app?.document?.documentName==='Actor'?app.document.name:null;
   translateRoot(root,{actorName});
   if(!observers.has(root)) {
-    let pending=false;const observer=new MutationObserver(()=>{if(pending)return;pending=true;queueMicrotask(()=>{pending=false;translateRoot(root,{actorName});});});
+    // Most V20 sheet updates rebuild only a small area (blood buff, status,
+    // quick actions). Translating the entire multi-page sheet on every
+    // MutationObserver notification caused long stalls with Blood Buff.
+    let scheduled=false;
+    const pending=new Set();
+    const observer=new MutationObserver(mutations=>{
+      for(const mutation of mutations){
+        if(mutation.type==='characterData') {
+          if(mutation.target.parentElement) pending.add(mutation.target.parentElement);
+        } else for(const node of mutation.addedNodes) {
+          if(node.nodeType===1) pending.add(node);
+          else if(node.nodeType===3 && node.parentElement) pending.add(node.parentElement);
+        }
+      }
+      if(!pending.size||scheduled)return;
+      scheduled=true;
+      requestAnimationFrame(()=>{
+        scheduled=false;
+        const targets=[...pending].filter(el=>el?.isConnected);
+        pending.clear();
+        // Avoid walking a parent and its child twice. At many roots, one
+        // traversal is cheaper, e.g. a complete sheet tab refresh.
+        if(targets.length>28) {translateRoot(root,{actorName});return;}
+        for(const el of targets) if(!targets.some(other=>other!==el&&other.contains(el)))
+          translateRoot(el,{actorName});
+      });
+    });
     observer.observe(root,{subtree:true,childList:true,characterData:true});observers.set(root,observer);
   }
 }
