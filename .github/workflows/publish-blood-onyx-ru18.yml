@@ -66,7 +66,7 @@ jobs:
           m["url"]="https://github.com/Somnamibulism/Blood-Onyx-V20"
           m["manifest"]="https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json"
           m["download"]="https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.18/blood-onyx-v20-ru18.zip"
-          file.write_text(json.dumps(m,ensure_ascii=False,indent=2)+"\\n",encoding="utf8")
+          file.write_text(json.dumps(m,ensure_ascii=False,indent=2)+chr(10),encoding="utf8")
           if not (root/"CHANGELOG-RU.18.md").exists():
               raise SystemExit("Missing change log")
           PY
