@@ -2,11 +2,11 @@
   "upstream": "https://github.com/The-Final-Artificer/Foundry-VTM-V20",
   "upstream_version": "1.2.0",
   "upstream_commit": "662959bfb459b3c4bbff164977b39c40ab4c5427",
-  "build_version": "1.2.0-ru.19",
+  "build_version": "1.2.0-ru.21",
   "date": "2026-10-25",
   "foundry_target": "13",
   "foundry_runtime_tested": false,
-  "autonomous_tests": 164,
+  "autonomous_tests": 181,
   "changes": [
     "Тема 3D-кубиков «Кровавый оникс»: черный дым, красные цифры, кастомная текстура смолы",
     "Настоящий полет и физика броска через Dice So Nice! 5.3.4 в Foundry 13",
@@ -44,6 +44,6 @@
     "ru.17: портрет, клан, кровь, здоровье, Воля и деньги перенесены на отдельную вкладку «Общее», остальные разделы получили полную высоту окна, прокрутка сбрасывается при переходе; переходы работают и на листах только для чтения.",
     "ru.18: словесное состояние здоровья по ступеням V20 при наведении на токен, владельцам и ведущему дополнительно показываются HP и виды ран; автообновление после получения повреждений, поддержка доп. клеток и сменных тем."
   ],
-  "version": "1.2.0-ru.19",
+  "version": "1.2.0-ru.21",
   "notes": "ru.16: Courage-to-Willpower derivation persists with manual adjustment, independent/manual mode is selectable, spent temporary Willpower stays spent."
 }

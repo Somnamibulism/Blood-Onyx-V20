@@ -259,6 +259,127 @@ function openLightbox(src, title) {
   });
 }
 
+
+const UI_ICON_PATHS = {
+  close: '<path d="M18 6 6 18M6 6l12 12"/>',
+  minimize: '<path d="M5 12h14"/>',
+  maximize: '<rect x="4" y="4" width="16" height="16" rx="2"/>',
+  popout: '<path d="M13 5h6v6M19 5l-9 9"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  actor: '<path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  book: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 6.5v15"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 1-3 0 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 1 0-3 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 1 3 0 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c0 .38.22.74.6 1a1.7 1.7 0 0 1 0 3c-.38.26-.6.62-.6 1Z"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="2.8"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 1 1 8 0v3"/>',
+  unlock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7-2.5"/>',
+  generic: '<circle cx="12" cy="12" r="7"/>'
+};
+
+let __vtmUiIconObserver = null;
+let __vtmUiIconScheduled = false;
+
+function classifyUiIcon(el) {
+  const cls = String(el.className || '').toLowerCase();
+  const title = String(el.getAttribute?.('title') || '').toLowerCase();
+  const aria = String(el.getAttribute?.('aria-label') || '').toLowerCase();
+  const text = `${title} ${aria} ${el.textContent || ''}`.toLowerCase();
+  const parentCls = String(el.parentElement?.className || '').toLowerCase();
+  const all = `${cls} ${parentCls} ${text}`;
+
+  if (/window-close|fa-times|fa-xmark|закры|close/.test(all)) return 'close';
+  if (/window-minimize|fa-minus|свернуть|minimize/.test(all)) return 'minimize';
+  if (/window-maximize|fa-square|fa-window-maximize|развернуть|maximize/.test(all)) return 'maximize';
+  if (/popout|external-link|share-from-square/.test(all)) return 'popout';
+  if (/uuid|copy|копир|fa-copy|fa-passport|clipboard/.test(all)) return 'copy';
+  if (/создать акт|create actor|fa-user|fa-user-plus|actor-directory/.test(all)) return 'actor';
+  if (/создать папк|create folder|fa-folder|folder/.test(all)) return 'folder';
+  if (/fa-plus| add|добавить/.test(all)) return 'plus';
+  if (/fa-search|magnifying-glass|поиск|search/.test(all)) return 'search';
+  if (/fa-book|fa-book-open|compendium|библиот/.test(all)) return 'book';
+  if (/fa-cog|fa-cogs|fa-gear|настрой|settings/.test(all)) return 'settings';
+  if (/fa-trash|удалить|delete/.test(all)) return 'trash';
+  if (/fa-pencil|fa-pen|fa-edit|редакт|edit/.test(all)) return 'edit';
+  if (/fa-eye|просмотр|view/.test(all)) return 'eye';
+  if (/fa-lock-open|unlock|разблок/.test(all)) return 'unlock';
+  if (/fa-lock|lock|блокир/.test(all)) return 'lock';
+  return null;
+}
+
+function ensureSvgIcon(target, kind, { prepend = false } = {}) {
+  if (!target || target.classList?.contains('vtm-ui-icon-ready')) return;
+  const path = UI_ICON_PATHS[kind] || UI_ICON_PATHS.generic;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'vtm-ui-svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = path;
+  if (prepend) target.prepend(svg);
+  else target.append(svg);
+  target.classList.add('vtm-ui-icon-ready');
+  if (target.tagName === 'I') target.classList.add('vtm-ui-icon-source');
+}
+
+function patchUiGlyphElement(iconEl) {
+  if (!iconEl || iconEl.dataset?.vtmUiPatched === '1') return;
+  if (iconEl.closest('.vtm-control-icon-ready, .vtm-ui-icon-ready')) { iconEl.dataset.vtmUiPatched = '1'; return; }
+  const kind = classifyUiIcon(iconEl);
+  if (!kind) return;
+  ensureSvgIcon(iconEl, kind);
+  iconEl.dataset.vtmUiPatched = '1';
+}
+
+function patchWindowHeaderControl(control) {
+  if (!control || control.dataset?.vtmUiPatched === '1') return;
+  const kind = classifyUiIcon(control) || 'generic';
+  ensureSvgIcon(control, kind);
+  control.dataset.vtmUiPatched = '1';
+}
+
+function patchUiIcons(root = document) {
+  const base = root instanceof Element || root instanceof Document ? root : document;
+  for (const control of base.querySelectorAll('.window-header button, .window-header a, .app-header button, .app-header a')) {
+    patchWindowHeaderControl(control);
+  }
+  for (const item of base.querySelectorAll('.context li, .context-menu li, .dropdown-menu li, [role="menu"] li, [data-tooltip] i, .directory-header button i, .window-header i, .app-header i, li i, button i, a i')) {
+    patchUiGlyphElement(item);
+  }
+}
+
+function scheduleUiIconPatch(root = document) {
+  if (__vtmUiIconScheduled) return;
+  __vtmUiIconScheduled = true;
+  requestAnimationFrame(() => {
+    __vtmUiIconScheduled = false;
+    try { patchUiIcons(root); } catch (err) { console.warn('VtM V20 | UI icon patch failed', err); }
+  });
+}
+
+function registerGlobalUiIconPatcher() {
+  scheduleUiIconPatch(document);
+  __vtmUiIconObserver?.disconnect?.();
+  __vtmUiIconObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        scheduleUiIconPatch(node);
+        return;
+      }
+    }
+  });
+  __vtmUiIconObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+
 Hooks.once('init', () => {
   console.log('VtM V20 | Initializing');
 
@@ -544,6 +665,7 @@ Hooks.once('init', () => {
 });
 
 Hooks.once('ready', () => {
+  registerGlobalUiIconPatcher();
   populateCompendiums().catch(error => { console.error('V20 | Library bootstrap failed',error); ui.notifications.error('Не удалось заполнить библиотеки V20. Откройте вкладку Библиотеки и нажмите «Восстановить».'); });
   bindCombatSocketHandlers();
   bindTargetEffectSockets();

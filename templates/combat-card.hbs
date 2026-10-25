@@ -30,23 +30,29 @@
   </div>
   {{/unless}}
 
-  {{#if diceAudit}}
-  <section class="vtm-dice-audit" aria-label="Подробный расчёт броска">
-    <strong>Проверка броска:</strong> {{diceAudit.breakdown}}.
-  </section>
-  {{/if}}
-
   {{#if compared}}
-  <div class="vtm-chronicle-report" aria-label="Сравнение атаки и защиты">
-    <div class="vtm-report-title">Проверка попадания</div>
-    <div class="vtm-report-step"><strong>Атака:</strong> {{attackSuccesses}} успехов</div>
-    <div class="vtm-report-step"><strong>Защита:</strong> {{defenseSuccesses}} успехов ({{defenseLabel}})</div>
-    <div class="vtm-report-final {{#if showDamageBtn}}is-hit{{else}}is-zero{{/if}}">Чистых успехов: {{netSuccesses}}. {{#if showDamageBtn}}Попадание, далее урон и поглощение.{{else}}Удар отражен.{{/if}}</div>
-  </div>
+    <div class="vtm-combat-glance">Попадание: <strong>{{attackSuccesses}} − {{defenseSuccesses}} = {{netSuccesses}}</strong> чистых успехов</div>
+  {{/if}}
+  {{#if compared}}
+  <details class="vtm-chronicle-report vtm-foldable" aria-label="Расчёт атаки и защиты">
+    <summary class="vtm-report-title"><span>Показать расчёт атаки и защиты</span><i class="fas fa-chevron-down vtm-fold-chevron" aria-hidden="true"></i></summary>
+    <div class="vtm-report-body">
+      {{#if diceAudit}}<div class="vtm-dice-audit"><strong>Проверка броска:</strong> {{diceAudit.breakdown}}.</div>{{/if}}
+      <div class="vtm-report-step"><strong>Атака:</strong> {{attackSuccesses}} успехов</div>
+      <div class="vtm-report-step"><strong>Защита:</strong> {{defenseSuccesses}} успехов ({{defenseLabel}})</div>
+      <div class="vtm-report-final {{#if showDamageBtn}}is-hit{{else}}is-zero{{/if}}">Чистых успехов: {{netSuccesses}}. {{#if showDamageBtn}}Попадание, далее урон и поглощение.{{else}}Удар отражен.{{/if}}</div>
+    </div>
+  </details>
   {{else}}
-  {{#unless noDice}}
-  <div class="vtm-dice-inspect">Брошено {{pool}}d10, сложность {{difficulty}}. {{#if autoSuccesses}}Включено {{autoSuccesses}} автоматических успехов ({{autoLabel}}).{{/if}} Итог: {{total}}.</div>
-  {{/unless}}
+    {{#unless noDice}}
+    <details class="vtm-chronicle-report vtm-foldable" aria-label="Подробный расчёт броска">
+      <summary class="vtm-report-title"><span>Показать расчёт броска</span><i class="fas fa-chevron-down vtm-fold-chevron" aria-hidden="true"></i></summary>
+      <div class="vtm-report-body">
+        {{#if diceAudit}}<div class="vtm-dice-audit"><strong>Проверка броска:</strong> {{diceAudit.breakdown}}.</div>{{/if}}
+        <div class="vtm-dice-inspect">Брошено {{pool}}d10, сложность {{difficulty}}. {{#if autoSuccesses}}Включено {{autoSuccesses}} автоматических успехов ({{autoLabel}}).{{/if}} Итог: {{total}}.</div>
+      </div>
+    </details>
+    {{/unless}}
   {{/if}}
 
   {{#if defendedLabel}}

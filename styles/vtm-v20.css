@@ -6035,3 +6035,41 @@ body.vtm-theme-printed .vtm-combat-damage .die.fail {
 }
 body.vtm-theme-printed .vtm-roll .result-success { color: #9c1f2b; }
 body.vtm-theme-printed .vtm-roll .result-botch { color: #701722; }
+
+
+/* ru.21 — global SVG fallback icons for headers and menus. */
+.vtm-ui-icon-ready > i,
+.vtm-ui-icon-ready > .fas,
+.vtm-ui-icon-ready > .far,
+.vtm-ui-icon-ready > .fab,
+.vtm-ui-icon-ready > [class*="fa-"] {
+  display: none !important;
+}
+.vtm-ui-icon-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.window-header .vtm-ui-icon-ready,
+.app-header .vtm-ui-icon-ready {
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  line-height: 1;
+  gap: 0;
+}
+.vtm-ui-svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: inherit;
+  pointer-events: none;
+  vertical-align: middle;
+}
+.context li .vtm-ui-svg,
+.context-menu li .vtm-ui-svg,
+.dropdown-menu li .vtm-ui-svg,
+[role="menu"] li .vtm-ui-svg {
+  margin-right: 6px;
+}

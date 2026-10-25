@@ -1,0 +1,109 @@
+/* Blood Onyx ru.20 · Native disclosure for chat calculations.
+   Only presentation changes; NO dice/health/attack logic. */
+.chat-message .vtm-roll .vtm-foldable {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin: 7px 0 0;
+  padding: 0;
+  border: 1px solid var(--vtm-border, rgba(210, 108, 139, .30));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vtm-surface, #2a121b) 80%, transparent);
+  color: var(--vtm-text, #ead7dd);
+}
+.chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 9px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--vtm-gold, #d7b88c);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .015em;
+  line-height: 1.25;
+  text-transform: none;
+  user-select: none;
+  border-radius: inherit;
+}
+.chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title::-webkit-details-marker { display: none; }
+.chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title::marker { content: ''; }
+.chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title:hover {
+  background: rgba(211, 100, 138, .10);
+  color: var(--vtm-text-bright, #fff5f6);
+}
+.chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title:focus-visible {
+  outline: 2px solid var(--vtm-red, #ca4469);
+  outline-offset: -2px;
+}
+.chat-message .vtm-roll .vtm-fold-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 10px;
+  transition: transform .15s ease;
+}
+.chat-message .vtm-roll .vtm-foldable[open] > summary .vtm-fold-chevron { transform: rotate(180deg); }
+.chat-message .vtm-roll .vtm-foldable > .vtm-report-body {
+  min-width: 0;
+  padding: 8px 9px 10px;
+  border-top: 1px solid var(--vtm-border, rgba(210, 108, 139, .30));
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.chat-message .vtm-roll .vtm-foldable .vtm-report-step {
+  margin: 0;
+  padding: 4px 0;
+}
+.chat-message .vtm-roll .vtm-foldable .vtm-report-final { margin-top: 6px; }
+.chat-message .vtm-roll .vtm-foldable .vtm-dice-audit,
+.chat-message .vtm-roll .vtm-foldable .vtm-dice-inspect { margin: 0 0 5px; }
+.chat-message .vtm-roll .vtm-foldable .vtm-report-body > div + div { margin-top: 4px; }
+.chat-message .vtm-roll .vtm-combat-glance {
+  margin: 5px 0;
+  padding: 6px 8px;
+  line-height: 1.45;
+  border-radius: 7px;
+  font-size: 11px;
+  color: var(--vtm-text, #eee1e5);
+  background: color-mix(in srgb, var(--vtm-surface-light, #30121c) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vtm-border, #784756) 75%, transparent);
+}
+.chat-message .vtm-roll .vtm-glance-hit { color: #f5afb4; font-weight: 700; }
+.chat-message .vtm-roll .vtm-glance-zero { color: #b7ddbe; font-weight: 700; }
+.chat-message .vtm-roll .vtm-power-warning {
+  color: #f2c98f; font-size: 11px; margin: 5px 0;
+}
+.chat-message .vtm-roll .vtm-compact-dice { margin: 5px 0; overflow-wrap: anywhere; font-size: 11px; }
+/* Compact damage card in collapsed mode: show dice, hit/soak and the result. */
+.chat-message .vtm-combat-damage .combat-damage-section { gap: 5px; margin-bottom: 5px; }
+.chat-message .vtm-combat-damage .damage-row { gap: 2px; }
+.chat-message .vtm-combat-damage .damage-row .roll-dice { margin: 3px 0; }
+.chat-message .vtm-combat-damage .damage-row .die { width: 25px; height: 25px; font-size: 12px; }
+/* Existing themes may set stronger backgrounds; keep actual disclosure readable. */
+body.vtm-theme-glass-crimson .chat-message .vtm-roll .vtm-foldable {
+  background: rgba(49, 13, 28, .38);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+body.vtm-theme-printed .chat-message .vtm-roll .vtm-foldable {
+  background: #f7f4ec;
+  border-color: #9b8e7e;
+  color: #342b28;
+}
+body.vtm-theme-printed .chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title {
+  color: #6c252e;
+}
+body.vtm-theme-printed .chat-message .vtm-roll .vtm-foldable > summary.vtm-report-title:hover {
+  color: #5e1725;
+  background: #e8dfd6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-message .vtm-roll .vtm-fold-chevron { transition: none; }
+}

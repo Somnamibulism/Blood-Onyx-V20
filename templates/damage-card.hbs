@@ -40,14 +40,28 @@
     </div>
   </div>
 
+  {{!-- Visible one-line summary; calculation itself is available below on demand. --}}
+  <div class="vtm-combat-glance" aria-label="Краткий результат урона">
+    {{#if compared}}<div>Попадание: <strong>{{attackSuccesses}} − {{defenseSuccesses}} = {{netSuccesses}}</strong> чистых успехов</div>{{/if}}
+    {{#if disarmMode}}
+      <div class="{{#if disarmSuccess}}vtm-glance-hit{{else}}vtm-glance-zero{{/if}}">{{#if disarmSuccess}}Обезоружен{{else}}Обезоруживание не удалось{{/if}} · {{dmgSuccesses}} успехов</div>
+    {{else if kissMode}}
+      <div class="{{#if kissPenetrated}}vtm-glance-hit{{else}}vtm-glance-zero{{/if}}">{{#if kissPenetrated}}Укус успешен{{else}}Укус не удался{{/if}} · {{dmgSuccesses}} успехов</div>
+    {{else}}
+      <div>Урон: <strong>{{dmgSuccesses}}</strong> · Поглощено: <strong>{{#if soakSkipped}}0{{else}}{{soakSuccesses}}{{/if}}</strong> · <span class="{{#if noDamage}}vtm-glance-zero{{else}}vtm-glance-hit{{/if}}">Получено: <strong>{{netDamage}}</strong></span></div>
+    {{/if}}
+  </div>
+
   {{#if detailedReport}}
-  <section class="vtm-chronicle-report" aria-label="Подробности нанесения урона">
-    <div class="vtm-report-title"><i class="fas fa-scroll"></i> Журнал боя: подробный расчёт</div>
-    {{#each detailedReport.steps}}
-    <div class="vtm-report-step"><strong>{{this.label}}:</strong> <span>{{this.text}}</span></div>
-    {{/each}}
-    <div class="vtm-report-final {{detailedReport.finalClass}}">{{detailedReport.final}}</div>
-  </section>
+  <details class="vtm-chronicle-report vtm-foldable" aria-label="Подробности нанесения урона">
+    <summary class="vtm-report-title"><i class="fas fa-scroll" aria-hidden="true"></i><span>Журнал боя: подробный расчёт</span><i class="fas fa-chevron-down vtm-fold-chevron" aria-hidden="true"></i></summary>
+    <div class="vtm-report-body">
+      {{#each detailedReport.steps}}
+      <div class="vtm-report-step"><strong>{{this.label}}:</strong> <span>{{this.text}}</span></div>
+      {{/each}}
+      <div class="vtm-report-final {{detailedReport.finalClass}}">{{detailedReport.final}}</div>
+    </div>
+  </details>
   {{/if}}
 
   <div class="combat-summary">

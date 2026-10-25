@@ -204,16 +204,22 @@ export async function rollDisciplinePower(actor,item,key) {
   const html=`<div class="vtm-roll vtm-power-resolution">
     <div class="roll-header"><b>${esc(item.name)}: ${esc(power.name||'')}</b></div>
     <div class="roll-meta">${esc(actor.name)} → ${esc(audit.targetName)}</div>
-    <div>Бросок: ${esc(metrics.values.join(', '))} · сложность ${audit.difficulty}</div>
-    <div>Основание: ${esc(audit.basis)}${adjustedDifficulty?' · сложность вручную изменена в диалоге':''}</div>
-    <div>Успехи на кубах: ${metrics.successfulDice+metrics.extraSpecialization}; единицы: ${metrics.ones}; автоматические: ${metrics.auto}; <b>итого: ${metrics.net}</b></div>
-    ${audit.resistance?`<div>Сопротивление: ${esc(audit.resistance.basis)} (сл. ${audit.resistance.difficulty})</div>`:''}
-    ${r?`<div>Кубы защиты: ${esc(r.values.join(', '))}; успехи: ${r.net}; итоговые чистые успехи: <b>${audit.net}</b></div>`:''}
-    ${audit.resistancePending?'<div>Сопротивление требуется выполнить владельцу цели или ведущему. Автоэффект не применён до разрешения проверки.</div>':''}
-    ${audit.threshold!==null?`<div>Нужно накопить успехов: ${audit.threshold}</div>`:''}
-    ${power.cost?`<div>Стоимость: ${esc(power.cost)} (подтверждена перед броском)</div>`:''}
-    ${audit.note?`<div>${esc(audit.note)}</div>`:''}
-    <div class="roll-result"><b>${esc(audit.result)}</b></div>
+    <div class="vtm-compact-dice" aria-label="Кубы броска">Кубы: ${esc(metrics.values.join(', ')||'без броска')} · сложность ${audit.difficulty}</div>
+    <div class="roll-result"><b>${esc(audit.result)}</b> · ${audit.net} чистых успехов</div>
+    ${audit.resistancePending?'<div class="vtm-power-warning">Сопротивление цели ожидается. Автоэффект не применён.</div>':''}
+    <details class="vtm-power-audit vtm-foldable" aria-label="Подробная проверка дисциплины">
+      <summary class="vtm-report-title"><span>Подробности расчёта</span><i class="fas fa-chevron-down vtm-fold-chevron" aria-hidden="true"></i></summary>
+      <div class="vtm-report-body">
+        <div>Основание сложности: ${esc(audit.basis)}${adjustedDifficulty?' · сложность вручную изменена в диалоге':''}</div>
+        <div>Успехи на кубах: ${metrics.successfulDice+metrics.extraSpecialization}; единицы: ${metrics.ones}; автоматические: ${metrics.auto}; <b>итого: ${metrics.net}</b></div>
+        ${audit.resistance?`<div>Сопротивление: ${esc(audit.resistance.basis)} (сл. ${audit.resistance.difficulty})</div>`:''}
+        ${r?`<div>Кубы защиты: ${esc(r.values.join(', '))}; успехи: ${r.net}; итоговые чистые успехи: <b>${audit.net}</b></div>`:''}
+        ${audit.resistancePending?'<div>Сопротивление требуется выполнить владельцу цели или ведущему. Автоэффект не применён до разрешения проверки.</div>':''}
+        ${audit.threshold!==null?`<div>Нужно накопить успехов: ${audit.threshold}</div>`:''}
+        ${power.cost?`<div>Стоимость: ${esc(power.cost)} (подтверждена перед броском)</div>`:''}
+        ${audit.note?`<div>${esc(audit.note)}</div>`:''}
+      </div>
+    </details>
   </div>`;
   await ChatMessage.create({user:game.user.id,speaker:ChatMessage.getSpeaker({actor}),content:html,
     style:CONST.CHAT_MESSAGE_STYLES.OTHER});
