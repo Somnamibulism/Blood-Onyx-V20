@@ -1,1 +1,1 @@
-Publish Blood Onyx 1.2.0-ru.27 retry after changelog prefix verification
+Publish Blood Onyx 1.2.0-ru.27 retry checksum normalized
