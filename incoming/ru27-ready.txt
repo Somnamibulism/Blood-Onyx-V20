@@ -1,1 +1,1 @@
-Publish Blood Onyx 1.2.0-ru.27 retry checksum normalized
+Publish Blood Onyx 1.2.0-ru.27 retry with obsolete test removed
