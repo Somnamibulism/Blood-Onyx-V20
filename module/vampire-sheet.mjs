@@ -4739,7 +4739,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const dmgType = await new Promise(resolve => {
       new Dialog({
         title: 'Поглощение: тип урона',
-        content: '<p style="margin:8px 0">What type of damage are you soaking?</p>',
+        content: '<p style="margin:8px 0">Какой тип урона нужно поглотить?</p>',
         buttons: {
           bashing: { label: 'Дробящий', callback: () => resolve('bashing') },
           lethal: { label: 'Летальный', callback: () => resolve('lethal') },
@@ -4751,12 +4751,20 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
     if (!dmgType) return;
 
+    // Validate the discipline before asking about the source or rolling dice.
+    // Even equipped armor cannot bypass the Fortitude prerequisite.
+    if (dmgType === 'aggravated' && disciplineLevel(actor, 'fortitude') < 1) {
+      ui.notifications.warn('Аггравированный урон нельзя поглотить: требуется хотя бы 1 точка Стойкости.');
+      return;
+    }
+
     let fireOrSunlight = false;
     if (dmgType === 'aggravated' && actor.type === 'vampire') {
       fireOrSunlight = await new Promise(resolve => {
         new Dialog({
           title: 'Источник аггравированного урона',
           content: `<p style="margin:8px 0">Это аггравированный урон от <b>солнца или огня</b>?</p>
+            <p style="font-size:11px;color:#ddd">Стойкость ${disciplineLevel(actor, 'fortitude')}: поглощение разрешено.</p>
             <p style="font-size:11px;color:#999">При таком уроне обычная броня не защищает.</p>`,
           buttons: {
             yes: { icon: '<i class="fas fa-fire"></i>', label: 'Солнце / огонь', callback: () => resolve(true) },
@@ -4770,7 +4778,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const soakData = computeSoakPool(actor, { dmgType, fireOrSunlight });
     if (!soakData.canSoak) {
-      return ui.notifications.warn('Этот тип урона поглотить нельзя.');
+      return ui.notifications.warn(soakData.parts.join('. ') || 'Этот тип урона поглотить нельзя.');
     }
 
     let { pool, parts, difficulty } = soakData;

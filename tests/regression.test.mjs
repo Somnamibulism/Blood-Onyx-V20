@@ -21,7 +21,7 @@ const soakCases=[
  ['вампир, ударный',{},'bashing',{},3,true],
  ['вампир, летальный',{},'lethal',{},3,true],
  ['вампир, аггравированный',{},'aggravated',{},0,false],
- ['вампир, когти, броня',{armor:3},'aggravated',{},3,true],
+ ['вампир, когти, броня без Стойкости',{armor:3},'aggravated',{},0,false],
  ['вампир, огонь',{armor:3,fort:2},'aggravated',{fireOrSunlight:true},2,true],
  ['смертный, ударный',{type:'mortal'},'bashing',{},3,true],
  ['смертный, летальный',{type:'mortal'},'lethal',{},0,false],
@@ -31,9 +31,9 @@ const soakCases=[
  ['нулевая Выносливость',{sta:0},'lethal',{},0,false],
  ['обход брони',{armor:4},'lethal',{bypassArmor:true},3,true],
  ['гуль со Стойкостью',{type:'mortal',fort:2},'lethal',{},2,true],
- ['Кожа гадюки, когти',{flags:{skinOfTheAdder:true}},'aggravated',{},3,true],
+ ['Кожа гадюки, когти без Стойкости',{flags:{skinOfTheAdder:true}},'aggravated',{},0,false],
  ['Кожа гадюки, огонь',{flags:{skinOfTheAdder:true},fort:2},'aggravated',{fireOrSunlight:true},2,true],
- ['Кожа гадюки, иная энергия',{flags:{skinOfTheAdder:true}},'aggravated',{aggravatedSource:'magic'},0,false]
+ ['Кожа гадюки, иная энергия без Стойкости',{flags:{skinOfTheAdder:true}},'aggravated',{aggravatedSource:'magic'},0,false]
 ];
 for(const[name,opts,type,extra,pool,canSoak]of soakCases)test(`Поглощение: ${name}`,()=>{const result=computeSoakPool(actor(opts),{dmgType:type,...extra});assert.equal(result.pool,pool);assert.equal(result.canSoak,canSoak);});
 for(let damage=0;damage<=9;damage++)test(`Ударный вампиру: ${damage} → ${Math.floor(damage/2)}`,()=>assert.equal(finalDamageAfterSoak(actor(),damage,'bashing'),Math.floor(damage/2)));

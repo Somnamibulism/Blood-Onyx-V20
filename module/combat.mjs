@@ -356,20 +356,29 @@ export function computeSoakPool(actor, { dmgType, fireOrSunlight = false, bypass
   const skinAdder = !!actor.getFlag('vtm-v20', 'skinOfTheAdder');
   const isAgg = dmgType === 'aggravated';
   const isKindred = actor.type === 'vampire';
+  // A single Fortitude dot is a hard prerequisite for any aggravated soak.
+  // Armor and Skin of the Adder cannot unlock the roll by themselves.
+  const canAttemptAggravatedSoak = !isAgg || fortLevel >= 1;
   const useStamina = isKindred
-    ? (!isAgg || (skinAdder && !fireOrSunlight && aggravatedSource === 'claws'))
+    ? (!isAgg || (canAttemptAggravatedSoak && skinAdder && !fireOrSunlight && aggravatedSource === 'claws'))
     : dmgType === 'bashing';
-  const armor = bypassArmor || fireOrSunlight ? 0 : armorRating;
-  const pool = Math.max(0, (useStamina ? stamina : 0) + fortLevel + armor);
+  const armor = bypassArmor || fireOrSunlight || !canAttemptAggravatedSoak ? 0 : armorRating;
+  const pool = canAttemptAggravatedSoak
+    ? Math.max(0, (useStamina ? stamina : 0) + fortLevel + armor)
+    : 0;
   const parts = [];
-  if (useStamina) parts.push(`Выносливость ${stamina}`);
-  if (fortLevel) parts.push(`Стойкость ${fortLevel}`);
-  if (armor) parts.push(`Броня ${armor}`);
-  if (!pool) parts.push('Нет доступного пула поглощения');
-  if (fireOrSunlight && armorRating) parts.push('Обычная броня не защищает от огня и солнца');
-  if (bypassArmor && armorRating) parts.push('Броня обойдена');
+  if (!canAttemptAggravatedSoak) {
+    parts.push('Нет Стойкости: аггравированный урон нельзя поглотить');
+  } else {
+    if (useStamina) parts.push(`Выносливость ${stamina}`);
+    if (fortLevel) parts.push(`Стойкость ${fortLevel}`);
+    if (armor) parts.push(`Броня ${armor}`);
+    if (!pool) parts.push('Нет доступного пула поглощения');
+    if (fireOrSunlight && armorRating) parts.push('Обычная броня не защищает от огня и солнца');
+    if (bypassArmor && armorRating) parts.push('Броня обойдена');
+  }
   const difficulty = skinAdder ? 5 : 6;
-  return { pool, parts, difficulty, canSoak: pool > 0 };
+  return { pool, parts, difficulty, canSoak: canAttemptAggravatedSoak && pool > 0, requiresFortitude: isAgg, hasFortitude: fortLevel >= 1 };
 }
 
 // Resolve actor through its token first (handles unlinked tokens with their own data)
@@ -1955,7 +1964,9 @@ export async function rollDamage(msg) {
   const isKindred = defender.type === 'vampire';
   let fireOrSunlight = !!c.incendiary;
 
-  if (isAgg && isKindred && !c.isBite && !c.incendiary) {
+  // No Fortitude means there is no aggravated soak, so do not interrupt
+  // damage resolution with a source choice that cannot affect that result.
+  if (isAgg && isKindred && disciplineLevel(defender, 'fortitude') > 0 && !c.isBite && !c.incendiary) {
     fireOrSunlight = await new Promise(resolve => {
       new Dialog({
         title: 'Источник аггравированного урона',
