@@ -1,0 +1,100 @@
+name: Publish Blood Onyx V20 ru.12
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'incoming/ru12.patch.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Apply ru.12 changes and build release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v1.2.0-ru.12"
+          ASSET="blood-onyx-v20-ru12.zip"
+          PAYLOAD="incoming/ru12.patch.b64"
+          if [ ! -f "$PAYLOAD" ]; then
+            echo "No pending ru.12 patch"
+            exit 0
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG already published, refusing overwrite"
+            exit 1
+          fi
+          export PATCH_OUT="$RUNNER_TEMP/ru12.patch"
+          python3 - <<'PY'
+          import base64, gzip, os, pathlib
+          encoded=pathlib.Path('incoming/ru12.patch.b64').read_text(encoding='ascii').strip()
+          patch=gzip.decompress(base64.b64decode(encoded,validate=True))
+          if not patch.startswith(b'diff --git '):
+              raise SystemExit('Invalid patch header')
+          pathlib.Path(os.environ['PATCH_OUT']).write_bytes(patch)
+          print(f'Patch decoded: {len(patch)} bytes')
+          PY
+          git apply --check "$PATCH_OUT"
+          git apply "$PATCH_OUT"
+          python3 - <<'PY'
+          import json, pathlib
+          p=pathlib.Path('system.json')
+          d=json.loads(p.read_text(encoding='utf8'))
+          if d.get('id')!='vtm-v20' or d.get('version')!='1.2.0-ru.10':
+              raise SystemExit('Unexpected current manifest version or system id')
+          d['version']='1.2.0-ru.12'
+          d['url']='https://github.com/Somnamibulism/Blood-Onyx-V20'
+          d['manifest']='https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json'
+          d['download']='https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.12/blood-onyx-v20-ru12.zip'
+          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          p=pathlib.Path('BUILD-INFO.json')
+          d=json.loads(p.read_text(encoding='utf8'))
+          d['version']='1.2.0-ru.12'
+          d['build_version']='1.2.0-ru.12'
+          d['notes']='Added Dark Obsidian and Glass Crimson switchable themes.'
+          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          PY
+          gh release download "v1.2.0-ru.10" --repo "$GITHUB_REPOSITORY" --pattern "blood-onyx-v20-ru10.zip" --dir "$RUNNER_TEMP"
+          export RELEASE_OUT="$RUNNER_TEMP/$ASSET"
+          export PREV_ZIP="$RUNNER_TEMP/blood-onyx-v20-ru10.zip"
+          python3 - <<'PY'
+          import os, pathlib, zipfile
+          prev=pathlib.Path(os.environ['PREV_ZIP'])
+          out=pathlib.Path(os.environ['RELEASE_OUT'])
+          with zipfile.ZipFile(prev) as z:
+              names=[i.filename for i in z.infolist() if not i.is_dir()]
+          names += ['vtm-v20/CHANGELOG-RU.11.md','vtm-v20/CHANGELOG-RU.12.md']
+          if len(names)!=len(set(names)):
+              raise SystemExit('Duplicate archive member names')
+          with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for name in names:
+                  p=pathlib.PurePosixPath(name)
+                  if len(p.parts)<2 or p.parts[0]!='vtm-v20' or '..' in p.parts:
+                      raise SystemExit(f'Unsafe member: {name}')
+                  source=pathlib.Path(*p.parts[1:])
+                  if not source.is_file():
+                      raise SystemExit(f'Missing release member: {source}')
+                  z.write(source,name)
+          with zipfile.ZipFile(out) as z:
+              if z.testzip() is not None:
+                  raise SystemExit('Corrupt output ZIP')
+          print(f'Packaged {len(names)} files: {out.stat().st_size} bytes')
+          PY
+          git rm -- "$PAYLOAD"
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release Blood Onyx V20 1.2.0-ru.12"
+          git push origin HEAD:main
+          gh release create "$TAG" "$RELEASE_OUT" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.12" --notes-file "CHANGELOG-RU.12.md"
+          echo "Published $TAG"
