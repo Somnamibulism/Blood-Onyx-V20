@@ -1,0 +1,89 @@
+name: Publish Blood Onyx V20 ru.18
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "incoming/ru18-ready.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blood-onyx-ru18-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply exact ru.18 changes, verify and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v1.2.0-ru.18"
+          ASSET="blood-onyx-v20-ru18.zip"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists, refusing to replace it"
+            exit 1
+          fi
+          export PAYLOAD_JSON="$RUNNER_TEMP/ru18.json"
+          export PATCH_FILE="$RUNNER_TEMP/ru18.patch"
+          python3 - <<'PY'
+          import base64, gzip, json, os, pathlib
+          pieces = [pathlib.Path("incoming/ru18-part-%02d.txt" % i) for i in range(1,5)]
+          if any(not p.is_file() for p in pieces):
+              raise SystemExit("Missing a transfer part")
+          encoded = "".join(p.read_text(encoding="ascii").strip() for p in pieces)
+          data = json.loads(gzip.decompress(base64.b64decode(encoded, validate=True)))
+          if data.get("version") != "1.2.0-ru.18":
+              raise SystemExit("Unexpected update version")
+          pathlib.Path(os.environ["PAYLOAD_JSON"]).write_text(json.dumps(data), encoding="utf8")
+          pathlib.Path(os.environ["PATCH_FILE"]).write_bytes(base64.b64decode(data["patch"], validate=True))
+          PY
+          git apply --check "$PATCH_FILE"
+          git apply "$PATCH_FILE"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          d=json.loads(pathlib.Path(os.environ["PAYLOAD_JSON"]).read_text(encoding="utf8"))
+          m=d["manifest"]
+          if m["id"]!="vtm-v20" or m["version"]!="1.2.0-ru.18":
+              raise SystemExit("Invalid system manifest")
+          pathlib.Path("system.json").write_text(json.dumps(m, ensure_ascii=False, indent=2)+"\n", encoding="utf8")
+          for name,digest in d["expected_sha256"].items():
+              p=pathlib.Path(name)
+              if not p.is_file():
+                  raise SystemExit("Missing file: "+name)
+              actual=hashlib.sha256(p.read_bytes()).hexdigest()
+              if actual!=digest:
+                  raise SystemExit("File differs from supplied ru.18: "+name)
+          print("Verified",len(d["expected_sha256"]),"files against uploaded archive")
+          PY
+          node --test tests/*.test.mjs
+          export RELEASE_ZIP="$RUNNER_TEMP/$ASSET"
+          python3 - <<'PY'
+          import json, os, pathlib, zipfile
+          d=json.loads(pathlib.Path(os.environ["PAYLOAD_JSON"]).read_text(encoding="utf8"))
+          out=pathlib.Path(os.environ["RELEASE_ZIP"])
+          with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              z.writestr("vtm-v20/","")
+              for name in sorted(d["expected_sha256"]):
+                  z.write(name, "vtm-v20/"+name)
+          with zipfile.ZipFile(out) as z:
+              if z.testzip() is not None: raise SystemExit("Archive integrity failed")
+          print("Installable ZIP:",out,out.stat().st_size)
+          PY
+          git rm -- incoming/ru18-ready.txt incoming/ru18-part-01.txt incoming/ru18-part-02.txt incoming/ru18-part-03.txt incoming/ru18-part-04.txt
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release Blood Onyx V20 1.2.0-ru.18"
+          git push origin HEAD:main
+          gh release create "$TAG" "$RELEASE_ZIP" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.18" --notes-file CHANGELOG-RU.18.md
+          echo "Published $TAG"
