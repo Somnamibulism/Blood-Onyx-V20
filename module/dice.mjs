@@ -1,9 +1,7 @@
 // Find an active player who owns this actor (prefer non-GM so dice match the player's theme)
 import { blindedDifficulty } from './status-effects.mjs';
 import { effectiveTraitValue, itemTraitBonus, potenceAutoSuccesses, usesStrengthTrait } from './discipline-effects.mjs';
-import { computeCarry } from './movement.mjs';
 
-const PHYSICAL_ATTRS = new Set(['attributes.strength', 'attributes.dexterity', 'attributes.stamina']);
 
 // Tackled last round but kept footing: +1 difficulty to actions, one round only
 export function unbalancedPenalty(actor) {
@@ -11,15 +9,10 @@ export function unbalancedPenalty(actor) {
   return (r && game.combat && game.combat.round === r) ? 1 : 0;
 }
 
-// Same carry math the sheet shows, haven exemptions included
-export function isEncumbered(actor) {
-  return computeCarry(actor).encumbered;
-}
-
-// Dex drag from worn gear: equipped armor and penalized containers (heavy packs) alike
+// Only worn armor applies Dexterity penalties; carrying containers never do.
 export function gearPenalty(actor) {
   return Array.from(actor.items)
-    .filter(i => (i.type === 'armor' || i.type === 'container') && i.system.equipped)
+    .filter(i => i.type === 'armor' && i.system.equipped)
     .reduce((s, i) => s + (i.system.penalty || 0), 0);
 }
 
@@ -215,14 +208,11 @@ export async function rollDicePool(actor, { trait, trait2, label, pool, difficul
   const isIntimidation = k => k === 'abilities.intimidation';
   const shadowPlayPool = shadowPlay && (isStealth(trait) || isStealth(trait2) || isIntimidation(trait) || isIntimidation(trait2)) ? 1 : 0;
 
-  const encumbered = isEncumbered(actor);
-  const encumbranceDiff = encumbered && (PHYSICAL_ATTRS.has(trait) || PHYSICAL_ATTRS.has(trait2)) ? 1 : 0;
-  if (encumbranceDiff) dialogDifficulty = Math.min(dialogDifficulty + 1, 10);
   const unbalanced = unbalancedPenalty(actor);
   if (unbalanced) dialogDifficulty = Math.min(dialogDifficulty + 1, 10);
 
   const dlgHtml = await renderTemplate('systems/vtm-v20/templates/roll-dialog.hbs', {
-    trait, trait2, label, difficulty: dialogDifficulty, woundPen, armorPen, blindedPenalty, wolfPerceptionBonus, batPerceptionBonus, shadowPlayPool, potenceAuto, encumbered, unbalanced,
+    trait, trait2, label, difficulty: dialogDifficulty, woundPen, armorPen, blindedPenalty, wolfPerceptionBonus, batPerceptionBonus, shadowPlayPool, potenceAuto, unbalanced,
     attrOpts: groupOpts('attributes'),
     abilOpts: groupOpts('abilities'),
     virtOpts: groupOpts('virtues'),
@@ -310,14 +300,11 @@ export async function rollDicePool(actor, { trait, trait2, label, pool, difficul
 
         // Only show armor penalty when Dexterity is actually in the pool
         const armorRow = html.find('.armor-pen-row');
-        const encRow = html.find('.encumbrance-diff-row');
-        const isPhysical = k => PHYSICAL_ATTRS.has(k);
-        if (armorRow.length || encRow.length) {
+        if (armorRow.length) {
           const checkPhysical = () => {
             const pri = html.find('[name="primary"]').val();
             const sec = html.find('[name="secondary"]').val();
             if (armorRow.length) armorRow.toggle(pri === 'attributes.dexterity' || sec === 'attributes.dexterity');
-            if (encRow.length) encRow.toggle(isPhysical(pri) || isPhysical(sec));
           };
           checkPhysical();
           html.find('[name="primary"], [name="secondary"]').change(checkPhysical);

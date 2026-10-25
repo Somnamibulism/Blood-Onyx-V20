@@ -2,7 +2,6 @@
 // freezes it read-only, embeds css/fonts/images, and ships a tiny script for
 // tabs, bio pages, and item description popups.
 
-import { potenceLevel } from './discipline-effects.mjs';
 
 const PAGE_SEP = '<!-- PAGE -->';
 
@@ -217,35 +216,22 @@ function inventoryHtml(actor) {
     it.system.range ? `Range: ${esc(it.system.range)} yds` : '',
     it.system.capacity ? `Cap: ${esc(it.system.capacity)}` : '',
     it.system.rate ? `Rate: ${esc(it.system.rate)}` : '',
-    it.system.weight ? `${it.system.weight} kg` : '',
   ])).join('');
 
   const armor = items.filter(i => i.type === 'armor').map(it => row(it, [
     `Rating ${it.system.rating}`,
     it.system.penalty ? `Pen ${it.system.penalty}` : '',
-    it.system.weight ? `${it.system.weight} kg` : '',
   ])).join('');
 
   const equipment = items.filter(i => i.type === 'equipment').map(it => row(it, [
     it.system.quantity > 1 ? `x${it.system.quantity}` : '',
-    it.system.weight ? `${it.system.weight} kg` : '',
   ])).join('');
 
   const containers = items.filter(i => i.type === 'container').map(it => row(it, [
     `Capacity ${it.system.capacity}`,
-    it.system.weight ? `${it.system.weight} kg` : '',
   ])).join('');
 
-  let weight = 0;
-  for (const it of items) {
-    const w = it.system.weight || 0;
-    if (it.type === 'equipment') weight += w * (it.system.quantity || 1);
-    else if (w > 0) weight += w;
-  }
-  const maxCarry = ((actor.system.attributes?.strength || 0) + potenceLevel(actor)) * 10;
-
   return `
-    <div class="carrying-capacity"><i class="fas fa-weight-hanging"></i> Carrying: ${weight.toFixed(1)} / ${maxCarry} kg</div>
     <div class="inventory-columns">
       <div class="inventory-column"><h3>Weapons</h3><div class="item-list compact">${weapons}</div></div>
       <div class="inventory-column"><h3>Attire</h3><div class="item-list compact">${armor}</div></div>

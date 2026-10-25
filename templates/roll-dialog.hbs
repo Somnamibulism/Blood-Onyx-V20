@@ -87,11 +87,6 @@
       <button type="button" class="diff-btn {{#if (eq difficulty 9)}}active{{/if}}" data-diff="9">9</button>
       <button type="button" class="diff-btn {{#if (eq difficulty 10)}}active{{/if}}" data-diff="10">10</button>
     </div>
-    {{#if encumbered}}
-    <div class="difficulty-pen-row encumbrance-diff-row">
-      <span class="wound-pen-val">Перегруз: +1 к сложности физических действий</span>
-    </div>
-    {{/if}}
     {{#if unbalanced}}
     <div class="difficulty-pen-row">
       <span class="wound-pen-val">Потеря равновесия: +1 к сложности</span>

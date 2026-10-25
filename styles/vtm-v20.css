@@ -6038,3 +6038,12 @@ body.vtm-theme-printed .vtm-roll .result-botch { color: #701722; }
 
 
 
+
+/* RU.25: temporary Blood Buff dots remain interactive and permanent dots are preserved. */
+.vtm-v20 .dot-row .blood-buff-overflow {
+  color: var(--vtm-gold, #d9b96b);
+  font: 700 11px/14px Georgia, serif;
+  white-space: nowrap;
+  padding-left: 4px;
+  pointer-events: none;
+}

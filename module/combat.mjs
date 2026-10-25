@@ -3,7 +3,7 @@ import { auditDice, snapshotHealth, healthChangeAudit } from './combat-report.mj
 import { pickSceneTarget, applyTargetEffect } from './target-actions.mjs';
 import { canonicalName } from './ru/naming.mjs';
 // Combat resolution: attack rolls, defense choices, damage + soak, auto-apply
-import { showDice, isEncumbered, promptRollAdjust, unbalancedPenalty, gearPenalty } from './dice.mjs';
+import { showDice, promptRollAdjust, unbalancedPenalty, gearPenalty } from './dice.mjs';
 import {
   statusIconVisibility,
   BLINDED_STATUS_ID,
@@ -601,7 +601,6 @@ export async function rollAttack(attacker, atk, options = {}) {
   const hasPoolOverride = options.poolOverride !== undefined && options.poolOverride !== null;
   let pool = actionDiceCount((hasPoolOverride ? options.poolOverride : computedPool) + flankBonus + fireBonus - lengthPenalty);
   const targetingDifficulty = targeting?.difficultyMod || 0;
-  const encumbranceDiff = isEncumbered(attacker) ? 1 : 0;
   // Multiple opponents in close combat: +1 difficulty per extra foe, max +4
   const multiOpp = atk.isRanged ? 0 : Math.min(attacker.getFlag('vtm-v20', 'multiOpp') || 0, 4);
   const atkUnbalanced = unbalancedPenalty(attacker);
@@ -612,7 +611,7 @@ export async function rollAttack(attacker, atk, options = {}) {
   const rangeLabel = rangeMode === 'pointblank' ? 'point blank -2 diff' : 'max range +2 diff';
   // Off hand: +1 difficulty, waived by the Ambidextrous merit
   const offHandDiff = (atk.offHand && !Array.from(attacker.items).some(i => i.type === 'merit' && /ambidext/i.test(canonicalName(i.name)))) ? 1 : 0;
-  const baseDifficulty = Math.min(cover.difficulty + targetingDifficulty + encumbranceDiff + multiOpp + atkUnbalanced + fireDiff + rangeDiff + offHandDiff, 10);
+  const baseDifficulty = Math.min(cover.difficulty + targetingDifficulty + multiOpp + atkUnbalanced + fireDiff + rangeDiff + offHandDiff, 10);
   let difficulty = attackerBlinded ? Math.min(baseDifficulty + 2, 10) : baseDifficulty;
   const label = defender ? `${atk.name} -> ${defender.name}` : `${atk.name} Attack`;
 
@@ -635,7 +634,6 @@ export async function rollAttack(attacker, atk, options = {}) {
     if (targeting) diffNotes.push(`${targeting.label} +${targeting.difficultyMod} diff`);
     if (multiOpp) diffNotes.push(`outnumbered +${multiOpp} diff`);
     if (atkUnbalanced) diffNotes.push('unbalanced +1 diff');
-    if (encumbranceDiff) diffNotes.push('encumbered +1 diff');
     if (fireDiff) diffNotes.push(fireMode === 'auto' ? 'full auto +2 diff' : 'burst +1 diff');
     if (rangeDiff) diffNotes.push(rangeLabel);
     if (offHandDiff) diffNotes.push('off hand +1 diff');
@@ -672,7 +670,6 @@ export async function rollAttack(attacker, atk, options = {}) {
     const parts = [...atkPool.parts, 'target fully immobilized'];
     const contextParts = [...cover.parts];
     if (targeting) contextParts.push(`${targeting.label} +${targeting.difficultyMod} diff`);
-    if (encumbranceDiff) contextParts.push('encumbered +1 diff');
     const sublabel = contextParts.length
       ? `${parts.join(' + ')} | ${contextParts.join(' | ')}`
       : parts.join(' + ');
@@ -746,7 +743,6 @@ export async function rollAttack(attacker, atk, options = {}) {
   if (targeting) contextParts.push(`${targeting.label} +${targeting.difficultyMod} diff`);
   if (multiOpp) contextParts.push(`outnumbered +${multiOpp} diff`);
   if (atkUnbalanced) contextParts.push('unbalanced +1 diff');
-  if (encumbranceDiff) contextParts.push('encumbered +1 diff');
   if (fireDiff) contextParts.push(fireMode === 'auto' ? 'full auto +2 diff' : 'burst +1 diff');
   if (rangeDiff) contextParts.push(rangeLabel);
   if (offHandDiff) contextParts.push('off hand +1 diff');
@@ -1300,10 +1296,9 @@ export async function rollDefense(msg) {
   // Roll defense with the determined pool
   const def = types[choice];
   const defBlinded = isBlinded(defenderToken, defender);
-  const defEncumbered = isEncumbered(defender);
   const defMultiOpp = c.isRanged ? 0 : Math.min(defender.getFlag('vtm-v20', 'multiOpp') || 0, 4);
   const defUnbalanced = unbalancedPenalty(defender);
-  const difficulty = Math.min(6 + (defBlinded ? 2 : 0) + (defEncumbered ? 1 : 0) + defMultiOpp + defUnbalanced, 10);
+  const difficulty = Math.min(6 + (defBlinded ? 2 : 0) + defMultiOpp + defUnbalanced, 10);
 
   const roll = new Roll(`${pool}d10`);
   await roll.evaluate();
@@ -1328,7 +1323,6 @@ export async function rollDefense(msg) {
   const sl = game.i18n.localize(`VTM.${def.skill.charAt(0).toUpperCase() + def.skill.slice(1)}`);
   const defContext = [];
   if (defBlinded) defContext.push('blinded +2 diff');
-  if (defEncumbered) defContext.push('encumbered +1 diff');
   if (defMultiOpp) defContext.push(`outnumbered +${defMultiOpp} diff`);
   if (defUnbalanced) defContext.push('unbalanced +1 diff');
   const sublabel = defContext.length ? `${pool} dice | ${defContext.join(' | ')}` : `${pool} dice`;

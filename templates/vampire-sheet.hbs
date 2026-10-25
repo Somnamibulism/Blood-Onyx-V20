@@ -174,7 +174,7 @@
     </div>
   </div>
   <div class="status-block move-mini">
-    <label title="Скорость с учётом Ловкости, ранений, нагрузки и эффектов"><i class="fas fa-running"></i> {{curMove.label}}</label>
+    <label title="Скорость с учётом Ловкости, ранений и эффектов"><i class="fas fa-running"></i> {{curMove.label}}</label>
     <span class="move-val">{{curMove.value}} ярд./ход</span>
   </div>
 </div>
@@ -906,26 +906,9 @@
 
   {{!-- INVENTORY --}}
   <div class="tab inventory" data-group="primary" data-tab="inventory">
-    <div class="carrying-capacity">
-      <i class="fas fa-weight-hanging"></i> Вес: {{carriedWeight}} / {{maxCarry}} kg
-    </div>
     {{#if armorPenalty}}
     <div class="armor-penalty-banner">
       <i class="fas fa-shield-alt"></i> Штраф Ловкости от снаряжения: {{armorPenalty}}
-    </div>
-    {{/if}}
-    {{#if encumbered}}
-    <div class="armor-penalty-banner">
-      <i class="fas fa-weight-hanging"></i> Перегрузка: +1 к сложности физических действий
-    </div>
-    {{/if}}
-    {{#if cannotMove}}
-    <div class="armor-penalty-banner">
-      <i class="fas fa-ban"></i> Перегрузка: движение невозможно
-    </div>
-    {{else if moveHalves}}
-    <div class="armor-penalty-banner">
-      <i class="fas fa-person-walking"></i> Перегрузка: скорость движения уменьшена вдвое {{#if (gt moveHalves 1)}}x{{moveHalves}}{{/if}}
     </div>
     {{/if}}
     <div class="inventory-columns">

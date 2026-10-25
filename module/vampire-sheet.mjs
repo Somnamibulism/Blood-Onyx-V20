@@ -20,7 +20,6 @@ import { archetypeAuthentic, clanAuthentic, traitAuthentic } from './authentic-s
 import { clanWeaknessInfo, clanItemInfo, clanOptions } from './clan-weaknesses.mjs';
 import { disciplineLevel, isDisciplineActive, potenceLevel, potenceAutoSuccesses, celerityLevel, celerityRawMode, effectiveTraitValue, effectiveStrength, usesStrengthTrait } from './discipline-effects.mjs';
 import { exportSheet } from './sheet-export.mjs';
-import { computeCarry } from './movement.mjs';
 import { trackSize, countDamage, rebuildTrack } from './health-track.mjs';
 import { pickSceneTarget } from './target-actions.mjs';
 import { CLOSE_COMBAT_MANEUVER_RULES } from './maneuver-rules.mjs';
@@ -760,14 +759,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     ctx.armorPenalty = gearPenalty(actor);
-
-    // Carrying capacity
-    const carry = computeCarry(actor);
-    ctx.carriedWeight = carry.weight;
-    ctx.maxCarry = carry.maxCarry;
-    ctx.encumbered = carry.encumbered;
-    ctx.cannotMove = carry.cannotMove;
-    ctx.moveHalves = carry.moveHalves;
 
     // Health
     const healthDescs = {
@@ -4807,41 +4798,32 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const physAttrs = ['strength', 'dexterity', 'stamina'];
     const hasAnyBuff = physAttrs.some(a => (buffs[a] || 0) > 0);
 
-    // Update dots for buffed attributes
+    // Keep the original dot nodes and the click handlers already installed
+    // by _onRender. Replacing innerHTML here broke clicks on empty/yellow dots,
+    // preventing a permanent attribute from being increased during Blood Buff.
     for (const attr of physAttrs) {
       const row = el.querySelector(`.dot-row[data-path="system.attributes.${attr}"]`);
       if (!row) continue;
-      const base = sys.attributes[attr] || 0;
-      const buff = buffs[attr] || 0;
-      const total = base + buff;
-
-      if (buff > 0) {
-        const tMax = sys.traitMax || 5;
-        let dots = '';
-        if (total <= tMax) {
-          for (let i = 1; i <= tMax; i++) {
-            if (i <= base) dots += `<span class="dot filled" data-value="${i}"></span>`;
-            else if (i <= total) dots += `<span class="dot blood-buff" data-value="${i}"></span>`;
-            else dots += `<span class="dot empty" data-value="${i}"></span>`;
-          }
-        } else {
-          const overflow = total - tMax;
-          for (let i = 1; i <= tMax; i++) {
-            if (i <= overflow) dots += `<span class="dot blood-buff" data-value="${i}"></span>`;
-            else dots += `<span class="dot empty" data-value="${i}"></span>`;
-          }
-        }
-        row.innerHTML = dots;
-
-        if (canEdit) {
-          row.querySelectorAll('.dot.filled').forEach(dot => {
-            dot.addEventListener('click', () => {
-              const val = parseInt(dot.dataset.value);
-              const cur = sys.attributes[attr] || 0;
-              actor.update({ [`system.attributes.${attr}`]: val === cur ? val - 1 : val });
-            });
-          });
-        }
+      const base = Number(sys.attributes[attr]) || 0;
+      const buff = Math.max(0, Number(buffs[attr]) || 0);
+      const dots = Array.from(row.querySelectorAll('.dot'));
+      for (const dot of dots) {
+        const value = Number(dot.dataset.value);
+        dot.classList.toggle('filled', value <= base);
+        dot.classList.toggle('blood-buff', value > base && value <= base + buff);
+        dot.classList.toggle('empty', value > base + buff);
+        dot.title = buff > 0
+          ? `Постоянное значение: ${base}; усиление кровью: +${buff}. Нажатие меняет постоянное значение.`
+          : '';
+      }
+      // If temporary bonuses exceed the visible track, show them separately
+      // rather than wiping out permanent dots (the previous overflow bug).
+      if (base + buff > dots.length && dots.length) {
+        const overflow = document.createElement('span');
+        overflow.className = 'blood-buff-overflow';
+        overflow.textContent = `+${base + buff - dots.length}`;
+        overflow.title = `Дополнительные точки от усиления кровью; постоянное значение: ${base}`;
+        row.appendChild(overflow);
       }
     }
 

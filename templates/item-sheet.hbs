@@ -358,14 +358,6 @@
     <label>Capacity</label>
     <input type="number" name="system.capacity" value="{{system.capacity}}" min="0" max="100" />
   </div>
-  <div class="form-group">
-    <label>Dex Penalty</label>
-    <input type="number" name="system.penalty" value="{{system.penalty}}" min="-5" max="0" />
-  </div>
-  <div class="form-group">
-    <label>Stationary (haven)</label>
-    <input type="checkbox" name="system.haven" {{#if system.haven}}checked{{/if}} title="A place, not luggage: this container and everything stored in it is ignored by carrying capacity" />
-  </div>
   {{/if}}
 
   {{#if bonusCapable}}
