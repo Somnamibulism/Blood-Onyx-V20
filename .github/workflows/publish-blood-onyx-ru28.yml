@@ -1,0 +1,119 @@
+name: Publish Blood Onyx V20 ru.28
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "incoming/ru28-ready.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blood-onyx-ru28-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current Blood Onyx sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply uploaded ru.28 package and publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f incoming/ru28-ready.txt
+          TAG="v1.2.0-ru.28"
+          ASSET="blood-onyx-v20-ru28.zip"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists"
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import base64,hashlib,io,json,pathlib,tarfile
+          parts=sorted(pathlib.Path('incoming').glob('ru28-data-*.txt'))
+          if len(parts)!=4: raise SystemExit('Unexpected number of ru28 transport parts')
+          decoded=base64.b64decode(''.join(''.join(p.read_text(encoding='ascii').split()) for p in parts),validate=True)
+          with tarfile.open(fileobj=io.BytesIO(decoded),mode='r:gz') as t:
+              meta=json.load(t.extractfile('__release.json'))
+              if meta.get('version')!='1.2.0-ru.28': raise SystemExit('Unexpected release version')
+              changed=meta['updated']
+              if len(changed)!=len(set(changed)): raise SystemExit('Duplicate changed paths')
+              for name in changed:
+                  rel=pathlib.PurePosixPath(name)
+                  if rel.is_absolute() or '..' in rel.parts or '\\' in name:
+                      raise SystemExit('Unsafe path: '+name)
+                  source=t.extractfile(name)
+                  if source is None: raise SystemExit('Missing '+name)
+                  target=pathlib.Path(name)
+                  target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(source.read())
+          for name,digest in meta['hashes'].items():
+              rel=pathlib.PurePosixPath(name)
+              if rel.is_absolute() or '..' in rel.parts or '\\' in name:
+                  raise SystemExit('Unsafe input path '+name)
+              file=pathlib.Path(name)
+              if not file.is_file(): raise SystemExit('Missing source file: '+name)
+              if hashlib.sha256(file.read_bytes()).hexdigest()!=digest:
+                  raise SystemExit('Source checksum mismatch: '+name)
+          print('Verified',len(meta['hashes']),'files from ru.28 archive')
+
+          # ru.28 archive already carries its current regression tests.
+          manifest_file=pathlib.Path('system.json')
+          manifest=json.loads(manifest_file.read_text(encoding='utf-8'))
+          if manifest.get('id')!='vtm-v20' or manifest.get('version')!='1.2.0-ru.28':
+              raise SystemExit('Unexpected Foundry system manifest')
+          repo='Somnamibulism/Blood-Onyx-V20'
+          manifest['url']='https://github.com/'+repo
+          manifest['manifest']='https://raw.githubusercontent.com/'+repo+'/main/system.json'
+          manifest['download']='https://github.com/'+repo+'/releases/download/v1.2.0-ru.28/blood-onyx-v20-ru28.zip'
+          manifest_file.write_text(json.dumps({k:v for k,v in manifest.items() if k not in ('manifest','download')},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          buildinfo_file=pathlib.Path('BUILD-INFO.json')
+          buildinfo=json.loads(buildinfo_file.read_text(encoding='utf-8'))
+          if buildinfo.get('build_version')!='1.2.0-ru.28':
+              raise SystemExit('Unexpected build info version')
+          buildinfo['version']='1.2.0-ru.28'
+          buildinfo_file.write_text(json.dumps(buildinfo,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          # Metadata drives release members, avoiding stray development files.
+          pathlib.Path('/tmp/ru28-release.json').write_text(json.dumps(meta),encoding='utf-8')
+          PY
+
+          node --test tests/*.test.mjs
+
+          python3 - <<'PY'
+          import json,pathlib,zipfile
+          meta=json.loads(pathlib.Path('/tmp/ru28-release.json').read_text())
+          mf=pathlib.Path('system.json')
+          manifest=json.loads(mf.read_text(encoding='utf-8'))
+          manifest['manifest']='https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json'
+          manifest['download']='https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.28/blood-onyx-v20-ru28.zip'
+          mf.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          output=pathlib.Path('/tmp/blood-onyx-v20-ru28.zip')
+          with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              z.writestr('vtm-v20/','')
+              for path in sorted(set(meta['dirs'])):
+                  z.writestr('vtm-v20/'+path.rstrip('/')+'/','')
+              for name in sorted(meta['files']):
+                  z.write(name,'vtm-v20/'+name)
+          with zipfile.ZipFile(output) as z:
+              if z.testzip() is not None: raise SystemExit('Damaged ZIP')
+              assert json.loads(z.read('vtm-v20/system.json'))['version']=='1.2.0-ru.28'
+          print('Built release ZIP:',output.stat().st_size,'bytes')
+          PY
+
+          git rm -- incoming/ru28-data-01.txt incoming/ru28-data-02.txt incoming/ru28-data-03.txt incoming/ru28-data-04.txt incoming/ru28-ready.txt
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release Blood Onyx V20 1.2.0-ru.28"
+          git push origin HEAD:main
+          gh release create "$TAG" "/tmp/$ASSET" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.28" --notes-file CHANGELOG-RU.28.md
+          echo "Published $TAG"
