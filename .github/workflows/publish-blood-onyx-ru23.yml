@@ -92,7 +92,7 @@ jobs:
           manifest=json.loads(mf.read_text(encoding='utf-8'))
           manifest['manifest']='https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json'
           manifest['download']='https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.23/blood-onyx-v20-ru23.zip'
-          mf.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
+          mf.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           output=pathlib.Path('/tmp/blood-onyx-v20-ru23.zip')
           with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               z.writestr('vtm-v20/','')
