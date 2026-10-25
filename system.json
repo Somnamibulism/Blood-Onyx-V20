@@ -1,119 +1,143 @@
 {
-    "id":  "vtm-v20",
-    "title":  "Vampire V20 — русская сборка · Blood Onyx Luxe",
-    "description":  "Русская система V20 для Foundry 13: клановые дисциплины, выбор преимуществ из справочника, удобная Воля, широкие баннеры компендиумов, автоматический бой и Blood Onyx.",
-    "version":  "1.2.0-ru.10",
-    "compatibility":  {
-                          "minimum":  "13",
-                          "maximum":  "13"
-                      },
-    "url":  "https://github.com/Somnamibulism/Blood-Onyx-V20",
-    "authors":  [
-                    {
-                        "name":  "The Final Artificer"
-                    },
-                    {
-                        "name":  "Ами \u0026 Ви — русская адаптация"
-                    }
-                ],
-    "esmodules":  [
-                      "vtm-v20.mjs"
-                  ],
-    "styles":  [
-                   "styles/vtm-v20.css",
-                   "styles/russian.css",
-                   "styles/blood-onyx-compact.css"
-               ],
-    "languages":  [
-                      {
-                          "lang":  "ru",
-                          "name":  "Русский",
-                          "path":  "lang/ru.json"
-                      },
-                      {
-                          "lang":  "en",
-                          "name":  "English (русская сборка)",
-                          "path":  "lang/en.json"
-                      }
-                  ],
-    "packs":  [
-                  {
-                      "name":  "disciplines",
-                      "label":  "Дисциплины",
-                      "system":  "vtm-v20",
-                      "path":  "packs/disciplines",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/disciplines.webp"
-                  },
-                  {
-                      "name":  "backgrounds",
-                      "label":  "Факты биографии",
-                      "system":  "vtm-v20",
-                      "path":  "packs/backgrounds",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/backgrounds.webp"
-                  },
-                  {
-                      "name":  "weapons",
-                      "label":  "Оружие",
-                      "system":  "vtm-v20",
-                      "path":  "packs/weapons",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/weapons.webp"
-                  },
-                  {
-                      "name":  "armor",
-                      "label":  "Броня и одежда",
-                      "system":  "vtm-v20",
-                      "path":  "packs/armor",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/armor.webp"
-                  },
-                  {
-                      "name":  "paths",
-                      "label":  "Пути магии крови",
-                      "system":  "vtm-v20",
-                      "path":  "packs/paths",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/paths.webp"
-                  },
-                  {
-                      "name":  "rituals",
-                      "label":  "Ритуалы",
-                      "system":  "vtm-v20",
-                      "path":  "packs/rituals",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/rituals.webp"
-                  },
-                  {
-                      "name":  "merits",
-                      "label":  "Достоинства",
-                      "system":  "vtm-v20",
-                      "path":  "packs/merits",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/merits.webp"
-                  },
-                  {
-                      "name":  "flaws",
-                      "label":  "Недостатки",
-                      "system":  "vtm-v20",
-                      "path":  "packs/flaws",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/flaws.webp"
-                  },
-                  {
-                      "name":  "clans",
-                      "label":  "Кланы",
-                      "system":  "vtm-v20",
-                      "path":  "packs/clans",
-                      "type":  "Item",
-                      "banner":  "systems/vtm-v20/assets/banners/clans.webp"
-                  }
-              ],
-    "initiative":  "1d10 + @attributes.dexterity + @attributes.wits",
-    "primaryTokenAttribute":  "health",
-    "secondaryTokenAttribute":  "blood",
-    "socket":  true,
-    "manifest":  "https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json",
-    "download":  "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.10/blood-onyx-v20-ru10.zip"
+  "id": "vtm-v20",
+  "title": "Vampire V20 — русская сборка · Blood Onyx Luxe",
+  "description": "V20 русская сборка: восстановление компендиумов при запуске мастера, встроенный каталог с поиском и добавлением, готовые предметы, дополнительные сюжетные материалы V5 без подмены механик.",
+  "version": "1.2.0-ru.13",
+  "compatibility": {
+    "minimum": "13",
+    "maximum": "13"
+  },
+  "url": "https://github.com/Somnamibulism/Blood-Onyx-V20",
+  "authors": [
+    {
+      "name": "The Final Artificer"
+    },
+    {
+      "name": "Ами & Ви — русская адаптация"
+    }
+  ],
+  "esmodules": [
+    "vtm-v20.mjs"
+  ],
+  "styles": [
+    "styles/vtm-v20.css",
+    "styles/russian.css",
+    "styles/blood-onyx-compact.css"
+  ],
+  "languages": [
+    {
+      "lang": "ru",
+      "name": "Русский",
+      "path": "lang/ru.json"
+    },
+    {
+      "lang": "en",
+      "name": "English (русская сборка)",
+      "path": "lang/en.json"
+    }
+  ],
+  "packs": [
+    {
+      "name": "disciplines",
+      "label": "Дисциплины",
+      "system": "vtm-v20",
+      "path": "packs/disciplines",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/disciplines.webp"
+    },
+    {
+      "name": "backgrounds",
+      "label": "Факты биографии",
+      "system": "vtm-v20",
+      "path": "packs/backgrounds",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/backgrounds.webp"
+    },
+    {
+      "name": "weapons",
+      "label": "Оружие",
+      "system": "vtm-v20",
+      "path": "packs/weapons",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/weapons.webp"
+    },
+    {
+      "name": "armor",
+      "label": "Броня и одежда",
+      "system": "vtm-v20",
+      "path": "packs/armor",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/armor.webp"
+    },
+    {
+      "name": "paths",
+      "label": "Пути магии крови",
+      "system": "vtm-v20",
+      "path": "packs/paths",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/paths.webp"
+    },
+    {
+      "name": "rituals",
+      "label": "Ритуалы",
+      "system": "vtm-v20",
+      "path": "packs/rituals",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/rituals.webp"
+    },
+    {
+      "name": "merits",
+      "label": "Достоинства",
+      "system": "vtm-v20",
+      "path": "packs/merits",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/merits.webp"
+    },
+    {
+      "name": "flaws",
+      "label": "Недостатки",
+      "system": "vtm-v20",
+      "path": "packs/flaws",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/flaws.webp"
+    },
+    {
+      "name": "clans",
+      "label": "Кланы",
+      "system": "vtm-v20",
+      "path": "packs/clans",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/clans.webp"
+    },
+    {
+      "name": "equipment",
+      "label": "Снаряжение",
+      "system": "vtm-v20",
+      "path": "packs/equipment",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/weapons.webp"
+    },
+    {
+      "name": "containers",
+      "label": "Контейнеры и убежища",
+      "system": "vtm-v20",
+      "path": "packs/containers",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/armor.webp"
+    },
+    {
+      "name": "v5lore",
+      "label": "V5: сюжетные дополнения (правила V20)",
+      "system": "vtm-v20",
+      "path": "packs/v5lore",
+      "type": "Item",
+      "banner": "systems/vtm-v20/assets/banners/backgrounds.webp"
+    }
+  ],
+  "initiative": "1d10 + @attributes.dexterity + @attributes.wits",
+  "primaryTokenAttribute": "health",
+  "secondaryTokenAttribute": "blood",
+  "socket": true,
+  "manifest": "https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json",
+  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.13/blood-onyx-v20-ru13.zip"
 }

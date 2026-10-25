@@ -1,4 +1,5 @@
 import { russianDocument, displayName, canonicalName } from './ru/naming.mjs';
+import { EXTRA_PACKS } from './library-extras.mjs';
 import { PATHS } from './paths-data.mjs';
 import { RITUALS } from './rituals-data.mjs';
 import { getOverrides, applyAuthentic, getRev, getAppliedRev, markApplied } from './authentic-store.mjs';
@@ -1248,7 +1249,7 @@ const RITUAL_CATEGORIES = [
   }
 ];
 
-const COMPENDIUM_VERSION = 1002;
+const COMPENDIUM_VERSION = 1300;
 
 export { DISCIPLINES, BACKGROUNDS, MERITS, FLAWS, ARMOR, RITUAL_CATEGORIES };
 
@@ -1262,113 +1263,100 @@ export function registerCompendiumSettings() {
 }
 
 export async function populateCompendiums({ force = false } = {}) {
-  if (!game.user.isGM) return;
-
-  const ver = game.settings.get('vtm-v20', 'compendiumVersion');
-  if (!force && ver >= COMPENDIUM_VERSION && getAppliedRev() >= getRev()) return;
-
-  console.log(`VtM V20 | Compendium version ${ver} -> ${COMPENDIUM_VERSION}, refreshing...`);
-  const ov = getOverrides();
-
-  const onlyDisciplines = !force && ver === 1001 && getAppliedRev() >= getRev();
-  const packs = [
-    { name: 'disciplines', label: 'Disciplines', data: DISCIPLINES, kind: 'discipline' },
-    { name: 'backgrounds', label: 'Backgrounds', data: BACKGROUNDS, kind: 'background' },
-    { name: 'weapons', label: 'Weapons', data: WEAPONS, categories: WEAPON_CATEGORIES },
-    { name: 'armor', label: 'Armor', data: ARMOR },
-    { name: 'merits', label: 'Merits', data: MERITS, kind: 'merit' },
-    { name: 'flaws', label: 'Flaws', data: FLAWS, kind: 'flaw' },
-    { name: 'paths', label: 'Paths', data: PATHS, categories: PATH_CATEGORIES, kind: 'path' },
-    { name: 'rituals', label: 'Rituals', data: RITUALS, categories: RITUAL_CATEGORIES, kind: 'ritual' },
+  if (!game.user?.isGM) return;
+  // Original releases shipped empty pack directories. Even if the world setting
+  // indicates success, an empty or partially populated pack must be repaired.
+  const version = game.settings.get('vtm-v20', 'compendiumVersion') || 0;
+  const overrides = getOverrides();
+  // Dynamic import avoids the cycle: ru/content imports this source catalog
+  // in order to translate the labels and populate V20-specific notes.
+  const { clanDocuments } = await import('./ru/content.mjs');
+  const groups = [
+    {name:'clans',data:clanDocuments},
+    {name:'disciplines', data:DISCIPLINES,kind:'discipline'},
+    {name:'backgrounds', data:BACKGROUNDS,kind:'background'},
+    {name:'weapons',data:WEAPONS,categories:WEAPON_CATEGORIES},
+    {name:'armor',data:ARMOR},
+    {name:'merits',data:MERITS,kind:'merit'},
+    {name:'flaws',data:FLAWS,kind:'flaw'},
+    {name:'paths',data:PATHS,kind:'path',categories:PATH_CATEGORIES},
+    {name:'rituals',data:RITUALS,kind:'ritual',categories:RITUAL_CATEGORIES},
+    ...EXTRA_PACKS,
   ];
-
   let failed = false;
-  for (const { name, label, data, categories, kind } of (onlyDisciplines ? packs.filter(x => x.name === 'disciplines') : packs)) {
-    const packId = `vtm-v20.${name}`;
-    let pack = game.packs.get(packId);
-    if (!pack) pack = game.packs.find(p => p.metadata.name === name);
-    if (!pack) {
-      failed = true;
-      console.warn(`VtM V20 | Pack "${name}" not found. Available:`, [...game.packs.keys()]);
-      continue;
-    }
-
+  let addedTotal = 0;
+  for (const {name,data,kind,categories} of groups) {
+    const pack = game.packs.get(`vtm-v20.${name}`);
+    if (!pack) { failed=true; console.error(`V20 | Нет компендиума ${name}`); continue; }
+    let unlocked = false;
     try {
-      await pack.configure({ locked: false });
-
-      // clear old entries
-      const idx = await pack.getIndex();
-      if (idx.size > 0) {
-        const ids = idx.contents.map(e => e._id);
-        await Item.deleteDocuments(ids, { pack: pack.collection });
-        console.log(`VtM V20 | Cleared ${ids.length} old ${label}`);
-      }
-
-      // clear old folders
-      if (pack.folders.size > 0) {
-        const folderIds = pack.folders.contents.map(f => f.id);
-        await Folder.deleteDocuments(folderIds, { pack: pack.collection });
-      }
-
-      // create category folders and map items into them
-      let itemData = kind ? data.map(it => applyAuthentic(kind, it, ov) || it) : data;
-      if (categories) {
-        const foldersByName = {};
-
-        // first pass: parent folders (no parent field or parent: null)
-        const parents = categories.filter(c => !c.parent);
-        if (parents.length) {
-          const parentData = parents.map((cat, i) => ({
-            name: displayName(cat.name), type: 'Item',
-            sort: (i + 1) * 100000,
-            sorting: 'm',
-            description: (kind === 'ritual' && ov[`ritualcat:${cat.name}`]) || `<p>${displayName(cat.name)}. Открой карточку для описания, параметров и броска.</p>`,
-          }));
-          const created = await Folder.createDocuments(parentData, { pack: pack.collection });
-          for (const f of created) foldersByName[canonicalName(f.name)] = f.id;
-        }
-
-        // second pass: child folders, created per parent to avoid name collisions
-        const children = categories.filter(c => c.parent);
-        const byParent = {};
-        for (const cat of children) (byParent[cat.parent] ??= []).push(cat);
-        for (const [parentName, cats] of Object.entries(byParent)) {
-          const childData = cats.map((cat, i) => ({
-            name: displayName(cat.name), type: 'Item',
-            sort: (i + 1) * 100000,
-            folder: foldersByName[parentName] || null,
-            description: `<p>${displayName(cat.name)}. Параметры и правила указаны в карточках.</p>`,
-          }));
-          const created = await Folder.createDocuments(childData, { pack: pack.collection });
-          for (const f of created) foldersByName[`${parentName}/${canonicalName(f.name)}`] = f.id;
-        }
-
-        const nameToFolder = {};
-        for (const cat of categories) {
-          const key = cat.parent ? `${cat.parent}/${cat.name}` : cat.name;
-          for (const wpn of (cat.items || cat.weapons || [])) {
-            nameToFolder[wpn] = foldersByName[key];
+      // Read actual index: never trust migration version alone.
+      const index = await pack.getIndex();
+      const existing = new Set(index.contents.map(entry => canonicalName(entry.name)));
+      const candidates = data.filter(item => !existing.has(canonicalName(displayName(item.name))));
+      // User-created and imported records survive upgrades, unchanged.
+      if (!candidates.length) continue;
+      await pack.configure({locked:false});
+      unlocked = true;
+      // Restore useful book-style folders, but never make folders a prerequisite
+      // for loading the actual Item records (some hosts restrict folder writes).
+      const targetFolder = new Map();
+      if (categories?.length && typeof Folder?.createDocuments === 'function') {
+        try {
+          const folderIds = new Map();
+          for (const folder of pack.folders?.contents || []) {
+            folderIds.set(canonicalName(folder.name),folder.id);
           }
+          const ensure = async (category,parent=null) => {
+            const key = parent ? `${parent}/${category.name}` : category.name;
+            const displayed = displayName(category.name);
+            const existing = (pack.folders?.contents || []).find(f =>
+              canonicalName(f.name)===category.name && (f.folder?.id || f.folder || null)===(parent ? folderIds.get(parent) : null));
+            const id = existing?.id || (await Folder.createDocuments([{
+              name:displayed,type:'Item',sorting:'a',
+              ...(parent ? {folder:folderIds.get(parent)} : {}),
+            }],{pack:pack.collection}))[0]?.id;
+            if (id) {
+              folderIds.set(key,id);
+              for(const value of category.items || category.weapons || []) targetFolder.set(value,id);
+            }
+          };
+          for(const cat of categories.filter(c=>!c.parent)) await ensure(cat);
+          for(const cat of categories.filter(c=>!!c.parent)) await ensure(cat,cat.parent);
+        } catch(error) {
+          console.warn(`V20 | ${name}: папки создать не удалось, предметы продолжат загружаться`,error);
         }
-        itemData = itemData.map(item => {
-          const fid = nameToFolder[item.name];
-          return fid ? { ...item, folder: fid } : item;
-        });
-        console.log(`VtM V20 | Created ${Object.keys(foldersByName).length} folders in ${label}`);
       }
-
-      const docs = await Item.createDocuments(itemData.map(russianDocument), { pack: pack.collection });
-      await pack.configure({ locked: true });
-      ui.notifications.info(`VtM V20: Loaded ${docs.length} ${label}.`);
-      console.log(`VtM V20 | Populated ${label} (${docs.length} items)`);
-    } catch (err) {
-      failed = true;
-      console.error(`VtM V20 | Failed to populate ${name}:`, err);
-      ui.notifications.error(`VtM V20: Failed to load ${label}. Check console.`);
+      const items = candidates.map(source => {
+        const copy = structuredClone(applyAuthentic(kind,source,overrides) || source);
+        const translated = russianDocument(copy);
+        if(targetFolder.has(source.name)) translated.folder=targetFolder.get(source.name);
+        translated.flags = {...translated.flags, 'vtm-v20':{...translated.flags?.['vtm-v20'], builtinCatalog:true, catalogVersion:COMPENDIUM_VERSION}};
+        return translated;
+      });
+      // Smaller writes avoid single giant transactions, especially on hosts.
+      for (let offset=0;offset<items.length;offset+=25) {
+        const batch = items.slice(offset,offset+25);
+        const created=await Item.createDocuments(batch,{pack:pack.collection});
+        addedTotal += created.length;
+      }
+      console.info(`V20 | ${name}: добавлено ${items.length}, всего должно быть не меньше ${data.length}`);
+      // Re-check index to report real failures rather than marking complete.
+      const refreshed=await pack.getIndex();
+      if (refreshed.size < data.length) {
+        failed=true;console.warn(`V20 | ${name}: индекс содержит ${refreshed.size}/${data.length}`);
+      }
+    } catch (error) {
+      failed=true;
+      console.error(`V20 | Не удалось наполнить ${name}`,error);
+      ui.notifications?.error?.(`V20: не удалось наполнить библиотеку «${name}». Открой F12 для ошибки.`);
+    } finally {
+      if(unlocked) try{await pack.configure({locked:true});}catch(error){console.warn(`V20 | Не удалось закрыть ${name}`,error);}
     }
   }
-
+  if (addedTotal) ui.notifications?.info?.(`V20: загружено ${addedTotal} предметов в библиотеки.`);
   if (failed) return;
-  await game.settings.set('vtm-v20', 'compendiumVersion', COMPENDIUM_VERSION);
+  // Preserve authentic override revision: existing edited texts are NEVER destroyed.
+  if (version < COMPENDIUM_VERSION) await game.settings.set('vtm-v20','compendiumVersion',COMPENDIUM_VERSION);
   await markApplied();
 }

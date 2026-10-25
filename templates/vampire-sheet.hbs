@@ -93,7 +93,12 @@
 {{!-- STATUS BAR --}}
 <div class="status-bar">
   <div class="status-block health-mini">
-    <label><i class="fas fa-heart"></i> Health</label>
+    <div class="status-heading">
+      <label><i class="fas fa-heart"></i> Здоровье</label>
+      <button type="button" class="soak-btn" title="Поглощение: {{soakPool}} ({{soakLabel}})" aria-label="Бросок поглощения">
+        <i class="fas fa-shield-alt"></i>
+      </button>
+    </div>
     <div class="health-pips">
       {{#each healthTrack}}
       {{#unless this.infoOnly}}
@@ -102,32 +107,29 @@
       {{/each}}
     </div>
   </div>
-  <div class="status-block soak-mini">
-    <button type="button" class="soak-btn" title="Soak {{soakPool}} ({{soakLabel}})">
-      <i class="fas fa-shield-alt"></i>
-    </button>
-  </div>
   {{#if isVampire}}
   <div class="status-block blood-mini">
-    <label><i class="fas fa-tint"></i> Blood {{system.blood.value}}/{{system.blood.max}}{{#if hungry}} <span class="hunger-tag" title="Blood pool at or below 7 - {{hungerLabel}} ({{hungerThreshold}}). Hunger frenzy checks apply around blood.">Hungry</span>{{/if}}</label>
-    <div class="blood-bar-wrap">
-      <div class="blood-bar" style="width: {{bloodPct}}%"></div>
-    </div>
-    <div class="blood-btns">
-      <button type="button" class="blood-spend"><i class="fas fa-minus"></i></button>
-      <button type="button" class="blood-gain"><i class="fas fa-plus"></i></button>
+    <label><i class="fas fa-tint"></i> Кровь {{system.blood.value}}/{{system.blood.max}}{{#if hungry}} <span class="hunger-tag" title="Голод: {{hungerLabel}} ({{hungerThreshold}})">Голод</span>{{/if}}</label>
+    <div class="blood-meter-row">
+      <div class="blood-bar-wrap">
+        <div class="blood-bar" style="width: {{bloodPct}}%"></div>
+      </div>
+      <div class="blood-btns">
+        <button type="button" class="blood-spend" title="Потратить кровь" aria-label="Потратить кровь"><i class="fas fa-minus"></i></button>
+        <button type="button" class="blood-gain" title="Восстановить кровь" aria-label="Восстановить кровь"><i class="fas fa-plus"></i></button>
+      </div>
     </div>
   </div>
   {{/if}}
   <div class="status-block wp-mini">
-    <label><i class="fas fa-brain"></i> WP {{system.willpower.value}}/{{system.willpower.max}}</label>
-    <div class="wp-track">
-      {{{vtmSquares system.willpower.value system.willpower.max}}}
+    <label title="Постоянную Волю (1–10) можно изменить во вкладке «Состояние»"><i class="fas fa-brain"></i> Воля {{system.willpower.value}}/{{system.willpower.max}}</label>
+    <div class="wp-track" data-path="system.willpower.value" aria-label="Временная Воля: 10 делений">
+      {{{vtmWillpowerTrack system.willpower.value system.willpower.max}}}
     </div>
   </div>
   <div class="status-block move-mini">
-    <label><i class="fas fa-running"></i> {{curMove.label}}</label>
-    <span class="move-val">{{curMove.value}} yds</span>
+    <label title="Скорость с учётом Ловкости, ранений, нагрузки и эффектов"><i class="fas fa-running"></i> {{curMove.label}}</label>
+    <span class="move-val">{{curMove.value}} ярд./ход</span>
   </div>
 </div>
   </div>{{!-- .sheet-top-right --}}
@@ -213,6 +215,17 @@
     <div class="trait-columns">
       <div class="trait-column">
         <h3>Disciplines</h3>
+        <details class="ru-library-picker" data-library-kind="discipline">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Дисциплины V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="discipline"><i class="fas fa-feather-alt"></i> + Создать своё</button>
         <div class="item-list">
           {{#each disciplines}}
@@ -250,6 +263,28 @@
       </div>
       <div class="trait-column">
         <h3>Backgrounds</h3>
+        <details class="ru-library-picker" data-library-kind="background">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Факты биографии V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
+        <details class="ru-library-picker" data-library-kind="v5lore">
+          <summary><i class="fas fa-book"></i> Сюжетные идеи V5 (без механик V5)</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по сюжетным идеям..." aria-label="Поиск" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Сюжетные материалы V5"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить как заметку</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="background"><i class="fas fa-feather-alt"></i> + Создать своё</button>
         <div class="item-list">
           {{#each backgrounds}}
@@ -295,6 +330,17 @@
         </div>
 
         <h3>Merits</h3>
+        <details class="ru-library-picker" data-library-kind="merit">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Достоинства V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="merit"><i class="fas fa-feather-alt"></i> + Создать своё</button>
         <div class="item-list compact">
           {{#each merits}}
@@ -309,6 +355,17 @@
         </div>
 
         <h3>Flaws</h3>
+        <details class="ru-library-picker" data-library-kind="flaw">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Недостатки V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="merit" data-flaw="true"><i class="fas fa-feather-alt"></i> + Создать своё</button>
         <div class="item-list compact">
           {{#each flaws}}
@@ -327,6 +384,17 @@
     <div class="trait-columns paths-rituals-row">
       <div class="trait-column">
         <h3>Paths</h3>
+        <details class="ru-library-picker" data-library-kind="path">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Пути магии V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="path"><i class="fas fa-feather-alt"></i> + Создать своё</button>
         {{#each pathCategories}}
         <div class="path-category">
@@ -350,6 +418,17 @@
       </div>
       <div class="trait-column">
         <h3>Rituals</h3>
+        <details class="ru-library-picker" data-library-kind="ritual">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Ритуалы V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="ritual"><i class="fas fa-feather-alt"></i> + Создать своё</button>
         <div class="item-list compact">
           {{#each rituals}}
@@ -459,8 +538,8 @@
             </div>
             <label>Temporary</label>
             <div class="wp-temp-row">
-              <div class="wp-track" data-path="system.willpower.value">
-                {{{vtmSquares system.willpower.value system.willpower.max}}}
+              <div class="wp-track" data-path="system.willpower.value" aria-label="Временная Воля: 10 делений">
+                {{{vtmWillpowerTrack system.willpower.value system.willpower.max}}}
               </div>
               <button type="button" class="wp-spend-btn {{#if wpSpent}}active{{/if}}" title="Spend 1 Willpower for +1 automatic success on next roll">
                 <i class="fas fa-fire"></i> Use
@@ -801,6 +880,17 @@
     <div class="inventory-columns">
       <div class="inventory-column">
         <h3>Weapons <a class="item-create" data-type="weapon"><i class="fas fa-plus"></i></a></h3>
+        <details class="ru-library-picker" data-library-kind="weapon">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Оружие V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="weapon"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
         <div class="item-list compact">
           {{#each weapons}}
@@ -837,6 +927,17 @@
       </div>
       <div class="inventory-column">
         <h3>Attire <a class="item-create" data-type="armor"><i class="fas fa-plus"></i></a></h3>
+        <details class="ru-library-picker" data-library-kind="armor">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Броня V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="armor"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
         <div class="item-list compact">
           {{#each armor}}
@@ -864,6 +965,17 @@
       </div>
       <div class="inventory-column">
         <h3>Equipment <a class="item-create" data-type="equipment"><i class="fas fa-plus"></i></a></h3>
+        <details class="ru-library-picker" data-library-kind="equipment">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Снаряжение V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="equipment"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
         <div class="item-list compact">
           {{#each equipment}}
@@ -889,6 +1001,17 @@
         </div>
 
         <h3>Containers <a class="item-create" data-type="container"><i class="fas fa-plus"></i></a></h3>
+        <details class="ru-library-picker" data-library-kind="container">
+          <summary><i class="fas fa-book-open"></i> Из библиотеки · Контейнеры V20</summary>
+          <div class="ru-library-controls">
+            <input type="search" class="ru-library-search" placeholder="Поиск по названию..." aria-label="Поиск по библиотеке" autocomplete="off" />
+            <select class="ru-library-choice" aria-label="Выбор предмета из библиотеки"></select>
+            <div class="ru-library-buttons">
+              <button type="button" class="ru-library-add"><i class="fas fa-plus"></i> Добавить в лист</button>
+              <button type="button" class="ru-library-open"><i class="fas fa-book"></i> Открыть библиотеку</button>
+            </div>
+          </div>
+        </details>
         <button type="button" class="ru-homebrew-create" data-type="container"><i class="fas fa-feather-alt"></i> + Свой предмет / хоумбрю</button>
         <div class="item-list compact">
           {{#each containers}}

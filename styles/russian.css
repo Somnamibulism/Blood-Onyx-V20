@@ -3,7 +3,7 @@
 .vtm-v20 :is(h1,h2,h3,h4,label,button,select,input,.item-name,.tab-button,.sheet-tabs a){font-family:V20Cyrillic,Georgia,serif!important;}
 .vtm-v20 .sheet-tabs{flex-wrap:wrap;gap:4px}.vtm-v20 .sheet-tabs a{font-size:12px;padding:6px}.vtm-v20 .ru-sect-row{display:flex;align-items:center;gap:12px;margin:0 0 8px;color:#c9b783}.vtm-v20 .ru-sect-row select{width:180px}.vtm-v20 .ru-sect-row span{margin-left:auto;font-size:10px;opacity:.6}.vtm-v20 .header-row{gap:8px}.vtm-v20 .field label{font-size:10px}.vtm-v20 .trait-label{letter-spacing:0}.vtm-v20 .arch-pop{font-family:V20Cyrillic,Georgia,serif;text-transform:none;letter-spacing:0;min-width:260px;}
 
-.vtm-v20 :not(i):not(.fas):not(.far):not(.fa-solid):not(.fa-regular){font-family:V20Cyrillic,Georgia,serif!important;}
+.vtm-v20 :not(i):not(svg):not([class*="fa-"]):not(.fas):not(.far):not(.fab){font-family:V20Cyrillic,Georgia,serif!important;}
 
 
 /* Встроенная анимация бросков: визуальные d10 без дополнительного модуля. */

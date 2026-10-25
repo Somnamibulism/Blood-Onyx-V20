@@ -256,6 +256,9 @@ Awakening|Пробуждение
 Heal|Исцеление
 Resist the Kiss|Сопротивление Поцелую
 Ride the Wave|Оседлать волну
+Get Up|Встать
+Getting Up|Подъём на ноги
+Ready Weapon|Подготовить оружие
 Movement|Передвижение
 Walk|Шаг
 Jog|Бег трусцой

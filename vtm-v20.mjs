@@ -261,7 +261,7 @@ function openLightbox(src, title) {
 Hooks.once('init', () => {
   console.log('VtM V20 | Initializing');
 
-  game.vtm = { rollDicePool, rollAttack, ChargenWizard, openLightbox };
+  game.vtm = { rollDicePool, rollAttack, ChargenWizard, openLightbox, populateCompendiums };
   CONFIG.VTM = VTM;
   registerInitiativeHooks();
   registerCoverStatusEffects();
@@ -305,6 +305,35 @@ Hooks.once('init', () => {
 
   registerCompendiumSettings();
   registerAuthenticSettings();
+
+  // A manual repair action is useful on hosted worlds where pack initialization
+  // was interrupted. It never deletes previously created/edited entries.
+  Hooks.on('renderCompendiumDirectory', (app, html) => {
+    if (!game.user?.isGM) return;
+    const root = html?.querySelector ? html : html?.[0];
+    if (!root || root.querySelector('.vtm-library-repair')) return;
+    const anchor = root.querySelector('.directory-header') || root.querySelector('header');
+    if (!anchor) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'vtm-library-repair';
+    button.title = 'Добавить недостающие записи во все библиотеки, сохранив уже существующие';
+    button.innerHTML = '<i class="fas fa-book-medical"></i> Восстановить библиотеки V20';
+    button.addEventListener('click', async event => {
+      event.preventDefault();
+      button.disabled = true;
+      button.textContent = 'Проверяю библиотеки…';
+      try { await populateCompendiums({force:true}); }
+      catch(error) {
+        console.error('V20 | Repair libraries failed',error);
+        ui.notifications.error('Не удалось восстановить библиотеки. Ошибка в F12.');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-book-medical"></i> Восстановить библиотеки V20';
+      }
+    });
+    anchor.append(button);
+  });
 
   game.settings.register('vtm-v20', 'visualDiceFallback', {
     name: 'Старые плоские кубики (устарело)',
@@ -379,19 +408,36 @@ Hooks.once('init', () => {
   });
 
   // Theme: a class on the body, the stylesheet does the rest
+  const SHEET_THEME_CLASSES = ['vtm-theme-modern', 'vtm-theme-dark-obsidian', 'vtm-theme-glass-crimson', 'vtm-theme-printed'];
   const applySheetTheme = () => {
-    let printed = false;
-    try { printed = game.settings.get('vtm-v20', 'sheetTheme') === 'printed'; }
-    catch { printed = false; }
-    document.body.classList.toggle('vtm-theme-printed', printed);
+    const body = document.body;
+    for (const cls of SHEET_THEME_CLASSES) body.classList.remove?.(cls);
+
+    let theme = 'modern';
+    try { theme = game.settings.get('vtm-v20', 'sheetTheme') || 'modern'; }
+    catch { theme = 'modern'; }
+
+    const themeClass = ({
+      modern: 'vtm-theme-modern',
+      obsidian: 'vtm-theme-dark-obsidian',
+      glass: 'vtm-theme-glass-crimson',
+      printed: 'vtm-theme-printed',
+    })[theme] || 'vtm-theme-modern';
+
+    body.classList.add?.(themeClass);
   };
   game.settings.register('vtm-v20', 'sheetTheme', {
-    name: 'Theme',
-    hint: 'How the system dresses its sheets, dialogs and chat messages. Per player: everyone picks their own look.',
+    name: 'Тема интерфейса Blood Onyx',
+    hint: 'Выбирает оформление листов, диалогов и боевых карточек. Это клиентская настройка: каждый игрок может выбрать свою тему.',
     scope: 'client',
     config: true,
     type: String,
-    choices: { modern: 'Modern Nights', printed: 'Printed Sheet' },
+    choices: {
+      modern: 'Blood Onyx — базовая',
+      obsidian: 'Dark Obsidian — тёмная',
+      glass: 'Glass Crimson — полупрозрачное стекло',
+      printed: 'Printed Sheet — печатная',
+    },
     default: 'modern',
     onChange: applySheetTheme,
   });
@@ -443,6 +489,21 @@ Hooks.once('init', () => {
     return new Handlebars.SafeString(html);
   });
 
+  // Always show the ten V20 Willpower positions. Slots above permanent Willpower
+  // are locked; they are not extra points and cannot be spent or restored.
+  Handlebars.registerHelper('vtmWillpowerTrack', (value, max) => {
+    const capacity = Math.max(0, Math.min(10, Math.floor(Number(max) || 0)));
+    const current = Math.max(0, Math.min(capacity, Math.floor(Number(value) || 0)));
+    let html = '';
+    for (let i = 1; i <= 10; i++) {
+      const locked = i > capacity;
+      const state = locked ? 'locked' : i <= current ? 'filled' : 'empty';
+      const label = locked ? `Воля ${i}: недоступно (максимум ${capacity})` : `Воля ${i}: ${i <= current ? 'есть' : 'потрачена'}`;
+      html += `<span class="square ${state}" data-value="${i}" title="${label}" aria-label="${label}"></span>`;
+    }
+    return new Handlebars.SafeString(html);
+  });
+
   Handlebars.registerHelper('join', (arr, sep) => {
     if (!Array.isArray(arr)) return '';
     return arr.map(v => typeof v === 'object' ? v.name : v).join(sep);
@@ -473,7 +534,7 @@ Hooks.once('init', () => {
 });
 
 Hooks.once('ready', () => {
-  populateCompendiums();
+  populateCompendiums().catch(error => { console.error('V20 | Library bootstrap failed',error); ui.notifications.error('Не удалось заполнить библиотеки V20. Откройте вкладку Библиотеки и нажмите «Восстановить».'); });
   bindCombatSocketHandlers();
   bindTargetEffectSockets();
   bindInitiativeSocketHandlers();

@@ -61,16 +61,3 @@ Hooks.once('init',()=>{
     ui.notifications[method]=(message,...args)=>original(translateText(message),...args);
   }
 });
-Hooks.once('ready',async()=>{
-  const key='ruClansVersion';
-  game.settings.register('vtm-v20',key,{scope:'world',config:false,type:Number,default:0});
-  if(!game.user.isGM||game.settings.get('vtm-v20',key)>=2)return;
-  const pack=game.packs.get('vtm-v20.clans');if(!pack)return;
-  try{
-    await pack.configure({locked:false});
-    const existing=await pack.getIndex();const available=new Set(existing.contents.map(it=>it.name));
-    const missing=clanDocuments.filter(it=>!available.has(it.name));
-    if(missing.length)await Item.createDocuments(missing.map(russianDocument),{pack:pack.collection});
-    await pack.configure({locked:true});await game.settings.set('vtm-v20',key,2);
-  }catch(err){console.error('V20 RU | Clan catalog',err);ui.notifications.error('Не удалось создать справочник кланов. Проверь консоль и права доступа.');}
-});

@@ -27,17 +27,30 @@ test('Локализация не меняет идентификаторы и �
  const root={querySelectorAll:()=>[]};translateRoot(root,{actorName:'Patrick Smith'});
  assert.equal(nodes[0].nodeValue,'Сила');assert.equal(nodes[1].nodeValue,'Strength is my chosen name');assert.equal(nodes[2].nodeValue,'Patrick Smith');
 });
-test('Первое наполнение создает все восемь основных русских справочников',async()=>{
- const written=new Map();const folders=new Map();game.settings.set=async(ns,key,value)=>settings.set(key,{default:value});
- game.packs=new Map(['disciplines','backgrounds','weapons','armor','merits','flaws','paths','rituals'].map(name=>[`vtm-v20.${name}`,{collection:`vtm-v20.${name}`,metadata:{name},folders:{size:0,contents:[]},configure:async()=>{},getIndex:async()=>({size:0,contents:[]})}]));
- globalThis.Folder={createDocuments:async(data,{pack})=>data.map((it,n)=>{const doc={...it,id:`${pack}-${folders.size}-${n}`};folders.set(doc.id,doc);return doc;}),deleteDocuments:async()=>{}};
- globalThis.Item={createDocuments:async(data,{pack})=>{written.set(pack,data);return data;},deleteDocuments:async()=>{}};
- const{populateCompendiums}=await import('../module/compendiums.mjs');await populateCompendiums({force:true});
- assert.equal(written.size,8);assert.equal([...written.values()].flat().length,372);
- assert.ok(written.get('vtm-v20.disciplines').some(it=>it.name==='Стойкость'));
- for(const it of [...written.values()].flat())if(it.folder)assert.ok(folders.has(it.folder));
+test('Первоначальная загрузка наполняет справочники V20 и безопасно восстанавливает отсутствующие записи', async()=>{
+ const saved = new Map(); const folders = new Map(); const wrote = new Map();
+ game.settings.set=async(ns,key,value)=>settings.set(key,{default:value});
+ const names=['disciplines','backgrounds','weapons','armor','merits','flaws','paths','rituals','equipment','containers','v5lore','clans'];
+ game.packs=new Map(names.map(name=>[`vtm-v20.${name}`,{
+   collection:`vtm-v20.${name}`,metadata:{name},folders:{size:0,contents:[]},
+   configure:async()=>{},getIndex:async()=>({size:(saved.get(name)||[]).length,contents:(saved.get(name)||[]).map((i,n)=>({_id:String(n),name:i.name}))}),
+ }]));
+ globalThis.Folder={createDocuments:async(data,{pack})=>data.map((it,n)=>{const doc={...it,id:`${pack}-folder-${folders.size}-${n}`};folders.set(doc.id,doc);return doc;}),deleteDocuments:async()=>{}};
+ globalThis.Item={createDocuments:async(data,{pack})=>{
+   const key=pack.split('.').pop();saved.set(key,[...(saved.get(key)||[]),...data]);
+   wrote.set(key,(wrote.get(key)||0)+data.length);return data;
+ },deleteDocuments:async()=>{throw Error('destructive deletion not allowed')}};
+ const {populateCompendiums}=await import('../module/compendiums.mjs');
+ await populateCompendiums({force:true});
+ assert.equal(saved.size,12);
+ assert.equal([...saved.values()].flat().length,418);
+ assert.ok(saved.get('disciplines').some(it=>it.name==='Стойкость'));
+ for(const it of [...saved.values()].flat()) if(it.folder) assert.ok(folders.has(it.folder));
  assert.ok([...folders.values()].some(f=>f.name==='Дробящее оружие'));
- assert.equal(settings.get('compendiumVersion').default,1002);
+ assert.equal(settings.get('compendiumVersion').default,1300);
+ const count=[...saved.values()].flat().length;
+ await populateCompendiums();
+ assert.equal([...saved.values()].flat().length,count,'second run cannot duplicate entries');
 });
 
 test('Когда Dice So Nice включен, система использует его 3D-кубики вместо запасного режима', async()=>{

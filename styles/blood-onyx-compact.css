@@ -1111,3 +1111,200 @@
   .vtm-v20.sheet.actor.vampire .portrait-panel { display: none; }
   .vtm-v20.sheet.actor.vampire .sheet-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
+
+
+/* ru.11: clean avatar, four fully visible resource panels and native-looking controls. */
+.vtm-v20.sheet.actor.vampire .portrait-panel {
+  flex: 0 0 150px;
+  width: 150px;
+  align-self: flex-start;
+  padding: 8px;
+  border-radius: 20px;
+}
+.vtm-v20.sheet.actor.vampire .portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  min-height: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(219, 150, 165, .47);
+  box-shadow: 0 0 0 5px rgba(105, 37, 57, .31), inset 0 0 22px #0009;
+}
+.vtm-v20.sheet.actor.vampire .portrait img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.vtm-v20.sheet.actor.vampire .status-bar {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.1fr) minmax(0, 1.35fr) minmax(0, .8fr);
+  gap: 6px;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  margin: 4px 0 0;
+}
+.vtm-v20.sheet.actor.vampire .status-bar > .status-block {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 70px;
+  padding: 8px 9px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.vtm-v20.sheet.actor.vampire .status-bar .status-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.vtm-v20.sheet.actor.vampire .status-bar label {
+  font-size: 10px;
+  line-height: 1.25;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin: 0;
+  min-width: 0;
+  white-space: normal;
+  letter-spacing: .03em;
+}
+.vtm-v20.sheet.actor.vampire .health-mini .soak-btn {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 23px;
+  width: 23px;
+  height: 23px;
+  min-width: 23px;
+  min-height: 23px;
+  padding: 0;
+  border-radius: 7px;
+}
+.vtm-v20.sheet.actor.vampire .health-pips { display:flex; flex-wrap:wrap; gap:3px; max-width:100%; }
+.vtm-v20.sheet.actor.vampire .health-pip {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  font-size: 11px;
+}
+.vtm-v20.sheet.actor.vampire .blood-meter-row { display:flex; align-items:center; gap:5px; min-width:0; }
+.vtm-v20.sheet.actor.vampire .blood-bar-wrap { flex: 1 1 auto; min-width: 10px; width:auto; height: 10px; min-height: 10px; }
+.vtm-v20.sheet.actor.vampire .blood-btns { flex: 0 0 auto; display:flex; gap:3px; }
+.vtm-v20.sheet.actor.vampire .blood-btns button {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items:center;
+  padding:0;
+  min-width:22px;
+  width:22px;
+  height:22px;
+  border-radius:8px;
+}
+.vtm-v20.sheet.actor.vampire .wp-mini .wp-track,
+.vtm-v20.sheet.actor.vampire .wp-temp-row .wp-track {
+  display:grid;
+  grid-template-columns:repeat(10,minmax(0,1fr));
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  gap:3px;
+}
+.vtm-v20.sheet.actor.vampire .wp-mini .wp-track .square,
+.vtm-v20.sheet.actor.vampire .wp-temp-row .wp-track .square {
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  height:15px;
+  min-height:15px;
+  min-width:0;
+  margin:0;
+  border-radius:5px;
+}
+.vtm-v20.sheet.actor.vampire .wp-track .square.locked {
+  cursor:not-allowed;
+  opacity:.30;
+  background:repeating-linear-gradient(135deg,rgba(125,77,88,.28) 0 3px,transparent 3px 6px);
+  border-color:rgba(171,107,120,.37);
+  pointer-events:none;
+}
+.vtm-v20.sheet.actor.vampire .status-bar .move-mini .move-val {font-size:12px;white-space:nowrap;}
+.vtm-v20.sheet.actor.vampire .wp-perm-row .dot-row[data-path="system.willpower.max"] {
+  grid-template-columns:repeat(10,minmax(0,19px));
+  max-width:100%;
+}
+/* Header icons are SVG elements inserted without changing Foundry's actions. */
+.vtm-v20.sheet.actor.vampire .window-header .vtm-control-icon-ready > i { display:none!important; }
+.vtm-v20.sheet.actor.vampire .window-header .vtm-control-svg {
+  display:block;
+  width:16px;
+  height:16px;
+  flex:0 0 16px;
+  color:inherit;
+  pointer-events:none;
+}
+.vtm-v20.sheet.actor.vampire .window-header .vtm-control-icon-ready {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:24px;
+  min-height:24px;
+  line-height:1;
+}
+@media (max-width:810px) {
+  .vtm-v20.sheet.actor.vampire .portrait-panel {flex-basis:112px;width:112px;}
+  .vtm-v20.sheet.actor.vampire .status-bar {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .vtm-v20.sheet.actor.vampire .status-bar > .status-block {min-height:62px;}
+}
+@media (max-width:540px) {
+  .vtm-v20.sheet.actor.vampire .portrait-panel {display:none;}
+  .vtm-v20.sheet.actor.vampire .status-bar {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+/* ru.13 — inline libraries; compatible with all themes via palette variables. */
+.vtm-v20 .ru-library-picker {
+  width:100%; min-width:0; margin:4px 0 5px;
+  border:1px solid var(--vtm-border);border-radius:9px;
+  background:var(--vtm-surface);color:var(--vtm-text);
+  box-sizing:border-box;
+}
+.vtm-v20 .ru-library-picker>summary {
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;cursor:pointer;list-style:none;
+  font-size:11px;font-weight:700;color:var(--vtm-gold);
+}
+.vtm-v20 .ru-library-picker>summary::-webkit-details-marker{display:none}
+.vtm-v20 .ru-library-picker>summary::after{content:'▾';margin-left:auto;color:var(--vtm-text-dim)}
+.vtm-v20 .ru-library-picker[open]>summary::after{content:'▴'}
+.vtm-v20 .ru-library-picker>summary:hover{color:var(--vtm-text-bright)}
+.vtm-v20 .ru-library-controls {display:grid;grid-template-columns:minmax(0,1fr);gap:6px;
+  padding:8px;border-top:1px solid var(--vtm-border);min-width:0}
+.vtm-v20 .ru-library-controls input,.vtm-v20 .ru-library-controls select{
+  width:100%;min-width:0;max-width:100%;box-sizing:border-box;
+  height:30px;padding:4px 8px;font-size:12px;color:var(--vtm-text);
+  border:1px solid var(--vtm-border);border-radius:6px;background:var(--vtm-bg)}
+.vtm-v20 .ru-library-buttons{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5px}
+.vtm-v20 .ru-library-buttons button{
+  box-sizing:border-box;min-width:0;white-space:normal;overflow-wrap:anywhere;
+  padding:6px 7px;border:1px solid var(--vtm-border);border-radius:6px;
+  background:var(--vtm-surface-light);color:var(--vtm-text);font-size:10px;line-height:1.4;cursor:pointer}
+.vtm-v20 .ru-library-buttons .ru-library-add{border-color:var(--vtm-red-dim);color:var(--vtm-text-bright)}
+.vtm-v20 .ru-library-buttons button:hover{border-color:var(--vtm-red);box-shadow:0 0 8px var(--vtm-red-glow)}
+.vtm-v20 .ru-library-buttons button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:650px){.vtm-v20 .ru-library-buttons{grid-template-columns:1fr}}
+
+/* The repair button belongs to the compendium directory only; no effect on sheet layout. */
+.compendium-directory .vtm-library-repair,
+#compendium .vtm-library-repair,
+.vtm-library-repair {width:100%;min-height:28px;margin:5px 0;padding:5px 9px;
+  border:1px solid var(--vtm-border);border-radius:8px;background:var(--vtm-surface);
+  color:var(--vtm-text);font-size:11px;cursor:pointer}
+.vtm-library-repair:hover{border-color:var(--vtm-red);color:var(--vtm-text-bright)}

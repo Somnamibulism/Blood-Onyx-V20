@@ -33,15 +33,202 @@
   --color-scrollbar: #8b1528;
 }
 
+
+body.vtm-theme-modern {
+  --vtm-panel-fx: none;
+}
+
+body.vtm-theme-dark-obsidian {
+  --vtm-bg: #0e1116;
+  --vtm-surface: #171c24;
+  --vtm-surface-light: #202734;
+  --vtm-border: #333b49;
+  --vtm-red: #c23b5c;
+  --vtm-red-dim: #7e2339;
+  --vtm-red-glow: rgba(194, 59, 92, 0.30);
+  --vtm-gold: #c5a76a;
+  --vtm-text: #d7dde7;
+  --vtm-text-dim: #8d97aa;
+  --vtm-text-bright: #f4f6fa;
+  --color-cool-5: #0e1116;
+  --color-cool-5-90: #0e1116;
+  --color-cool-5-75: rgba(14, 17, 22, 0.78);
+  --color-cool-5-50: rgba(14, 17, 22, 0.50);
+  --color-cool-4: #171c24;
+  --color-cool-3: #333b49;
+  --color-shadow-primary: #c23b5c;
+  --color-shadow-highlight: #c5a76a;
+  --color-scrollbar: #7e2339;
+}
+
+body.vtm-theme-glass-crimson {
+  --vtm-bg: rgba(20, 8, 14, 0.64);
+  --vtm-surface: rgba(63, 15, 29, 0.28);
+  --vtm-surface-light: rgba(107, 24, 46, 0.34);
+  --vtm-border: rgba(255, 161, 191, 0.22);
+  --vtm-red: #ff5d86;
+  --vtm-red-dim: #a32d4b;
+  --vtm-red-glow: rgba(255, 93, 134, 0.35);
+  --vtm-gold: #f1d3a0;
+  --vtm-text: #f3e8ec;
+  --vtm-text-dim: #c7a7b1;
+  --vtm-text-bright: #fff7fb;
+  --color-cool-5: rgba(20, 8, 14, 0.74);
+  --color-cool-5-90: rgba(20, 8, 14, 0.78);
+  --color-cool-5-75: rgba(20, 8, 14, 0.64);
+  --color-cool-5-50: rgba(20, 8, 14, 0.46);
+  --color-cool-4: rgba(52, 14, 26, 0.55);
+  --color-cool-3: rgba(255, 161, 191, 0.20);
+  --color-shadow-primary: #ff5d86;
+  --color-shadow-highlight: #f1d3a0;
+  --color-scrollbar: #a32d4b;
+  --vtm-panel-fx: blur(18px) saturate(145%);
+}
+
+body.vtm-theme-dark-obsidian .window-app:not([class*="compendium"]) .window-header,
+body.vtm-theme-dark-obsidian .window-app:not([class*="compendium"]) .window-content,
+body.vtm-theme-dark-obsidian .sidebar-tab,
+body.vtm-theme-dark-obsidian #navigation .nav-item,
+body.vtm-theme-dark-obsidian #hotbar #action-bar .slot {
+  background-image:
+    radial-gradient(circle at top left, rgba(194, 59, 92, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0));
+}
+
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) .window-header,
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) .window-content,
+body.vtm-theme-glass-crimson .sidebar-tab,
+body.vtm-theme-glass-crimson #navigation .nav-item,
+body.vtm-theme-glass-crimson #hotbar #action-bar .slot,
+body.vtm-theme-glass-crimson .movement-drawer,
+body.vtm-theme-glass-crimson .vtm-lightbox {
+  backdrop-filter: var(--vtm-panel-fx);
+  -webkit-backdrop-filter: var(--vtm-panel-fx);
+}
+
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) .window-header {
+  background:
+    linear-gradient(180deg, rgba(108, 20, 44, 0.52) 0%, rgba(31, 8, 17, 0.58) 100%),
+    radial-gradient(circle at top left, rgba(255, 176, 204, 0.18), transparent 34%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 22px rgba(0,0,0,0.28);
+}
+
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) .window-content,
+body.vtm-theme-glass-crimson .sidebar-tab {
+  background:
+    linear-gradient(180deg, rgba(38, 12, 22, 0.46) 0%, rgba(18, 8, 13, 0.54) 100%),
+    radial-gradient(circle at top left, rgba(255, 169, 195, 0.10), transparent 36%);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20.sheet {
+  border: 1px solid rgba(255, 145, 179, 0.34);
+  border-radius: 16px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20.sheet .window-content {
+  border-radius: 14px;
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .portrait-panel,
+body.vtm-theme-glass-crimson .vtm-v20 .status-block,
+body.vtm-theme-glass-crimson .vtm-v20 .attack-row,
+body.vtm-theme-glass-crimson .vtm-v20 .combat-box,
+body.vtm-theme-glass-crimson .vtm-v20 .detail-card,
+body.vtm-theme-glass-crimson .vtm-roll,
+body.vtm-theme-glass-crimson .vtm-combat,
+body.vtm-theme-glass-crimson .vtm-combat-damage,
+body.vtm-theme-glass-crimson .window-app.dialog .dialog-content {
+  background:
+    linear-gradient(180deg, rgba(86, 18, 39, 0.20) 0%, rgba(30, 8, 15, 0.28) 100%),
+    radial-gradient(circle at top left, rgba(255,255,255,0.08), transparent 38%);
+  border-color: rgba(255, 145, 179, 0.26) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 30px rgba(0,0,0,0.18);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .sheet-header,
+body.vtm-theme-glass-crimson .vtm-v20 .sheet-tabs,
+body.vtm-theme-glass-crimson .vtm-v20 h2,
+body.vtm-theme-glass-crimson .vtm-v20 h3,
+body.vtm-theme-glass-crimson .vtm-v20 .attack-row .card-header,
+body.vtm-theme-glass-crimson .vtm-v20 .attack-row:not(.has-img) .attack-name {
+  background-image: radial-gradient(circle at top left, rgba(255,255,255,0.06), transparent 45%);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .trait-row:hover,
+body.vtm-theme-glass-crimson .vtm-v20 .attack-row:hover,
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) button:hover,
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) .dialog-button:hover {
+  box-shadow: 0 0 0 1px rgba(255, 145, 179, 0.16), 0 0 18px rgba(255, 93, 134, 0.16);
+}
+
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) input[type="text"],
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) input[type="number"],
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) input[type="search"],
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) input[type="password"],
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) select,
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) textarea,
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) button,
+body.vtm-theme-glass-crimson .window-app:not([class*="compendium"]) .dialog-button,
+body.vtm-theme-glass-crimson #chat-form textarea,
+body.vtm-theme-glass-crimson #chat-form input,
+body.vtm-theme-glass-crimson textarea#chat-message {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)), rgba(56, 15, 27, 0.26);
+  border-color: rgba(255, 145, 179, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .sheet-tabs .item {
+  border-radius: 9px 9px 0 0;
+  margin-right: 2px;
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .sheet-tabs .item.active {
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .attack-btn,
+body.vtm-theme-glass-crimson .vtm-combat .combat-defend-btn,
+body.vtm-theme-glass-crimson .vtm-combat .combat-damage-btn,
+body.vtm-theme-glass-crimson .vtm-combat-damage .kiss-resist-btn,
+body.vtm-theme-glass-crimson .vtm-roll .fall-soak-btn {
+  background: linear-gradient(180deg, rgba(255, 90, 130, 0.22), rgba(84, 18, 38, 0.28)) !important;
+  border-color: rgba(255, 151, 183, 0.34) !important;
+}
+
+body.vtm-theme-glass-crimson .vtm-v20 .attack-btn:hover,
+body.vtm-theme-glass-crimson .vtm-combat .combat-defend-btn:hover,
+body.vtm-theme-glass-crimson .vtm-combat .combat-damage-btn:hover,
+body.vtm-theme-glass-crimson .vtm-combat-damage .kiss-resist-btn:hover,
+body.vtm-theme-glass-crimson .vtm-roll .fall-soak-btn:hover {
+  background: linear-gradient(180deg, rgba(255, 105, 146, 0.38), rgba(108, 20, 44, 0.34)) !important;
+}
+
+body.vtm-theme-dark-obsidian .vtm-v20.sheet {
+  border-color: rgba(194, 59, 92, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+body.vtm-theme-dark-obsidian .vtm-v20 .portrait-panel,
+body.vtm-theme-dark-obsidian .vtm-v20 .attack-row,
+body.vtm-theme-dark-obsidian .vtm-roll,
+body.vtm-theme-dark-obsidian .vtm-combat,
+body.vtm-theme-dark-obsidian .vtm-combat-damage {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+}
+
+
 /* ── Foundry UI Overrides ───────────────────────────────────────────
    Restyle Foundry's chrome to match the character sheet. */
 
 /* Global font for all Foundry UI */
-body, input, select, textarea,
-button:not([class*="fa-"]),
-.window-app, .window-app *:not([class*="fa-"]):not(.fas):not(.far):not(.fab) {
+body, .window-app,
+.window-app :is(input, select, textarea, .window-title),
+.vtm-v20 :is(label, button, .sheet-tabs a):not([class*="fa-"]) {
   font-family: 'Cinzel', serif !important;
 }
+/* Do not force text fonts on Foundry 13 header controls/icons. */
 
 /* Inherited tracking opens the face up; elements with their own letter-spacing keep it */
 body, .window-app {

@@ -1,5 +1,9 @@
 import { renderDamageCard } from './combat-report.mjs';
-import { canonicalName, displayName } from './ru/naming.mjs';
+import { canonicalName, displayName, russianDocument } from './ru/naming.mjs';
+import { DISCIPLINES, BACKGROUNDS, WEAPONS, ARMOR, MERITS, FLAWS } from './compendiums.mjs';
+import { PATHS } from './paths-data.mjs';
+import { RITUALS } from './rituals-data.mjs';
+import { EQUIPMENT, CONTAINERS, V5_LORE, LIBRARY_GROUPS } from './library-extras.mjs';
 import { disciplineGuide, passiveDisciplines } from './ru/discipline-guides.mjs';
 import { VTM } from './config.mjs';
 import { showDice, promptRollAdjust, gearPenalty } from './dice.mjs';
@@ -16,6 +20,12 @@ import { computeCarry } from './movement.mjs';
 import { trackSize, countDamage, rebuildTrack } from './health-track.mjs';
 import { pickSceneTarget } from './target-actions.mjs';
 import { CLOSE_COMBAT_MANEUVER_RULES } from './maneuver-rules.mjs';
+
+const RU_LIBRARY_SOURCES = {
+  discipline:DISCIPLINES, background:BACKGROUNDS, merit:MERITS, flaw:FLAWS,
+  path:PATHS, ritual:RITUALS, weapon:WEAPONS, armor:ARMOR,
+  equipment:EQUIPMENT, container:CONTAINERS, v5lore:V5_LORE,
+};
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -502,12 +512,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       });
     }
     attacks.push({
-      id: 'get-up', name: 'Get Up',
+      id: 'get-up', name: 'Встать',
       img: 'systems/vtm-v20/assets/ru/combat/stance.svg',
-      pool: `Dex + Athletics (${dex + effectiveTraitValue(actor, 'abilities.athletics')})`,
+      pool: `Ловкость + Атлетика (${dex + effectiveTraitValue(actor, 'abilities.athletics')})`,
       skill: 'abilities.athletics', isRanged: false,
       isAction: true, actionDifficulty: 4,
-      note: 'Success removes the prone and knockdown effects',
+      note: 'Без броска за одно действие. При совмещении с другим действием: Ловкость + Атлетика, сложность 4.',
     });
     attacks.push({
       id: 'ready-weapon', name: 'Ready Weapon',
@@ -829,7 +839,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // token bar reads
     const move = sys.movement;
     ctx.movement = { walk: move.walk, jog: move.jog, run: move.run, hobble: move.hobble, crawl: move.crawl };
-    ctx.curMove = { label: move.curLabel, value: move.curValue };
+    const moveLabels = { Run: 'Бег', Jog: 'Трусцой', Walk: 'Шаг', Hobble: 'Хромая', Crawl: 'Ползком', None: 'Без движения' };
+    ctx.curMove = { label: moveLabels[move.curLabel] ?? move.curLabel, value: move.curValue };
 
     ctx.config = VTM;
     ctx.clanChoices = clanOptions(VTM.clans).map(value => ({value, label: displayName(value)}));
@@ -1002,6 +1013,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     this._syncChargenButton();
     this._syncCompactButton();
+    this._syncWindowControlIcons();
     el.classList.toggle('compact-combat', this._compactMode);
 
     if (this._chargen) {
@@ -1015,6 +1027,10 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!this.isEditable) return;
 
     const canEdit = game.user.isGM || !locked;
+    // Dropdowns use V20 source catalogs directly, even before GM compendium
+    // seeding finishes. When a pack is available we import its real document
+    // instead, preserving its GM customizations.
+    if (canEdit) this._bindInlineLibraries(el);
 
     // Tabs
     el.querySelectorAll('.sheet-tabs .item[data-tab]').forEach(tab => {
@@ -1075,7 +1091,13 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           // Nosferatu can't change Appearance
           if (path === 'system.attributes.appearance' && this.document.system.clan?.toLowerCase() === 'nosferatu') return;
           const cur = foundry.utils.getProperty(this.document, path);
-          this.document.update({ [path]: val === cur ? val - 1 : val });
+          const next = val === cur ? val - 1 : val;
+          if (path === 'system.willpower.max') {
+            this.document.update({ [path]: next,
+              'system.willpower.value': Math.min(this.document.system.willpower.value, next) });
+          } else {
+            this.document.update({ [path]: next });
+          }
         });
       });
       el.querySelectorAll('.item-dots .dot').forEach(dot => {
@@ -1115,9 +1137,10 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         this.document.update({ [`system.health.levels.${level}`]: (cur + 1) % 4 });
       }));
 
-    el.querySelectorAll('.wp-track .square').forEach(sq =>
+    el.querySelectorAll('.wp-track .square:not(.locked)').forEach(sq =>
       sq.addEventListener('click', () => {
-        const val = parseInt(sq.dataset.value);
+        const cap = Math.max(0, Math.min(10, this.document.system.willpower.max));
+        const val = Math.max(0, Math.min(cap, parseInt(sq.dataset.value) || 0));
         const cur = this.document.system.willpower.value;
         this.document.update({ 'system.willpower.value': val === cur ? val - 1 : val });
       }));
@@ -1490,11 +1513,16 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (!this._isMyResTurn()) return;
         }
 
+        // V20: standing alone consumes the action, but needs no test.
+        // A Dexterity + Athletics (difficulty 4) roll applies to multiple actions.
+        if (actionId === 'get-up') {
+          await standUp(this.document);
+          return;
+        }
         const result = await game.vtm.rollDicePool(this.document, {
           trait: 'attributes.dexterity', trait2: skill,
           label, difficulty: action.actionDifficulty || 6,
         });
-        if (actionId === 'get-up' && result?.outcome === 'success') await standUp(this.document);
       }));
 
     // Right-click on declared action rolls: adjustment dialog. Outside combat
@@ -1856,8 +1884,131 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
+
+  // Core v13 header buttons remain real Foundry controls; the SVG is merely
+  // a font-independent visible icon, so clicks and window behavior survive.
+  _syncWindowControlIcons() {
+    const header = this.element.querySelector('.window-header, header.window-header');
+    if (!header) return;
+    const icons = {
+      close: '<path d="M18 6 6 18M6 6l12 12"/>',
+      minimize: '<path d="M5 12h14"/>',
+      maximize: '<rect x="4" y="4" width="16" height="16" rx="2"/>',
+      popout: '<path d="M13 5h6v6M19 5l-9 9"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
+      compact: this._compactMode ? '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3m13 5h3a2 2 0 0 0 2-2v-3"/>' : '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/>',
+      chargen: this._chargen ? '<path d="m15 18-6-6 6-6"/><path d="M20 12H9"/>' : '<path d="m5 19 14-14M14 5l5 5M4 4l1 3m9-5 1 3M2 14l3 1"/>',
+      export: '<path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 17v3h14v-3"/>',
+      health: '<path d="M20.8 8.1c0 4.7-8.8 10.9-8.8 10.9S3.2 12.8 3.2 8.1a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"/><path d="M12 7v7m-3.5-3.5h7"/>',
+    };
+    for (const control of header.querySelectorAll('button, a')) {
+      const action = (control.dataset.action || '').toLowerCase();
+      const classNames = String(control.className || '').toLowerCase();
+      const tip = `${control.getAttribute('title') || ''} ${control.getAttribute('aria-label') || ''} ${control.querySelector('i')?.className || ''}`.toLowerCase();
+      let kind = ({ togglecompact: 'compact', togglechargen: 'chargen', exportsheet: 'export', managehealth: 'health' })[action];
+      if (!kind) {
+        if (action === 'close' || /window-close/.test(classNames) || /\bclose\b|закрыть/.test(tip)) kind = 'close';
+        else if (action === 'minimize' || /window-minimize/.test(classNames) || /minimize|свернуть/.test(tip)) kind = 'minimize';
+        else if (action === 'maximize' || /window-maximize/.test(classNames) || /maximize|развернуть/.test(tip)) kind = 'maximize';
+        else if (action === 'popout' || /pop.?out/.test(classNames)) kind = 'popout';
+      }
+      if (!kind) continue;
+      control.querySelector('.vtm-control-svg')?.remove();
+      control.insertAdjacentHTML('beforeend', `<svg class="vtm-control-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[kind]}</svg>`);
+      control.classList.add('vtm-control-icon-ready');
+    }
+  }
+
+  _bindInlineLibraries(el) {
+    for (const picker of el.querySelectorAll('.ru-library-picker')) {
+      const kind = picker.dataset.libraryKind;
+      const source = RU_LIBRARY_SOURCES[kind] || [];
+      const search = picker.querySelector('.ru-library-search');
+      const select = picker.querySelector('.ru-library-choice');
+      const add = picker.querySelector('.ru-library-add');
+      const open = picker.querySelector('.ru-library-open');
+      const packName = LIBRARY_GROUPS[kind]?.pack;
+      const filtered = () => {
+        const text = search.value.trim().toLocaleLowerCase('ru');
+        const previous = select.value;
+        select.replaceChildren();
+        const hits = source.map((item,i)=>({item,i})).filter(({item}) =>
+          displayName(item.name).toLocaleLowerCase('ru').includes(text) ||
+          item.name.toLocaleLowerCase('ru').includes(text));
+        for (const {item,i} of hits) {
+          const option = document.createElement('option');
+          option.value = String(i);
+          option.textContent = displayName(item.name);
+          select.append(option);
+        }
+        if (hits.length) {
+          select.value = [...select.options].some(o=>o.value===previous)?previous:String(hits[0].i);
+        } else {
+          select.add(new Option('Ничего не найдено', ''));
+        }
+        add.disabled = !hits.length;
+      };
+      picker.addEventListener('toggle', () => { if (picker.open) { filtered(); search.focus(); } });
+      search.addEventListener('input', filtered);
+      add.addEventListener('click', async ev => {
+        ev.preventDefault();
+        const item = source[Number(select.value)];
+        if (!item) return;
+        add.disabled=true;
+        try { await this._addFromLibrary(item, packName); }
+        finally { add.disabled=false; }
+      });
+      open.addEventListener('click', ev => {
+        ev.preventDefault();
+        const pack = game.packs.get(`vtm-v20.${packName}`);
+        if (!pack) return ui.notifications.warn('Библиотека не найдена. Встроенный выбор выше продолжит работать.');
+        if (pack.render) pack.render(true);
+        else if (pack.application?.render) pack.application.render({force:true});
+        else ui.notifications.warn('Не удалось открыть компендиум. Выбери предмет в списке.');
+      });
+    }
+  }
+
+  async _addFromLibrary(item, packName) {
+    if (!this.isEditable) return;
+    const translatedName = displayName(item.name);
+    const canonical = canonicalName(translatedName);
+    const duplicate = this.document.items.find(owned =>
+      owned.type === item.type && canonicalName(owned.name) === canonical);
+    if (duplicate) {
+      ui.notifications.info(`«${duplicate.name}» уже есть в листе. Изменить уровень можно точками.`);
+      return;
+    }
+    let data = null;
+    const pack = game.packs.get(`vtm-v20.${packName}`);
+    if (pack) {
+      try {
+        const index = await pack.getIndex();
+        const entry = index.contents.find(e => canonicalName(e.name) === canonical);
+        if (entry) {
+          const doc = await pack.getDocument(entry._id);
+          if (doc) data = doc.toObject();
+        }
+      } catch (error) { console.warn('V20 | Compendium lookup failed; using embedded source.', error); }
+    }
+    data ||= russianDocument(structuredClone(item));
+    // Actor Items must not inherit the compendium document's identity/folder.
+    delete data._id;
+    delete data.id;
+    delete data.folder;
+    const [created] = await this.document.createEmbeddedDocuments('Item',[data]);
+    if (created) ui.notifications.info(`Добавлено в лист: ${created.name}`);
+  }
+
   async _onDropItem(event, item) {
     if (this._chargen) return this._chargen.handleDrop(item, item.uuid) ? null : super._onDropItem(event, item);
+    if (!item || !this.isEditable) return;
+    if (['discipline','background','path','ritual','merit','weapon','armor','equipment','container'].includes(item.type)) {
+      const existing = this.document.items.find(i=>i.type===item.type && canonicalName(i.name)===canonicalName(item.name));
+      if (existing) {
+        ui.notifications.info(`«${item.name}» уже есть у персонажа.`);
+        return;
+      }
+    }
     return super._onDropItem(event, item);
   }
 
@@ -4206,13 +4357,17 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           resSkill = action.readyType === 'ranged' ? 'abilities.firearms' : 'abilities.melee';
           resLabel = `Ready Weapon (${action.readyType === 'melee' ? 'Melee' : 'Ranged'})`;
         }
-        const result = await game.vtm.rollDicePool(actor, {
-          trait: 'attributes.dexterity', trait2: resSkill,
-          label: resLabel, difficulty: atkEntry.actionDifficulty || 6,
-          poolOverride: poolForAction, poolNote, adjust,
-        });
-        if (adjust && result === null) return;
-        if (action.attackId === 'get-up' && result?.outcome === 'success') await standUp(actor);
+        if (action.attackId === 'get-up' && !multiAction) {
+          await standUp(actor); // Normal single-action stand: automatic in V20.
+        } else {
+          const result = await game.vtm.rollDicePool(actor, {
+            trait: 'attributes.dexterity', trait2: resSkill,
+            label: resLabel, difficulty: atkEntry.actionDifficulty || 6,
+            poolOverride: poolForAction, poolNote, adjust,
+          });
+          if (adjust && result === null) return;
+          if (action.attackId === 'get-up' && result?.outcome === 'success') await standUp(actor);
+        }
       } else if (action.attackId === 'horrid-reality') {
         await this._rollHorridReality();
       } else if (action.attackId === 'taste-of-death') {
