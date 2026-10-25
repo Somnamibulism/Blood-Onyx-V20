@@ -1,1 +1,1 @@
-Release 1.2.0-ru.23
+Release 1.2.0-ru.23 retry with validated source manifest
