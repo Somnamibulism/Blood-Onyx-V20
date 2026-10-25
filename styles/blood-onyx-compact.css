@@ -1334,3 +1334,10 @@
 }
 .vtm-roll .vtm-chronicle-report .vtm-report-step strong { display: inline; margin-right: 3px; }
 .vtm-roll .vtm-chronicle-report .vtm-report-step:last-of-type { border-bottom: none; }
+
+/* ru.19: discipline verification is visible in both normal and glass themes. */
+.vtm-v20 .ru-power-roll { width:auto; min-width:100px; display:inline-flex; align-items:center; gap:5px; justify-content:center; margin:3px 6px 3px 0; }
+.vtm-power-audit,.vtm-power-resolution { line-height:1.45; }
+.vtm-power-audit { margin:7px 0; padding:7px 9px; border:1px solid var(--vtm-border,#674353); border-radius:7px; background:var(--vtm-surface,rgba(40,10,18,.65)); font-size:11px; }
+.vtm-power-audit > div+div,.vtm-power-resolution > div+div { margin-top:4px; }
+.vtm-power-resolution {padding:10px; border-left:2px solid var(--vtm-red,#bd3458);}

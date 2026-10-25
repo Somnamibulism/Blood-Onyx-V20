@@ -1,3 +1,5 @@
+import { rollDisciplinePower } from './item-sheet.mjs';
+import { powerUsesRoll } from './ru/powers.mjs';
 import { renderDamageCard } from './combat-report.mjs';
 import { snapshotHealth, healthChangeAudit, auditDice } from './combat-report.mjs';
 import { canonicalName, displayName, russianDocument } from './ru/naming.mjs';
@@ -273,6 +275,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           note, learned: Number(d.system.level)>index,
           hasGuide: !!note,
           passive: passiveDisciplines.has(canonical),
+          canRoll: Number(d.system.level)>index && powerUsesRoll(d,key),
+          key,
         };
       }).filter(entry=>entry.hasGuide);
       return {
@@ -1325,6 +1329,13 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this._reflexiveHealRoll();
     });
 
+    el.querySelectorAll('.ru-power-roll').forEach(btn => {
+      btn.addEventListener('click',async ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+        const item=this.document.items.get(btn.dataset.itemId);
+        if(item)await rollDisciplinePower(this.document,item,btn.dataset.level);
+      });
+    });
     el.querySelectorAll('.ru-power-open').forEach(btn => {
       btn.addEventListener('click', () => {
         const item = this.document.items.get(btn.dataset.itemId);

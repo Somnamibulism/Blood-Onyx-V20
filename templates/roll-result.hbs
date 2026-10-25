@@ -25,6 +25,14 @@
       </span>
     {{/if}}
   </div>
+  {{#if powerMeta}}
+  <div class="vtm-power-audit">
+    <div><b>Проверка дисциплины V20</b> · {{powerMeta.caster}} → {{powerMeta.target}}</div>
+    <div>Основание сложности: {{powerMeta.basis}}</div>
+    <div>Успехов на кубах до единиц: {{powerMeta.successesBeforeOnes}} · Единиц: {{powerMeta.ones}} · Итог: <b>{{powerMeta.net}}</b></div>
+    {{#if powerMeta.note}}<div>{{powerMeta.note}}</div>{{/if}}
+  </div>
+  {{/if}}
   {{#if extra}}
   <div class="roll-extra">{{extra}}</div>
   {{/if}}

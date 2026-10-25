@@ -102,7 +102,7 @@ export async function promptRollAdjust({ title = 'Adjust Roll', pool, poolLabel 
   });
 }
 
-export async function rollDicePool(actor, { trait, trait2, label, pool, difficulty = 6, poolMod = 0, poolOverride = null, poolNote = '', adjust = false, beforeRoll = null } = {}) {
+export async function rollDicePool(actor, { trait, trait2, label, pool, difficulty = 6, poolMod = 0, poolOverride = null, poolNote = '', adjust = false, beforeRoll = null, powerMeta = null } = {}) {
   // Resolution shortcut: skip dialog/capture, roll with the given pool directly.
   // Everything after this block (roll, tally, chat card) still runs normally.
   let result;
@@ -486,6 +486,15 @@ export async function rollDicePool(actor, { trait, trait2, label, pool, difficul
     label: result.label, pool: result.pool, difficulty: result.difficulty,
     specialty: result.specialty, dice, total, outcome, portraitStyle,
     autoSuccesses: autoSucc, autoLabel, diceTotal, poolNote,
+    powerMeta: powerMeta ? {
+      caster: actor.name,
+      target: powerMeta.target ?? 'Без цели',
+      basis: powerMeta.basis ?? 'Из карточки силы',
+      note: powerMeta.note ?? '',
+      successesBeforeOnes: dice.filter(d => d.status === 'success' || d.status === 'crit').length + dice.filter(d => d.status === 'crit').length,
+      ones,
+      net: total,
+    } : null,
   });
 
   await showDice(roll, actor);
@@ -496,7 +505,7 @@ export async function rollDicePool(actor, { trait, trait2, label, pool, difficul
     style: CONST.CHAT_MESSAGE_STYLES.OTHER,
   });
 
-  return { total, outcome, dice };
+  return { total, outcome, dice, pool: result.pool, difficulty: result.difficulty };
 }
 
 // Roll a fixed-size pool with no dialog. Used when the pool is already determined

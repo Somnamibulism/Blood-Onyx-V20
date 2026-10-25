@@ -260,7 +260,10 @@
               <div class="discipline-guide-entry {{#if this.learned}}known{{/if}}">
                 <b>{{this.level}}. {{this.title}}</b>
                 <p>{{this.note}}</p>
-                {{#if this.learned}}<button type="button" class="ru-power-open" data-item-id="{{../_id}}" title="Открыть силы дисциплины и выбрать цель"><i class="fas fa-hand-sparkles"></i> Применить</button>{{/if}}
+                {{#if this.learned}}
+                  {{#if this.canRoll}}<button type="button" class="ru-power-roll" data-item-id="{{../_id}}" data-level="{{this.key}}" title="Бросить проверку этой силы по V20"><i class="fas fa-dice-d10"></i> Бросок V20</button>{{/if}}
+                  <button type="button" class="ru-power-open" data-item-id="{{../_id}}" title="Открыть описание и настройки силы"><i class="fas fa-book-open"></i> Подробнее</button>
+                {{/if}}
               </div>
               {{/each}}
             </div>

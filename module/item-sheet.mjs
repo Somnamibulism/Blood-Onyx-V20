@@ -1,5 +1,8 @@
 import { canonicalName } from './ru/naming.mjs';
-import { canUsePower, preparePower } from './ru/powers.mjs';
+import { canUsePower, preparePower, powerUsesRoll, powerRequiresTarget } from './ru/powers.mjs';
+import { powerAuditData } from './ru/power-report.mjs';
+import { rollFixedPool } from './dice.mjs';
+import { disciplineLevel } from './discipline-effects.mjs';
 import { VTM } from './config.mjs';
 import { applyHealthDamage } from './combat.mjs';
 import { DISCIPLINES } from './compendiums.mjs';
@@ -152,6 +155,75 @@ async function applyConfiguredPower(actor, item, power, picked, roll = null) {
   } catch (error) { ui.notifications.error(error.message || 'Не удалось применить эффект.'); }
 }
 
+// Shared entry point: the individual power button in the actor sheet and
+// the dice button in the item sheet must use exactly the same V20 procedure.
+export async function rollDisciplinePower(actor,item,key) {
+  if(!canUsePower(actor,item,key)){
+    ui.notifications.warn('Эта способность ещё не изучена.');return null;
+  }
+  if(!powerUsesRoll(item,key)){
+    ui.notifications.info('Для этой силы обычный бросок активации не предусмотрен.');return null;
+  }
+  const needed=powerRequiresTarget(item,key);
+  const picked=await pickSceneTarget({title:`Цель силы: ${item.name}`,allowNone:!needed});
+  if(picked.cancelled)return null;
+  const prepared=preparePower(actor,item,key,picked.actor);
+  if(prepared.error){ui.notifications.warn(prepared.error);return null;}
+  const power=prepared.power;
+  const meta={target:picked.actor?.name||'Без цели',basis:prepared.audit.difficultyBasis,
+    note:prepared.audit.note||''};
+  const roll=await game.vtm.rollDicePool(actor,{
+    trait:power.primary,trait2:power.secondary,
+    label:`${item.name}: ${power.name||'Уровень '+key.slice(3)}${picked.actor?' → '+picked.actor.name:''}`,
+    difficulty:power.difficulty,
+    powerMeta:meta,
+    beforeRoll:power.cost?()=>confirmAndSpend(actor,power.cost,power.name||item.name):null,
+  });
+  if(!roll)return null;
+  let resistance=null,resistancePending=false;
+  if(prepared.audit.resistance && roll.total>0 && picked.actor){
+    const def=prepared.audit.resistance;
+    if(game.user.isGM || picked.actor.isOwner){
+      const fort=def.includeFortitude?disciplineLevel(picked.actor,'Fortitude'):0;
+      const pool=Math.max(1,Number(picked.actor.system.attributes?.stamina||0)+(def.includeFortitude?fort:0));
+      // No extra roll for unsupported models; the V20 contested check is
+      // explicit and auditable with the same dice engine.
+      const base=def.primary==='willpower'?Math.max(1,Number(picked.actor.system.willpower?.max||0)):pool;
+      resistance=await rollFixedPool(picked.actor,{
+        pool:base,difficulty:def.difficulty,
+        label:`Сопротивление: ${picked.actor.name} → ${power.name||item.name} (${def.basis})`,
+      });
+    }else resistancePending=true;
+  }
+  const audit=powerAuditData({actorName:actor.name,targetName:picked.actor?.name,discipline:item.name,
+    power:power.name,prepared,attack:roll,defense:resistance,resistancePending});
+  const esc=foundry.utils.escapeHTML;
+  const metrics=audit.metrics;
+  const r=audit.defense;
+  const adjustedDifficulty=roll.difficulty!==prepared.power.difficulty;
+  const html=`<div class="vtm-roll vtm-power-resolution">
+    <div class="roll-header"><b>${esc(item.name)}: ${esc(power.name||'')}</b></div>
+    <div class="roll-meta">${esc(actor.name)} → ${esc(audit.targetName)}</div>
+    <div>Бросок: ${esc(metrics.values.join(', '))} · сложность ${audit.difficulty}</div>
+    <div>Основание: ${esc(audit.basis)}${adjustedDifficulty?' · сложность вручную изменена в диалоге':''}</div>
+    <div>Успехи на кубах: ${metrics.successfulDice+metrics.extraSpecialization}; единицы: ${metrics.ones}; автоматические: ${metrics.auto}; <b>итого: ${metrics.net}</b></div>
+    ${audit.resistance?`<div>Сопротивление: ${esc(audit.resistance.basis)} (сл. ${audit.resistance.difficulty})</div>`:''}
+    ${r?`<div>Кубы защиты: ${esc(r.values.join(', '))}; успехи: ${r.net}; итоговые чистые успехи: <b>${audit.net}</b></div>`:''}
+    ${audit.resistancePending?'<div>Сопротивление требуется выполнить владельцу цели или ведущему. Автоэффект не применён до разрешения проверки.</div>':''}
+    ${audit.threshold!==null?`<div>Нужно накопить успехов: ${audit.threshold}</div>`:''}
+    ${power.cost?`<div>Стоимость: ${esc(power.cost)} (подтверждена перед броском)</div>`:''}
+    ${audit.note?`<div>${esc(audit.note)}</div>`:''}
+    <div class="roll-result"><b>${esc(audit.result)}</b></div>
+  </div>`;
+  await ChatMessage.create({user:game.user.id,speaker:ChatMessage.getSpeaker({actor}),content:html,
+    style:CONST.CHAT_MESSAGE_STYLES.OTHER});
+  if(roll.total>0 && (!prepared.audit.resistance || (!resistancePending && audit.net>0))){
+    const effectiveRoll=prepared.audit.resistance?{...roll,total:audit.net}:roll;
+    await applyConfiguredPower(actor,item,power,picked,effectiveRoll);
+  }
+  return {roll,audit};
+}
+
 export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   static DEFAULT_OPTIONS = {
@@ -243,8 +315,8 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           effectPerSuccess: !!power.effectPerSuccess,
           statusOptions: TARGET_STATUSES.map(o => ({ ...o, selected: o.id === (power.effectStatus || 'vtm-dazed') })),
           primary: power.primary, secondary: power.secondary,
-          hasRoll: !!power.primary,
-          hasActivate: (!power.primary && (!!power.cost || (power.effectKind && power.effectKind !== 'none') || (disc === 'obeah' && key === 'lvl3'))) || needsActivate,
+          hasRoll: powerUsesRoll(item,key),
+          hasActivate: (!powerUsesRoll(item,key) && (!!power.cost || (power.effectKind && power.effectKind !== 'none') || (disc === 'obeah' && key === 'lvl3'))) || needsActivate,
           primaryOptions: traitOpts.map(o => ({ ...o, selected: o.key === power.primary })),
           secondaryOptions: traitOpts.map(o => ({ ...o, selected: o.key === power.secondary })),
         };
@@ -413,20 +485,7 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         if (!canUsePower(actor, this.document, key)) {
           ui.notifications.warn('Эта способность ещё не изучена.'); return;
         }
-        const picked = await pickSceneTarget({ title: `Цель дисциплины: ${this.document.name}`, allowNone: true });
-        if (picked.cancelled) return;
-        const prepared = preparePower(actor, this.document, key, picked.actor);
-        if (prepared.error) { ui.notifications.warn(prepared.error); return; }
-        const power = prepared.power;
-        const result = await game.vtm.rollDicePool(actor, {
-          trait: power.primary,
-          trait2: power.secondary,
-          label: `${this.document.name}: ${power.name}${picked.actor ? ` → ${picked.actor.name}` : ''}`,
-          difficulty: power.difficulty,
-          beforeRoll: power.cost ? () => confirmAndSpend(actor, power.cost, power.name || this.document.name) : null,
-        });
-        if (result && power.cost) await whisperActivation(actor, `${this.document.name}: ${power.name}`, null, power.cost, false);
-        if (result?.total > 0) await applyConfiguredPower(actor, this.document, power, picked, result);
+        await rollDisciplinePower(actor,this.document,key);
       });
     });
 
