@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "incoming/ru19-payload.txt"
+      - "incoming/*ru.19*.zip"
 
 permissions:
   contents: write
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Apply verified ru.19 update, test, and publish
+      - name: Validate source, run tests, publish installable ru.19
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,93 +29,76 @@ jobs:
           set -euo pipefail
           TAG="v1.2.0-ru.19"
           ASSET="blood-onyx-v20-ru19.zip"
-          SOURCE="incoming/ru19-payload.txt"
-          if [ ! -f "$SOURCE" ]; then
-            echo "No pending ru.19 update. Nothing to do."
-            exit 0
-          fi
+          ZIP="$(find incoming -maxdepth 1 -type f -name '*ru.19*.zip' -print -quit)"
+          if [ -z "$ZIP" ]; then echo "No incoming ru.19 ZIP"; exit 0; fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Existing release; refusing to replace."
-            exit 1
+            echo "Release already exists; refusing overwrite"; exit 1
           fi
-          export BLOOD_PAYLOAD="$RUNNER_TEMP/ru19-payload.json"
-          export BLOOD_PATCH="$RUNNER_TEMP/ru19.patch"
+          export SOURCE_ZIP="$ZIP"
+          export STAGING="$RUNNER_TEMP/ru19-stage"
+          mkdir -p "$STAGING"
           python3 - <<'PY'
-          import base64, gzip, json, os, pathlib
-          content=pathlib.Path("incoming/ru19-payload.txt").read_text(encoding="ascii")
-          parsed=json.loads(gzip.decompress(base64.b64decode("".join(content.split()),validate=True)))
-          if parsed.get("version")!="1.2.0-ru.19":
-              raise SystemExit("Unexpected version")
-          patch=base64.b64decode(parsed["patch"],validate=True)
-          if not patch.startswith(b"diff --git "):
-              raise SystemExit("Missing Git patch")
-          pathlib.Path(os.environ["BLOOD_PAYLOAD"]).write_text(json.dumps(parsed),encoding="utf8")
-          pathlib.Path(os.environ["BLOOD_PATCH"]).write_bytes(patch)
+          import json,os,pathlib,stat,zipfile
+          source=pathlib.Path(os.environ['SOURCE_ZIP'])
+          stage=pathlib.Path(os.environ['STAGING'])
+          with zipfile.ZipFile(source) as z:
+              members=z.infolist()
+              if not members or sum(x.file_size for x in members)>120_000_000:
+                  raise SystemExit('Invalid ZIP size')
+              names=set()
+              for x in members:
+                  name=pathlib.PurePosixPath(x.filename)
+                  if name.is_absolute() or '..' in name.parts or not name.parts or name.parts[0]!='vtm-v20':
+                      raise SystemExit('Unsafe ZIP path: '+x.filename)
+                  if stat.S_ISLNK(x.external_attr >> 16):
+                      raise SystemExit('Symlink forbidden')
+                  if x.filename in names: raise SystemExit('Duplicate path')
+                  names.add(x.filename)
+              if z.testzip() is not None: raise SystemExit('Invalid ZIP CRC')
+              z.extractall(stage)
+          root=stage/'vtm-v20'
+          m=json.loads((root/'system.json').read_text(encoding='utf8'))
+          if m.get('version')!='1.2.0-ru.19' or m.get('id')!='vtm-v20':
+              raise SystemExit('Incorrect manifest version/id')
+          if not (root/'CHANGELOG-RU.19.md').is_file():
+              raise SystemExit('Missing release changelog')
           PY
-          git apply --check "$BLOOD_PATCH"
-          git apply "$BLOOD_PATCH"
-          python3 - <<'PY'
-          import hashlib,json,os,pathlib
-          obj=json.loads(pathlib.Path(os.environ["BLOOD_PAYLOAD"]).read_text(encoding="utf8"))
-          m=obj["manifest"]
-          if m.get("id")!="vtm-v20" or m.get("version")!="1.2.0-ru.19":
-              raise SystemExit("Invalid Foundry manifest")
-          pathlib.Path("system.json").write_text(json.dumps(m,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
-          info=obj["buildinfo"]
-          info["version"]="1.2.0-ru.19"
-          info["build_version"]="1.2.0-ru.19"
-          pathlib.Path("BUILD-INFO.json").write_text(json.dumps(info,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
-          for name,expected in obj["expected_sha256"].items():
-              path=pathlib.PurePosixPath(name)
-              if path.is_absolute() or ".." in path.parts or not name:
-                  raise SystemExit("Invalid archive filename "+name)
-              file=pathlib.Path(name)
-              if not file.is_file():
-                  raise SystemExit("Missing file "+name)
-              got=hashlib.sha256(file.read_bytes()).hexdigest()
-              if got!=expected:
-                  raise SystemExit("File content mismatch "+name)
-          print("All",len(obj["expected_sha256"]),"release files match source ru.19")
-          PY
+          rsync -a --exclude='.github/' --exclude='incoming/' "$STAGING/vtm-v20/" ./
           node --test tests/*.test.mjs
           python3 - <<'PY'
           import json,pathlib
-          p=pathlib.Path("system.json")
-          m=json.loads(p.read_text(encoding="utf8"))
-          m["url"]="https://github.com/Somnamibulism/Blood-Onyx-V20"
-          m["manifest"]="https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json"
-          m["download"]="https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.19/blood-onyx-v20-ru19.zip"
-          p.write_text(json.dumps(m,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
+          repo='https://github.com/Somnamibulism/Blood-Onyx-V20'
+          for path in (pathlib.Path('system.json'),pathlib.Path('BUILD-INFO.json')):
+              data=json.loads(path.read_text(encoding='utf8'))
+              if path.name=='system.json':
+                  data['url']=repo
+                  data['manifest']='https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json'
+                  data['download']=repo+'/releases/download/v1.2.0-ru.19/blood-onyx-v20-ru19.zip'
+              else:
+                  data['version']='1.2.0-ru.19'
+                  data['build_version']='1.2.0-ru.19'
+              path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
           PY
-          export BLOOD_ASSET="$RUNNER_TEMP/$ASSET"
+          export ASSET_FILE="$RUNNER_TEMP/$ASSET"
           python3 - <<'PY'
-          import json,os,pathlib,zipfile
-          payload=json.loads(pathlib.Path(os.environ["BLOOD_PAYLOAD"]).read_text(encoding="utf8"))
-          items=payload["files"]
-          dirs=payload["dirs"]
-          for name in items+dirs:
-              p=pathlib.PurePosixPath(name)
-              if not name or p.is_absolute() or ".." in p.parts or "\\" in name:
-                  raise SystemExit("Unsafe ZIP member "+name)
-          with zipfile.ZipFile(os.environ["BLOOD_ASSET"],"w",zipfile.ZIP_DEFLATED,compresslevel=6) as z:
-              z.writestr("vtm-v20/","")
-              for folder in sorted(set(dirs)):
-                  z.writestr("vtm-v20/"+folder.rstrip("/")+"/","")
-              for name in items:
-                  p=pathlib.Path(name)
-                  if not p.is_file():
-                      raise SystemExit("Missing source file "+name)
-                  z.write(p,"vtm-v20/"+name)
-          with zipfile.ZipFile(os.environ["BLOOD_ASSET"]) as z:
-              if z.testzip() is not None:
-                  raise SystemExit("Invalid release ZIP")
-          print("Created full ru.19 archive:",os.environ["BLOOD_ASSET"])
+          import os,pathlib,zipfile
+          root=pathlib.Path(os.environ['STAGING'])/'vtm-v20'
+          out=pathlib.Path(os.environ['ASSET_FILE'])
+          with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              z.write(root,'vtm-v20/')
+              for p in sorted(root.rglob('*')):
+                  if p.is_file() and p.name in ('system.json','BUILD-INFO.json') and p.parent==root:
+                      z.write(pathlib.Path(p.name),'vtm-v20/'+p.name)
+                  else:
+                      z.write(p,'vtm-v20/'+p.relative_to(root).as_posix())
+          with zipfile.ZipFile(out) as z:
+              if z.testzip() is not None: raise SystemExit('Release ZIP validation failed')
+          print('Ready:',out.stat().st_size)
           PY
-          git rm -- "$SOURCE"
+          git rm -- "$ZIP"
           git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Release Blood Onyx V20 1.2.0-ru.19"
           git push origin HEAD:main
-          gh release create "$TAG" "$BLOOD_ASSET" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.19" --notes-file CHANGELOG-RU.19.md
-          echo "Successfully published $TAG"
+          gh release create "$TAG" "$ASSET_FILE" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.19" --notes-file CHANGELOG-RU.19.md
