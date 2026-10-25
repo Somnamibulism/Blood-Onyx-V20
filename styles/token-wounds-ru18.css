@@ -1,0 +1,93 @@
+/* Token hover injury status: overlay is informational and never captures input. */
+#vtm-token-wound-tooltip.vtm-token-wound-tooltip {
+  position: fixed;
+  z-index: 100000;
+  width: max-content;
+  max-width: min(290px, calc(100vw - 16px));
+  min-width: 142px;
+  padding: 8px 11px 9px;
+  pointer-events: none;
+  user-select: none;
+  box-sizing: border-box;
+  border: 1px solid rgba(219, 141, 160, .48);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(57, 11, 27, .95), rgba(14, 6, 12, .95));
+  color: #f9eced;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .68), inset 0 1px rgba(255,255,255,.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font: 12px/1.35 'Cinzel', Georgia, serif;
+  letter-spacing: .01em;
+}
+#vtm-token-wound-tooltip .wound-hover-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+#vtm-token-wound-tooltip .wound-hover-indicator {
+  display: block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8cae8a;
+  box-shadow: 0 0 7px currentColor;
+}
+#vtm-token-wound-tooltip.severity-bruised .wound-hover-indicator,
+#vtm-token-wound-tooltip.severity-hurt .wound-hover-indicator { background: #e2bf81; }
+#vtm-token-wound-tooltip.severity-injured .wound-hover-indicator,
+#vtm-token-wound-tooltip.severity-wounded .wound-hover-indicator { background: #d88676; }
+#vtm-token-wound-tooltip.severity-mauled .wound-hover-indicator,
+#vtm-token-wound-tooltip.severity-crippled .wound-hover-indicator,
+#vtm-token-wound-tooltip.severity-incapacitated .wound-hover-indicator { background: #ff5279; }
+#vtm-token-wound-tooltip .wound-hover-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 6px;
+  color: #d7bcc3;
+}
+#vtm-token-wound-tooltip .wound-hover-count { color: #fff2f4; font-variant-numeric: tabular-nums; }
+#vtm-token-wound-tooltip .wound-hover-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+#vtm-token-wound-tooltip .wound-hover-box {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(231, 166, 182, .42);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .36);
+}
+#vtm-token-wound-tooltip .wound-hover-box.bashing { background: #cbb271; }
+#vtm-token-wound-tooltip .wound-hover-box.lethal { background: #b63250; }
+#vtm-token-wound-tooltip .wound-hover-box.aggravated { background: #ed5374; border-color: #ffd1df; }
+#vtm-token-wound-tooltip .wound-hover-details {
+  margin-top: 6px;
+  color: #d4b6c0;
+  font: 10px/1.3 Georgia, serif;
+}
+body.vtm-theme-dark-obsidian #vtm-token-wound-tooltip {
+  background: linear-gradient(170deg, rgba(31, 35, 44, .96), rgba(13, 16, 23, .96));
+  border-color: #626777;
+}
+body.vtm-theme-glass-crimson #vtm-token-wound-tooltip {
+  background: linear-gradient(140deg, rgba(105, 25, 52, .55), rgba(27, 7, 17, .72));
+  border-color: rgba(255, 153, 184, .58);
+  box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 1px rgba(255,255,255,.18);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+}
+body.vtm-theme-printed #vtm-token-wound-tooltip {
+  background: #e9e2d6;
+  color: #27221d;
+  border-color: #8d7568;
+}
+body.vtm-theme-printed #vtm-token-wound-tooltip .wound-hover-count,
+body.vtm-theme-printed #vtm-token-wound-tooltip .wound-hover-summary,
+body.vtm-theme-printed #vtm-token-wound-tooltip .wound-hover-details { color: #342b28; }

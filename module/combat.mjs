@@ -1,4 +1,5 @@
 import { renderDamageCard } from './combat-report.mjs';
+import { auditDice, snapshotHealth, healthChangeAudit } from './combat-report.mjs';
 import { pickSceneTarget, applyTargetEffect } from './target-actions.mjs';
 import { canonicalName } from './ru/naming.mjs';
 // Combat resolution: attack rolls, defense choices, damage + soak, auto-apply
@@ -770,6 +771,7 @@ export async function rollAttack(attacker, atk, options = {}) {
     label, sublabel,
     pool, difficulty, isAttack: true,
     dice: res.dice, total: atkTotal, outcome: atkOutcome,
+    diceAudit: auditDice(res.dice, difficulty, { automatic: atkAuto, specialty: specialtyOn }),
     autoSuccesses: atkAuto, autoLabel, diceTotal: res.total,
     canDefend: canDef, targetName: defender?.name,
     poolNote: options.poolNote || '',
@@ -1341,6 +1343,7 @@ export async function rollDefense(msg) {
     label: `${def.label} Defense`, sublabel,
     pool, difficulty, isAttack: false,
     dice: res.dice, total: defTotal, outcome: defOutcome,
+    diceAudit: auditDice(res.dice, difficulty, { automatic: defAutoSuccesses }),
     autoSuccesses: defAutoSuccesses, autoLabel: defAutoLabel, diceTotal: res.total,
     showDamageBtn: hit,
     damageBtnLabel: c.isHold ? 'Apply Hold' : null,
@@ -1406,7 +1409,10 @@ async function resolveDirectDamage(source, target, targetToken, { weaponName, dm
 
   const rawNet = Math.max(dmgTotal - soak.total, 0);
   const net = finalDamageAfterSoak(target, rawNet, dt);
-  if (net > 0) await applyHealthDamage(target, net, dt, { source, token: targetToken });
+  const beforeHealth = snapshotHealth(target);
+  const remoteHealth = !game.user.isGM && target.isOwner === false;
+  const damageAcknowledgement = net > 0 ? await applyHealthDamage(target, net, dt, { source, token: targetToken }) : null;
+  const healthAudit = healthChangeAudit({ before: beforeHealth, after: snapshotHealth(target), requested: net, remote: remoteHealth, acknowledgement: damageAcknowledgement });
   await checkIncapacitated(target, {source, token: targetToken});
   const threshold = dazeThreshold(target);
   const dazed = rawNet > 0 && rawNet > threshold;
@@ -1418,7 +1424,7 @@ async function resolveDirectDamage(source, target, targetToken, { weaponName, dm
     i.type === 'armor' && i.system.equipped && i.system.rating > 0 && dmgTotal >= i.system.rating * 2);
   if (broken.length) {
     const names = broken.map(i => i.name).join(' and ');
-    armorDestroyedNotice = `${names} destroyed! ${dmgTotal} damage successes reached twice the armor's rating.`;
+    armorDestroyedNotice = `Броня (${names}) разрушена: ${dmgTotal} успехов урона не меньше удвоенного рейтинга брони.`;
   }
 
   const html = await renderDamageCard({
@@ -1427,14 +1433,14 @@ async function resolveDirectDamage(source, target, targetToken, { weaponName, dm
     defenderName: target.name, defenderImg: target.img,
     defenderPortraitStyle: portraitStyle(target),
     weaponName, damageType: dt,
-    dmgPool: dp, dmgLabel,
+    dmgPool: dp, dmgDifficulty: 6, dmgLabel,
     dmgDice: dmg.dice, dmgSuccesses: dmgTotal,
     dmgAutoSuccesses: dmgAuto, dmgDiceTotal: dmg.total,
     soakPool: soakData.pool, soakDifficulty: soakData.difficulty, soakLabel: soakData.parts.join(' + '),
     soakDice: soak.dice, soakSuccesses: soak.total, soakSkipped: !soakData.canSoak,
-    netDamage: net, noDamage: net === 0,
+    netDamage: net, noDamage: net === 0, healthAudit,
     damageAdjustment: rawNet !== net ? `Ударный урон вампиру: ${rawNet} ÷ 2 = ${net}, округление вниз.` : null,
-    dazedNotice: dazed ? `${target.name} is dazed (${rawNet} damage successes exceeded ${threshold}).` : null,
+    dazedNotice: dazed ? `${target.name} оглушён: ${rawNet} непоглощённых успехов превысили порог ${threshold}.` : null,
     armorDestroyedNotice,
     condition: getCondition(target),
     penalty: target.system.woundPenalty ? `${target.system.woundPenalty}` : null,
@@ -1899,8 +1905,8 @@ export async function rollDamage(msg) {
     && String(dt).toLowerCase() === 'lethal' && !headShot;
   if (firearmDowngrade) dt = 'bashing';
   const firearmNote = firearmDowngrade
-    ? 'Gunfire is bashing against Kindred.'
-    : (c.isFirearm && defender.type === 'vampire' && headShot ? 'Head shot: bullets stay lethal.' : null);
+    ? 'Пули наносят вампирам ударный урон.'
+    : (c.isFirearm && defender.type === 'vampire' && headShot ? 'Попадание в голову: пули сохраняют летальный урон.' : null);
   const damageType = String(dt).toLowerCase();
 
   // Disarm: the damage roll is measured against the target's effective
@@ -1929,7 +1935,7 @@ export async function rollDamage(msg) {
       defenderPortraitStyle: portraitStyle(defender),
       weaponName: c.weaponName, damageType: '',
       compared: true, automaticHit: c.automaticHit === true, attackSuccesses: c.attackSuccesses, defenseSuccesses: c.defenseSuccesses || 0, netSuccesses: c.netSuccesses, defenseLabel: c.defenseLabel || 'Без защиты',
-      dmgPool: dp, dmgLabel: dLabel,
+      dmgPool: dp, dmgDifficulty: 6, dmgLabel: dLabel,
       dmgDice: dmg.dice, dmgSuccesses: dmgTotal,
       dmgAutoSuccesses: dmgAuto, dmgDiceTotal,
       soakSkipped: true, soakLabel: `Effective Strength ${targetStr}`,
@@ -1989,12 +1995,20 @@ export async function rollDamage(msg) {
   const kissCanResist = kissPenetrated && defender.type === 'vampire';
   const threshold = dazeThreshold(defender);
   let dazed = false;
+  const beforeHealth = snapshotHealth(defender);
+  const remoteHealth = !game.user.isGM && defender.isOwner === false;
+  let damageAcknowledgement = null;
   if (!kissMode) {
-    if (net > 0) await applyHealthDamage(defender, net, dt, { source: attacker, token: defenderToken });
+    if (net > 0) damageAcknowledgement = await applyHealthDamage(defender, net, dt, { source: attacker, token: defenderToken });
     await checkIncapacitated(defender, {source: attacker, token: defenderToken});
     dazed = rawNet > 0 && rawNet > threshold;
     if (dazed && !isDazed(defenderToken, defender)) await applyDazed(defender, {source: attacker, token: defenderToken});
   }
+
+  const healthAudit = healthChangeAudit({
+    before: beforeHealth, after: snapshotHealth(defender), requested: kissMode ? 0 : net,
+    remote: remoteHealth, acknowledgement: damageAcknowledgement,
+  });
 
   // Bone Quills: melee attackers take their Str in lethal unless they scored 3+ attack successes
   let quillsNotice = null;
@@ -2004,9 +2018,9 @@ export async function rollDamage(msg) {
     if (atkSucc < 3) {
       const atkStr = effectiveStrength(attacker);
       await applyHealthDamage(attacker, atkStr, 'lethal');
-      quillsNotice = `Bone Quills: ${attacker.name} takes ${atkStr} lethal (Str) from defensive quills.`;
+      quillsNotice = `Костяные шипы: ${attacker.name} получает ${atkStr} летального урона (Сила) от защитных шипов.`;
     } else {
-      quillsNotice = `Bone Quills: ${attacker.name} scored 3+ attack successes, avoids quill damage.`;
+      quillsNotice = `Костяные шипы: ${attacker.name} набрал 3+ успеха атаки и избежал шипов.`;
     }
   }
 
@@ -2019,7 +2033,7 @@ export async function rollDamage(msg) {
       i.type === 'armor' && i.system.equipped && i.system.rating > 0 && dmgTotal >= i.system.rating * 2);
     if (broken.length) {
       const names = broken.map(i => i.name).join(' and ');
-      armorDestroyedNotice = `${names} destroyed! ${dmgTotal} damage successes reached twice the armor's rating.`;
+      armorDestroyedNotice = `Броня (${names}) разрушена: ${dmgTotal} успехов урона не меньше удвоенного рейтинга брони.`;
     }
   }
 
@@ -2067,14 +2081,14 @@ export async function rollDamage(msg) {
     defenderPortraitStyle: portraitStyle(defender),
     weaponName: c.weaponName, damageType: dt,
     compared: true, attackSuccesses: c.attackSuccesses, defenseSuccesses: c.defenseSuccesses || 0, netSuccesses: c.netSuccesses, defenseLabel: c.defenseLabel || 'Без защиты',
-    dmgPool: dp, dmgLabel,
+    dmgPool: dp, dmgDifficulty: 6, dmgLabel,
     dmgDice: dmg.dice, dmgSuccesses: dmgTotal,
     dmgAutoSuccesses: dmgAuto, dmgDiceTotal,
     soakPool: sp, soakDifficulty: soakData.difficulty, soakLabel: soakParts.join(' + '),
     soakDice: soak.dice, soakSuccesses: soak.total, soakSkipped: !soakData.canSoak,
-    netDamage: net, noDamage: net === 0,
+    netDamage: net, noDamage: net === 0, healthAudit,
     damageAdjustment: rawNet !== net ? `Ударный урон вампиру: ${rawNet} ÷ 2 = ${net}, округление вниз.` : null,
-    dazedNotice: dazed ? `${defender.name} is dazed (${rawNet} damage successes exceeded ${threshold}).` : null,
+    dazedNotice: dazed ? `${defender.name} оглушён: ${rawNet} непоглощённых успехов превысили порог ${threshold}.` : null,
     firearmNote,
     quillsNotice,
     armorDestroyedNotice,

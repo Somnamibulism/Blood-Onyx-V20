@@ -3,6 +3,33 @@
 {{else}}
 <div class="sheet-inner">
 
+{{#if frenzied}}
+<div class="frenzy-banner">
+  <span class="frenzy-title"><span class="frenzy-icon-wrap"><span class="frenzy-banner-icon" style="-webkit-mask-image: url('{{frenzyIcon}}'); mask-image: url('{{frenzyIcon}}');"></span></span> {{frenzyName}}</span>
+  <span class="frenzy-effects">No wound penalties. Dominate against you at +2 difficulty, resisting it at -2. No Willpower rolls needed. Immune to R&ouml;tschreck. {{frenzyWpNote}}{{#if brujahFrenzyNote}} <b>Brujah:</b> may NEVER spend Willpower to avoid frenzy, but may spend 1 Willpower to end the frenzy.{{/if}}</span>
+  {{#if frenzyInstinct}}
+  <button type="button" class="ride-wave-btn"><i class="fas fa-water"></i> Ride the Wave</button>
+  {{/if}}
+  <button type="button" class="end-frenzy-btn"><i class="fas fa-heart-broken"></i> End {{frenzyName}}</button>
+</div>
+{{/if}}
+
+{{!-- TABS --}}
+<nav class="sheet-tabs" data-group="primary">
+  <a class="item" data-tab="overview" aria-label="Общие сведения о персонаже"><i class="fas fa-user-circle"></i> Общее</a>
+  <a class="item" data-tab="stats"><i class="fas fa-chart-bar"></i> Stats</a>
+  {{#if isVampire}}<a class="item" data-tab="powers"><i class="fas fa-fire"></i> Advantages</a>{{/if}}
+  <a class="item" data-tab="status"><i class="fas fa-heartbeat"></i> Status</a>
+  <a class="item" data-tab="combat"><i class="fas fa-fist-raised"></i> Combat</a>
+  <a class="item" data-tab="inventory"><i class="fas fa-suitcase"></i> Inventory</a>
+  <a class="item" data-tab="bio"><i class="fas fa-book"></i> Bio</a>
+</nav>
+
+{{!-- BODY --}}
+<section class="sheet-body">
+
+  {{!-- OVERVIEW: character details, portrait and resources live on their own page. --}}
+  <div class="tab overview" data-group="primary" data-tab="overview">
 {{!-- TOP: portrait + header/status side by side --}}
 <div class="sheet-top">
   <div class="portrait-panel">
@@ -135,36 +162,17 @@
   </div>{{!-- .sheet-top-right --}}
 </div>{{!-- .sheet-top --}}
 
-{{#if frenzied}}
-<div class="frenzy-banner">
-  <span class="frenzy-title"><span class="frenzy-icon-wrap"><span class="frenzy-banner-icon" style="-webkit-mask-image: url('{{frenzyIcon}}'); mask-image: url('{{frenzyIcon}}');"></span></span> {{frenzyName}}</span>
-  <span class="frenzy-effects">No wound penalties. Dominate against you at +2 difficulty, resisting it at -2. No Willpower rolls needed. Immune to R&ouml;tschreck. {{frenzyWpNote}}{{#if brujahFrenzyNote}} <b>Brujah:</b> may NEVER spend Willpower to avoid frenzy, but may spend 1 Willpower to end the frenzy.{{/if}}</span>
-  {{#if frenzyInstinct}}
-  <button type="button" class="ride-wave-btn"><i class="fas fa-water"></i> Ride the Wave</button>
-  {{/if}}
-  <button type="button" class="end-frenzy-btn"><i class="fas fa-heart-broken"></i> End {{frenzyName}}</button>
-</div>
-{{/if}}
 
-{{!-- TABS --}}
-<nav class="sheet-tabs" data-group="primary">
-  <a class="item" data-tab="stats"><i class="fas fa-chart-bar"></i> Stats</a>
-  {{#if isVampire}}<a class="item" data-tab="powers"><i class="fas fa-fire"></i> Advantages</a>{{/if}}
-  <a class="item" data-tab="status"><i class="fas fa-heartbeat"></i> Status</a>
-  <a class="item" data-tab="combat"><i class="fas fa-fist-raised"></i> Combat</a>
-  <a class="item" data-tab="inventory"><i class="fas fa-suitcase"></i> Inventory</a>
-  <a class="item" data-tab="bio"><i class="fas fa-book"></i> Bio</a>
-  <div class="money-section">
+    <div class="ru-overview-footer">
+<div class="money-section">
     <i class="fas fa-dollar-sign money-sign"></i>
     <span class="money-amount">{{moneyDisplay}}</span>
     {{#if isGM}}
     <a class="money-edit" title="Edit Money"><i class="fas fa-pencil-alt"></i></a>
     {{/if}}
   </div>
-</nav>
-
-{{!-- BODY --}}
-<section class="sheet-body">
+    </div>
+  </div>
 
   {{!-- STATS --}}
   <div class="tab stats" data-group="primary" data-tab="stats">
@@ -328,6 +336,15 @@
             {{{vtmDots system.virtues.courage 5}}}
           </div>
         </div>
+
+        {{#if isVampire}}
+        <div class="virtue-auto-hint">
+          <span title="V20: при создании Человечность = Совесть + Самоконтроль, постоянная Воля = Храбрость">V20: Человечность из Совести и Самоконтроля, Воля из Храбрости.</span>
+          <button type="button" class="virtue-recalculate" title="Вернуть исходные значения Воли и Человечности по добродетелям. Потраченная временная Воля не восстанавливается.">
+            <i class="fas fa-calculator"></i> Рассчитать исходные значения
+          </button>
+        </div>
+        {{/if}}
 
         <h3>Merits</h3>
         <details class="ru-library-picker" data-library-kind="merit">
@@ -536,6 +553,18 @@
                 <i class="fas fa-dice-d10"></i> Бросок
               </button>
             </div>
+            {{#if isVampire}}
+            <div class="wp-derivation-row" title="Авто: постоянная Воля зависит от Храбрости и ручной поправки. Ручная: значение задаётся независимо от Храбрости.">
+              <button type="button" class="wp-derivation-toggle" aria-label="Изменить режим расчёта постоянной Воли">
+                {{#if wpManualMode}}<i class="fas fa-unlink"></i> Ручная Воля{{else}}<i class="fas fa-link"></i> Авто + поправка{{/if}}
+              </button>
+              {{#if wpManualMode}}
+                <span class="wp-derivation-note">Нажми для возврата связи с Храбростью</span>
+              {{else}}
+                <span class="wp-derivation-note">Храбрость {{system.virtues.courage}} · поправка {{wpAdjustmentLabel}} · итог {{system.willpower.max}}</span>
+              {{/if}}
+            </div>
+            {{/if}}
             <label>Temporary</label>
             <div class="wp-temp-row">
               <div class="wp-track" data-path="system.willpower.value" aria-label="Временная Воля: 10 делений">

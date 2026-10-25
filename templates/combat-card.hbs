@@ -30,6 +30,12 @@
   </div>
   {{/unless}}
 
+  {{#if diceAudit}}
+  <section class="vtm-dice-audit" aria-label="Подробный расчёт броска">
+    <strong>Проверка броска:</strong> {{diceAudit.breakdown}}.
+  </section>
+  {{/if}}
+
   {{#if compared}}
   <div class="vtm-chronicle-report" aria-label="Сравнение атаки и защиты">
     <div class="vtm-report-title">Проверка попадания</div>

@@ -1308,3 +1308,29 @@
   border:1px solid var(--vtm-border);border-radius:8px;background:var(--vtm-surface);
   color:var(--vtm-text);font-size:11px;cursor:pointer}
 .vtm-library-repair:hover{border-color:var(--vtm-red);color:var(--vtm-text-bright)}
+
+/* ru.14: detailed audit stays legible at the Foundry chat sidebar width. */
+.vtm-roll .vtm-audit-participants {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;
+  padding: 5px 8px; margin: 4px 0 6px;
+  background: color-mix(in srgb, var(--vtm-surface, #21131a) 82%, transparent);
+  border: 1px solid var(--vtm-border, #613a48); border-radius: 6px;
+  color: var(--vtm-text, #e9dce0); font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.vtm-roll .vtm-audit-participants > strong { color: var(--vtm-text-bright, #fff); }
+.vtm-roll .vtm-audit-participants > span { color: var(--vtm-text-dim, #c3aeb4); }
+.vtm-roll .vtm-dice-audit {
+  margin-top: 5px; padding: 7px 8px;
+  border-left: 2px solid var(--vtm-red, #c41e3a);
+  border-radius: 3px; background: var(--vtm-surface, #201118);
+  color: var(--vtm-text, #e9dce0); font-size: 11px;
+  line-height: 1.5; overflow-wrap: anywhere;
+}
+.vtm-roll .vtm-chronicle-report .vtm-report-step {
+  display: block; padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--vtm-border, #633244) 50%, transparent);
+  font-size: 11px; line-height: 1.5;
+}
+.vtm-roll .vtm-chronicle-report .vtm-report-step strong { display: inline; margin-right: 3px; }
+.vtm-roll .vtm-chronicle-report .vtm-report-step:last-of-type { border-bottom: none; }

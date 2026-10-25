@@ -1,4 +1,5 @@
 import { VTM } from './config.mjs';
+import { initialRatings } from './virtue-derivation.mjs';
 import { TRAIT_DESCRIPTIONS } from './trait-descriptions.mjs';
 import { clanOptions, clanDisciplinesFor } from './clan-weaknesses.mjs';
 import { displayName, canonicalName } from './ru/naming.mjs';
@@ -105,6 +106,9 @@ export class ChargenWizard {
       ctx.bgRemaining = this._itemPool('bg');
       ctx.virtueRemaining = this._virtuePool();
       ctx.virtueLabels = d.virtueLabels;
+      const starting = initialRatings(d.virtues);
+      ctx.baseHumanity = starting.humanity;
+      ctx.baseWillpower = starting.willpower;
       ctx.discEntries = d.disc.map((entry,idx) => ({
         ...entry, idx, displayName: displayName(entry.name),
         guides: Array.from({length:5},(_,level) => ({
@@ -643,6 +647,12 @@ export class ChargenWizard {
         this._refreshDots(dot.closest('.virtue-dots'), next);
         const counter = el.querySelector('.virtue-pool-count');
         if (counter) counter.textContent = VIRTUE_POOL - otherSpent - (next - 1);
+        // Show V20 starting ratings immediately instead of only on the final step.
+        const ratings = initialRatings(v);
+        const humanity = el.querySelector('.chargen-base-humanity');
+        const willpower = el.querySelector('.chargen-base-willpower');
+        if (humanity) humanity.textContent = ratings.humanity;
+        if (willpower) willpower.textContent = ratings.willpower;
       });
     });
   }

@@ -1,3 +1,4 @@
+import { registerWoundTokenHover } from './module/token-wounds.mjs';
 import { canonicalName } from './module/ru/naming.mjs';
 import './module/onyx-dice.mjs';
 import './module/ru/ui.mjs';
@@ -306,6 +307,15 @@ Hooks.once('init', () => {
   registerCompendiumSettings();
   registerAuthenticSettings();
 
+  game.settings.register('vtm-v20', 'tokenWoundTooltip', {
+    name: 'Состояние здоровья при наведении на токен',
+    hint: 'Показывать степень ранения по V20. Точные клетки и виды повреждений видны только ведущему и владельцу персонажа.',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   // A manual repair action is useful on hosted worlds where pack initialization
   // was interrupted. It never deletes previously created/edited entries.
   Hooks.on('renderCompendiumDirectory', (app, html) => {
@@ -538,6 +548,7 @@ Hooks.once('ready', () => {
   bindCombatSocketHandlers();
   bindTargetEffectSockets();
   bindInitiativeSocketHandlers();
+  registerWoundTokenHover();
 
   // One-time: token bars bound to blood switch to the movement rate
   if (game.user.isGM && !game.settings.get('vtm-v20', 'movementBarMigrated')) {
@@ -960,6 +971,7 @@ Hooks.on('updateItem', async (item, changes, options, userId) => {
 // Willpower spend chat notification
 Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
   if (userId !== game.user.id) return;
+  if (options?.vtmVirtueAutoSync) return; // Permanent rating adjustment is not Willpower spending.
   const newWp = foundry.utils.getProperty(changes, 'system.willpower.value');
   if (newWp === undefined) return;
   const oldWp = actor.system.willpower.value;

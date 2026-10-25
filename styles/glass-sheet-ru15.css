@@ -1,0 +1,94 @@
+/* Blood Onyx ru.15: true translucent character sheet in Glass Crimson.
+   Loaded AFTER blood-onyx-compact.css. No structural changes to the sheet. */
+
+/* Foundry V13 apps themselves can have an opaque backing layer. Clear that
+   layer only for the vampire system when Glass Crimson is selected. */
+body.vtm-theme-glass-crimson .vtm-v20.sheet.window-app,
+body.vtm-theme-glass-crimson .vtm-v20.sheet.actor,
+body.vtm-theme-glass-crimson .vtm-v20.sheet.item {
+  background: rgba(16, 5, 12, 0.18) !important;
+  background-color: rgba(16, 5, 12, 0.18) !important;
+  border-color: rgba(255, 167, 193, 0.33) !important;
+  box-shadow: 0 20px 55px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.09), inset 0 1px 0 rgba(255,255,255,0.09) !important;
+}
+
+body.vtm-theme-glass-crimson .vtm-v20.sheet .window-header,
+body.vtm-theme-glass-crimson .vtm-v20.sheet .window-content,
+body.vtm-theme-glass-crimson .vtm-v20.sheet .sheet-inner,
+body.vtm-theme-glass-crimson .vtm-v20.sheet .sheet-body,
+body.vtm-theme-glass-crimson .vtm-v20.sheet .sheet-top-right,
+body.vtm-theme-glass-crimson .vtm-v20.sheet .tab {
+  background: transparent !important;
+}
+
+/* Backdrop gets a real glass pane: opacity here is deliberately below 0.5.
+   Avoid a mostly-opaque 0.98 overlay, which hid the tabletop in ru.14. */
+body.vtm-theme-glass-crimson .vtm-v20.sheet .window-content {
+  background-image: linear-gradient(155deg, rgba(85, 24, 48, 0.37), rgba(19, 8, 17, 0.36) 64%, rgba(54, 15, 31, 0.32)) !important;
+  background-color: rgba(17, 7, 16, 0.13) !important;
+  backdrop-filter: blur(16px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(145%) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,0.07);
+}
+
+body.vtm-theme-glass-crimson .vtm-v20.sheet .window-header {
+  background-image: linear-gradient(110deg, rgba(112, 24, 54, 0.48), rgba(26, 9, 22, 0.43)) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+}
+
+/* Individual control panels are still legible. None is a solid fill. */
+body.vtm-theme-glass-crimson .vtm-v20.sheet :is(
+  .sheet-header, .portrait-panel, .status-block, .section-block,
+  .trait-column, .item-list, .path-block, .health-track,
+  .ru-library-picker, .combat-drawer, .combat-box, .attack-row,
+  .ru-combat-hint, .money-section, .sheet-tabs .item,
+  .decl-attack-list, .decl-actions, .res-actions
+) {
+  background: linear-gradient(165deg, rgba(118, 39, 67, 0.24), rgba(29, 8, 21, 0.24)) !important;
+  border-color: rgba(247, 162, 188, 0.27) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,0.08), 0 3px 12px rgba(0,0,0,0.07) !important;
+}
+body.vtm-theme-glass-crimson .vtm-v20.sheet .sheet-tabs {
+  background: transparent !important;
+}
+body.vtm-theme-glass-crimson .vtm-v20.sheet :is(input,select,textarea,button) {
+  background: linear-gradient(180deg, rgba(85, 27, 49, 0.24), rgba(23, 9, 19, 0.29)) !important;
+  border-color: rgba(250, 177, 199, 0.26) !important;
+  color: #fff1f5;
+}
+body.vtm-theme-glass-crimson .vtm-v20.sheet input.char-name,
+body.vtm-theme-glass-crimson .vtm-v20.sheet .char-name input {
+  background: transparent !important;
+}
+body.vtm-theme-glass-crimson .vtm-v20.sheet .trait-row:hover {
+  background: rgba(224, 100, 140, 0.13) !important;
+}
+/* Explicitly scoped to glass to keep Blood Onyx, Dark Obsidian and Printed untouched. */
+
+/* Related sheet UX, all themes. */
+.vtm-v20.sheet .virtue-auto-hint {
+  display:flex; align-items:center; flex-wrap:wrap; gap:5px;
+  margin: 7px 2px; font-size: 10px; line-height: 1.4;
+  color: var(--vtm-text-dim);
+}
+.vtm-v20.sheet .virtue-recalculate {
+  width: auto; min-height: 24px; padding: 2px 7px;
+  border: 1px solid var(--vtm-border); border-radius: 6px;
+  background: var(--vtm-surface); color: var(--vtm-text);
+  cursor: pointer; font-size: 10px;
+}
+.vtm-v20.sheet .virtue-recalculate:hover { border-color: var(--vtm-red); }
+.vtm-v20 .chargen-virtue-preview {
+  margin: 9px 3px 0; padding: 8px 10px; border-radius: 8px;
+  display:flex; flex-wrap:wrap; gap:12px;
+  font-size: 12px; color: var(--vtm-text-bright);
+  background: var(--vtm-surface); border: 1px solid var(--vtm-border);
+}
+.vtm-v20 .chargen-virtue-preview b { color: var(--vtm-gold); }
+
+/* ru.16: manual/automatic Willpower controls remain legible in every theme. */
+.vtm-v20.sheet .wp-derivation-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:2px 0 6px; min-width:0; }
+.vtm-v20.sheet .wp-derivation-toggle { width:auto; flex:0 0 auto; font-size:11px; padding:4px 9px; border-radius:8px; border:1px solid var(--vtm-border); background:var(--vtm-surface); color:var(--vtm-text); cursor:pointer; }
+.vtm-v20.sheet .wp-derivation-toggle:hover { border-color:var(--vtm-red); }
+.vtm-v20.sheet .wp-derivation-note { color:var(--vtm-text-dim); font-size:11px; line-height:1.35; }

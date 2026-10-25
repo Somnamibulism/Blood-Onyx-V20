@@ -1,4 +1,5 @@
 import { renderDamageCard } from './combat-report.mjs';
+import { snapshotHealth, healthChangeAudit, auditDice } from './combat-report.mjs';
 import { canonicalName, displayName, russianDocument } from './ru/naming.mjs';
 import { DISCIPLINES, BACKGROUNDS, WEAPONS, ARMOR, MERITS, FLAWS } from './compendiums.mjs';
 import { PATHS } from './paths-data.mjs';
@@ -9,6 +10,7 @@ import { VTM } from './config.mjs';
 import { showDice, promptRollAdjust, gearPenalty } from './dice.mjs';
 import { TRAIT_DESCRIPTIONS } from './trait-descriptions.mjs';
 import { ChargenWizard } from './chargen.mjs';
+import { updatesForVirtueClick, recalculateAllVirtues, manuallySetWillpower, toggleWillpowerMode } from './virtue-derivation.mjs';
 import { applyHealthDamage, checkIncapacitated, computeSoakPool, finalDamageAfterSoak, getCondition, clinchInflictDamage, clinchEscape, holdEscape, standUp } from './combat.mjs';
 import { blindedDifficulty, hasStatus, statusIconVisibility, FRENZY_STATUS_ID, ROTSCHRECK_STATUS_ID } from './status-effects.mjs';
 import { archetypeInfo } from './archetypes-data.mjs';
@@ -160,7 +162,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     sheet: { template: "systems/vtm-v20/templates/vampire-sheet.hbs" }
   };
 
-  _tab = "stats";
+  _tab = "overview";
   _compactMode = false;
   _fullSize = null;
   _chargen = null;
@@ -813,6 +815,10 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     ctx.demeanorInfo = archetypeAuthentic(sys.demeanor) || archetypeInfo(sys.demeanor);
     ctx.clanInfo = this.document.type === 'vampire' ? (clanItemInfo(sys.clan) || clanAuthentic(sys.clan) || clanWeaknessInfo(sys.clan)) : null;
     ctx.humanityTip = this.document.type === 'vampire' && sys.pathName === 'Humanity';
+    ctx.wpManualMode = actor.getFlag('vtm-v20', 'virtueManualWillpower') === true;
+    ctx.wpAdjustment = Number(actor.getFlag('vtm-v20', 'virtueWillpowerAdjustment')) || 0;
+    ctx.wpAdjustmentLabel = ctx.wpAdjustment > 0 ? `+${ctx.wpAdjustment}` : `${ctx.wpAdjustment}`;
+    ctx.humanityManualMode = actor.getFlag('vtm-v20', 'virtueManualHumanity') === true;
     ctx.bloodPerTurn = sys.bloodPerTurn || 1;
     ctx.traitMax = sys.traitMax || 5;
     ctx.woundPenalty = sys.rawWoundPenalty || sys.woundPenalty || 0;
@@ -1024,6 +1030,21 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Bio pages work for all users (editing gated inside the method)
     this._setupBioPages(el);
 
+    // Every section is a separate page inside the SAME Foundry sheet window.
+    // Navigation must work on read-only sheets as well as editable ones.
+    el.querySelectorAll('.sheet-tabs .item[data-tab]').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === this._tab);
+      tab.addEventListener('click', ev => {
+        ev.preventDefault();
+        if (this._tab === tab.dataset.tab) return;
+        this._tab = tab.dataset.tab;
+        this._syncTabs({ resetScroll: true });
+      });
+    });
+    el.querySelectorAll('.sheet-body > .tab').forEach(p =>
+      p.classList.toggle('active', p.dataset.tab === this._tab));
+    el.querySelector('.sheet-body')?.classList.toggle('bio-active', this._tab === 'bio');
+
     if (!this.isEditable) return;
 
     const canEdit = game.user.isGM || !locked;
@@ -1031,19 +1052,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // seeding finishes. When a pack is available we import its real document
     // instead, preserving its GM customizations.
     if (canEdit) this._bindInlineLibraries(el);
-
-    // Tabs
-    el.querySelectorAll('.sheet-tabs .item[data-tab]').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.tab === this._tab);
-      tab.addEventListener('click', ev => {
-        ev.preventDefault();
-        this._tab = tab.dataset.tab;
-        this._syncTabs();
-      });
-    });
-    el.querySelectorAll('.sheet-body > .tab').forEach(p =>
-      p.classList.toggle('active', p.dataset.tab === this._tab));
-    el.querySelector('.sheet-body')?.classList.toggle('bio-active', this._tab === 'bio');
 
     // Path selector remains usable by actor owners in the locked sheet.
     // A dedicated update avoids competing native auto-save and ensures the bearing refreshes.
@@ -1092,9 +1100,22 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (path === 'system.attributes.appearance' && this.document.system.clan?.toLowerCase() === 'nosferatu') return;
           const cur = foundry.utils.getProperty(this.document, path);
           const next = val === cur ? val - 1 : val;
-          if (path === 'system.willpower.max') {
-            this.document.update({ [path]: next,
-              'system.willpower.value': Math.min(this.document.system.willpower.value, next) });
+          if (path.startsWith('system.virtues.')) {
+            const field = path.slice('system.virtues.'.length);
+            this.document.update(updatesForVirtueClick(this.document.system, field, next, {
+              willpower: this.document.getFlag('vtm-v20', 'virtueManualWillpower') === true,
+              humanity: this.document.getFlag('vtm-v20', 'virtueManualHumanity') === true,
+              willpowerAdjustment: this.document.getFlag('vtm-v20', 'virtueWillpowerAdjustment') ?? 0,
+            }), { vtmVirtueAutoSync: true });
+          } else if (path === 'system.willpower.max') {
+            // In AUTO mode dot edits become a persistent adjustment to Courage.
+            // In MANUAL mode the rating remains independent of later Courage changes.
+            this.document.update(manuallySetWillpower(this.document.system, next,
+              this.document.getFlag('vtm-v20', 'virtueManualWillpower') === true
+            ), { vtmVirtueAutoSync: true });
+          } else if (path === 'system.humanity') {
+            // Manual morality changes after play starts must survive later virtue edits.
+            this.document.update({ [path]: next, 'flags.vtm-v20.virtueManualHumanity': true });
           } else {
             this.document.update({ [path]: next });
           }
@@ -1111,6 +1132,15 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         });
       });
     }
+
+    if (canEdit) el.querySelector('.wp-derivation-toggle')?.addEventListener('click', async () => {
+      const manual = this.document.getFlag('vtm-v20', 'virtueManualWillpower') === true;
+      await this.document.update(toggleWillpowerMode(this.document.system, manual), { vtmVirtueAutoSync: true });
+    });
+
+    if (canEdit) el.querySelector('.virtue-recalculate')?.addEventListener('click', async () => {
+      await this.document.update(recalculateAllVirtues(this.document.system), { vtmVirtueAutoSync: true });
+    });
 
     // Tongue of the Asp skill prompt (one-time when Serpentis reaches lvl 2)
     const serpItem = this.document.items.find(i => i.type === 'discipline' && canonicalName(i.name).toLowerCase() === 'serpentis');
@@ -1727,13 +1757,15 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this._setupTraitTips(el);
   }
 
-  _syncTabs() {
+  _syncTabs({ resetScroll = false } = {}) {
     const el = this.element;
     el.querySelectorAll('.sheet-tabs .item[data-tab]').forEach(t =>
       t.classList.toggle('active', t.dataset.tab === this._tab));
     el.querySelectorAll('.sheet-body > .tab').forEach(t =>
       t.classList.toggle('active', t.dataset.tab === this._tab));
-    el.querySelector('.sheet-body')?.classList.toggle('bio-active', this._tab === 'bio');
+    const body = el.querySelector('.sheet-body');
+    body?.classList.toggle('bio-active', this._tab === 'bio');
+    if (resetScroll && body) body.scrollTop = 0;
 
     // Combat drawer stays visible on any tab during active declaration/resolution
     const onCombat = this._tab === 'combat';
@@ -4735,7 +4767,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const roll = new Roll(`${Math.max(pool, 1)}d10`);
     await roll.evaluate();
     const { dice, total, outcome } = this._tallyDice(roll, difficulty);
-    await this._emitRollCard(actor, { roll, label, pool, difficulty, dice, total, outcome });
+    const checked = auditDice(dice, difficulty);
+    const extra = `${actor.name}: самостоятельное поглощение (${parts.join(' + ')}); ${checked?.breakdown || 'нет кубиков'}. Бросок не наносит и не списывает урон автоматически.`;
+    await this._emitRollCard(actor, { roll, label, pool, difficulty, dice, total, outcome, extra });
   }
 
 
@@ -5807,7 +5841,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Mortals cannot soak lethal: the current simply cooks them
     if (actor.type === 'mortal') {
+      const healthBefore = snapshotHealth(actor);
       await applyHealthDamage(actor, incoming, dmgType);
+      const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: incoming });
       await checkIncapacitated(actor);
       const cond = getCondition(actor);
       const chatHtml = await renderDamageCard({
@@ -5821,6 +5857,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         soakPool: 0, soakLabel: 'Mortal cannot soak lethal damage',
         soakDice: [], soakSuccesses: 0, soakSkipped: true,
         netDamage: incoming, noDamage: false,
+      healthAudit,
         damageAdjustment: cond === 'Incapacitated' ? 'Incapacitated by electricity: possible permanent damage (Storyteller).' : null,
         condition: cond, penalty: actor.system.woundPenalty ? `${actor.system.woundPenalty}` : null,
       });
@@ -5849,7 +5886,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const soaked = botched ? 0 : total;
 
     const net = Math.max(incoming - soaked, 0);
+    const healthBefore = snapshotHealth(actor);
     if (net > 0) await applyHealthDamage(actor, net, dmgType);
+    const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: net });
     await checkIncapacitated(actor);
     const cond = getCondition(actor);
 
@@ -5868,6 +5907,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       soakPool: pool, soakDifficulty: soakDiff, soakLabel: soakParts.join(' + '),
       soakDice: dice, soakSuccesses: soaked, soakSkipped: false,
       netDamage: net, noDamage: net === 0,
+      healthAudit,
       damageAdjustment: botched ? 'Soak botched: the current fries blood and brain, the damage is aggravated.' : null,
       condition: cond, penalty: actor.system.woundPenalty ? `${actor.system.woundPenalty}` : null,
     });
@@ -5967,7 +6007,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     const net = Math.max(incoming - soaked, 0);
+    const healthBefore = snapshotHealth(actor);
     if (net > 0) await applyHealthDamage(actor, net, dmgType);
+    const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: net });
     await checkIncapacitated(actor);
     const cond = getCondition(actor);
 
@@ -5989,6 +6031,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       soakPool: fortLevel, soakDifficulty: heat.diff, soakLabel,
       soakDice, soakSuccesses: soaked, soakSkipped,
       netDamage: net, noDamage: net === 0,
+      healthAudit,
       damageAdjustment: scarNote,
       condition: cond, penalty: actor.system.woundPenalty ? `${actor.system.woundPenalty}` : null,
     });
@@ -6503,7 +6546,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     const net = Math.max(incoming - soaked, 0);
+    const healthBefore = snapshotHealth(actor);
     if (net > 0) await applyHealthDamage(actor, net, dmgType);
+    const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: net });
     await checkIncapacitated(actor);
     const cond = getCondition(actor);
 
@@ -6518,6 +6563,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       soakPool: fortLevel, soakDifficulty: intensity.diff, soakLabel,
       soakDice, soakSuccesses: soaked, soakSkipped,
       netDamage: net, noDamage: net === 0,
+      healthAudit,
       damageAdjustment: setite ? 'Followers of Set: sunlight deals two additional health levels.' : null,
       condition: cond, penalty: actor.system.woundPenalty ? `${actor.system.woundPenalty}` : null,
     });
@@ -6581,7 +6627,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     if (actor.type === 'mortal' && dmgType === 'lethal') {
+      const healthBefore = snapshotHealth(actor);
       await applyHealthDamage(actor, total, dmgType);
+      const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: total });
       await checkIncapacitated(actor);
       const cond = getCondition(actor);
       const pen = actor.system.woundPenalty || 0;
@@ -6596,6 +6644,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         soakPool: 0, soakLabel: 'Mortal cannot soak lethal damage',
         soakDice: [], soakSuccesses: 0, soakSkipped: true,
         netDamage: total, noDamage: total === 0,
+      healthAudit,
         damageAdjustment: null,
         condition: cond, penalty: pen ? `${pen}` : null,
       });
@@ -6635,7 +6684,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const actor = this.document;
     if (actor.type === 'mortal' && String(fallData.dmgType || '').toLowerCase() === 'lethal') {
       const net = Math.max(Number(fallData.dmgTotal) || 0, 0);
+      const healthBefore = snapshotHealth(actor);
       if (net > 0) await applyHealthDamage(actor, net, fallData.dmgType);
+      const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: net });
       await checkIncapacitated(actor);
 
       const cond = getCondition(actor);
@@ -6658,6 +6709,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         soakPool: 0, soakLabel: 'Mortal cannot soak lethal damage',
         soakDice: [], soakSuccesses: 0, soakSkipped: true,
         netDamage: net, noDamage: net === 0,
+      healthAudit,
         damageAdjustment: null,
         condition: cond, penalty: pen ? `${pen}` : null,
       });
@@ -6687,7 +6739,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const rawNet = Math.max(fallData.dmgTotal - soaked, 0);
     const net = finalDamageAfterSoak(actor, rawNet, fallData.dmgType);
+    const healthBefore = snapshotHealth(actor);
     if (net > 0) await applyHealthDamage(actor, net, fallData.dmgType);
+    const healthAudit = healthChangeAudit({ before: healthBefore, after: snapshotHealth(actor), requested: net });
     await checkIncapacitated(actor);
 
     const cond = getCondition(actor);
@@ -6715,6 +6769,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       soakPool: pool, soakDifficulty: fallSoakDiff, soakLabel: soakParts.join(' + '),
       soakDice: dice, soakSuccesses: soaked,
       netDamage: net, noDamage: net === 0,
+      healthAudit,
       damageAdjustment: rawNet !== net ? `Vampire bashing damage halved: ${rawNet} to ${net}.` : null,
       condition: cond, penalty: pen ? `${pen}` : null,
     });

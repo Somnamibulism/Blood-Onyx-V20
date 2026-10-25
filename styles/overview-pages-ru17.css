@@ -1,0 +1,75 @@
+/* Blood Onyx ru.17 — full-height pages, one Foundry actor window. */
+.vtm-v20.sheet.actor.vampire .sheet-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+/* Tabs stay visible; content below uses all remaining height. */
+.vtm-v20.sheet.actor.vampire .sheet-tabs {
+  flex: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: stretch;
+  margin: 0 0 3px;
+}
+.vtm-v20.sheet.actor.vampire .sheet-tabs > .item {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+.vtm-v20.sheet.actor.vampire .sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 4px;
+}
+/* The original header and resource tracks are now just one tab's content. */
+.vtm-v20.sheet.actor.vampire .sheet-body > .tab.overview {
+  min-height: 0;
+  width: 100%;
+  padding: 0 2px 12px;
+  box-sizing: border-box;
+}
+.vtm-v20.sheet.actor.vampire .tab.overview .sheet-top {
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+.vtm-v20.sheet.actor.vampire .tab.overview .sheet-top-right { min-width: 0; }
+.vtm-v20.sheet.actor.vampire .tab.overview .portrait-panel { flex-shrink: 0; }
+.vtm-v20.sheet.actor.vampire .ru-overview-footer {
+  padding: 10px 2px 2px;
+  display: flex;
+  align-items: center;
+}
+.vtm-v20.sheet.actor.vampire .ru-overview-footer .money-section {
+  margin: 0;
+  width: auto;
+  min-width: 135px;
+  justify-content: center;
+}
+@media (max-width: 810px) {
+  .vtm-v20.sheet.actor.vampire .sheet-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .vtm-v20.sheet.actor.vampire .sheet-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+/* Also adapt when the Foundry window, not the browser viewport, is narrow. */
+@supports (container-type: inline-size) {
+  .vtm-v20.sheet.actor.vampire .sheet-inner { container-type: inline-size; }
+  @container (max-width: 810px) {
+    .sheet-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  }
+  @container (max-width: 600px) {
+    .sheet-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  }
+}

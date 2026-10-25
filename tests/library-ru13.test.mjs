@@ -8,7 +8,7 @@ const root=dirname(dirname(fileURLToPath(import.meta.url)));
 const read=(f)=>readFileSync(join(root,f),'utf8');
 test('Переключение тем ru.12 и импорт новых библиотек остаются в сборке',()=>{
  const system=JSON.parse(read('system.json'));
- assert.equal(system.version,'1.2.0-ru.13');
+ assert.ok(Number(system.version.split('ru.').at(-1)) >= 13, system.version);
  assert.deepEqual(['equipment','containers','v5lore'].map(name => system.packs.find(p=>p.name===name).type),['Item','Item','Item']);
  for(const name of ['Dark Obsidian','Glass Crimson'])assert.ok(read('vtm-v20.mjs').includes(name));
 });

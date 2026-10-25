@@ -1,8 +1,8 @@
 {
   "id": "vtm-v20",
   "title": "Vampire V20 — русская сборка · Blood Onyx Luxe",
-  "description": "V20 русская сборка: восстановление компендиумов при запуске мастера, встроенный каталог с поиском и добавлением, готовые предметы, дополнительные сюжетные материалы V5 без подмены механик.",
-  "version": "1.2.0-ru.13",
+  "description": "Русская система V20 для Foundry 13: отдельные страницы листа, сменные темы, боевые журналы и состояние ранений при наведении на токен.",
+  "version": "1.2.0-ru.18",
   "compatibility": {
     "minimum": "13",
     "maximum": "13"
@@ -22,7 +22,10 @@
   "styles": [
     "styles/vtm-v20.css",
     "styles/russian.css",
-    "styles/blood-onyx-compact.css"
+    "styles/blood-onyx-compact.css",
+    "styles/overview-pages-ru17.css",
+    "styles/token-wounds-ru18.css",
+    "styles/glass-sheet-ru15.css"
   ],
   "languages": [
     {
@@ -139,5 +142,5 @@
   "secondaryTokenAttribute": "blood",
   "socket": true,
   "manifest": "https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json",
-  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.13/blood-onyx-v20-ru13.zip"
+  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.18/blood-onyx-v20-ru18.zip"
 }

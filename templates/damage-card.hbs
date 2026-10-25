@@ -12,6 +12,7 @@
     </div>
   </div>
 
+  <div class="vtm-audit-participants"><strong>{{attackerName}}</strong> <span>атакует</span> <strong>{{defenderName}}</strong></div>
   <div class="combat-damage-section">
     <div class="damage-row">
       <span class="damage-header"><i class="fas fa-crosshairs"></i> Урон ({{dmgLabel}}), пул {{dmgPool}}{{#if dmgDifficulty}}, сложность {{dmgDifficulty}}{{/if}}</span>
@@ -26,7 +27,7 @@
     <div class="damage-row">
       {{#if soakSkipped}}
       <span class="damage-header"><i class="fas fa-shield-alt"></i> Поглощение ({{soakLabel}})</span>
-      <span class="damage-subtotal">Без броска поглощения</span>
+      <span class="damage-subtotal">{{defenderName}}: без броска поглощения</span>
       {{else}}
       <span class="damage-header"><i class="fas fa-shield-alt"></i> Поглощение ({{soakLabel}}), пул {{soakPool}}{{#if soakDifficulty}}, сложность {{soakDifficulty}}{{/if}}</span>
       <div class="roll-dice">
@@ -34,14 +35,14 @@
         <span class="die {{this.status}}">{{this.value}}</span>
         {{/each}}
       </div>
-      <span class="damage-subtotal">Поглощено: {{soakSuccesses}}</span>
+      <span class="damage-subtotal">{{defenderName}}: {{soakSuccesses}} успехов поглощения</span>
       {{/if}}
     </div>
   </div>
 
   {{#if detailedReport}}
   <section class="vtm-chronicle-report" aria-label="Подробности нанесения урона">
-    <div class="vtm-report-title"><i class="fas fa-scroll"></i> Ход расчета</div>
+    <div class="vtm-report-title"><i class="fas fa-scroll"></i> Журнал боя: подробный расчёт</div>
     {{#each detailedReport.steps}}
     <div class="vtm-report-step"><strong>{{this.label}}:</strong> <span>{{this.text}}</span></div>
     {{/each}}
