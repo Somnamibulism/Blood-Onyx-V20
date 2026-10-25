@@ -65,7 +65,7 @@ jobs:
               if actual!=digest and name=='CHANGELOG-RU.26.md':
                   # The published ru.26 notes contain an additional Blood Buff section.
                   # Verify the exact original source prefix, then preserve the notes.
-                  original=content.split('## Управление Blood Buff'.encode('utf-8'),1)[0]
+                  original=content.split('## Управление Blood Buff'.encode('utf-8'),1)[0].rstrip(b'\n')+b'\n'
                   if hashlib.sha256(original).hexdigest()==digest:
                       actual=digest
               if actual!=digest:
