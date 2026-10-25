@@ -63,6 +63,8 @@ jobs:
           m=json.loads(file.read_text(encoding="utf8"))
           if m.get("version")!="1.2.0-ru.18" or m.get("id")!="vtm-v20":
               raise SystemExit("Wrong system ID or version")
+          import subprocess
+          subprocess.run(["node","--test",*(str(p.relative_to(root)) for p in sorted((root/"tests").glob("*.test.mjs")))],cwd=root,check=True)
           m["url"]="https://github.com/Somnamibulism/Blood-Onyx-V20"
           m["manifest"]="https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json"
           m["download"]="https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.18/blood-onyx-v20-ru18.zip"
@@ -72,7 +74,6 @@ jobs:
           PY
           rsync -a --exclude='.github/' --exclude='incoming/' "$STAGING/vtm-v20/" ./
           mkdir -p packs/equipment packs/containers packs/v5lore
-          node --test tests/*.test.mjs
           export RELEASE_ZIP="$RUNNER_TEMP/$ASSET"
           python3 - <<'PY'
           import os,pathlib,zipfile
