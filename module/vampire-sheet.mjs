@@ -124,9 +124,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     window: {
       resizable: true,
       controls: [
-        { icon: "fas fa-magic", label: "Создание персонажа", action: "toggleChargen" },
-        { icon: "fas fa-file-export", label: "Экспорт листа", action: "exportSheet" },
-        { icon: "fas fa-heart-circle-plus", label: "Уровни здоровья", action: "manageHealth" },
+        { icon: "fas fa-user", label: "Создание персонажа", action: "toggleChargen" },
+        { icon: "fas fa-download", label: "Экспорт листа", action: "exportSheet" },
+        { icon: "fas fa-heart", label: "Уровни здоровья", action: "manageHealth" },
       ]
     },
     form: { submitOnChange: true },
@@ -4848,6 +4848,15 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this._syncBloodBuffDrawer();
     });
     h2.appendChild(btn);
+    if (hasAnyBuff && canEdit) {
+      const clearButton = document.createElement('button');
+      clearButton.type = 'button';
+      clearButton.className = 'blood-buff-clear';
+      clearButton.textContent = 'Снять усиление';
+      clearButton.title = 'Снять все временные усиления физических атрибутов без возврата потраченной крови';
+      clearButton.addEventListener('click', () => this._bloodBuffClear());
+      h2.appendChild(clearButton);
+    }
 
     // Close drawer if we entered declaration
     if (inDecl && this._bloodBuffOpen) {
@@ -4932,7 +4941,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       <div class="blood-buff-drawer-header">
         <i class="fas fa-tint"></i> Усиление атрибутов кровью
       </div>
-      <p class="blood-buff-explain">Каждая «+» тратит 1 пункт крови и добавляет 1 точку к выбранному физическому атрибуту. «−» снимает усиление, но потраченную кровь не возвращает. Лимит: ${sys.bloodPerTurn || 1} крови за ход.</p>
+      <p class="blood-buff-explain">Каждая «+» тратит 1 пункт крови и добавляет 1 точку к выбранному физическому атрибуту. «−» снимает одну временную точку. «Снять всё» сбрасывает все усиления без возврата потраченной крови. Лимит: ${sys.bloodPerTurn || 1} крови за ход.</p>
+      <button type="button" class="blood-buff-clear-all" ${physAttrs.some(attr => Number(buffs[attr]) > 0) ? '' : 'disabled'}>Снять всё</button>
       ${physAttrs.map(attr => {
         const base = sys.attributes[attr] || 0;
         const buff = buffs[attr] || 0;
@@ -4961,6 +4971,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     drawer.querySelectorAll('.bb-minus').forEach(btn => {
       btn.addEventListener('click', () => this._bloodBuffRemove(btn.dataset.attr));
     });
+    drawer.querySelector('.blood-buff-clear-all')?.addEventListener('click', () => this._bloodBuffClear());
   }
 
   _syncBloodBudgetPanel() {
@@ -5066,6 +5077,21 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (buffs[attr] <= 0) updates[`flags.vtm-v20.bloodBuffs.-=${attr}`] = null;
     else updates[`flags.vtm-v20.bloodBuffs.${attr}`] = buffs[attr];
     await actor.update(updates);
+  }
+
+  async _bloodBuffClear() {
+    const actor = this.document;
+    if (!actor.isOwner) return;
+    const buffs = actor.getFlag('vtm-v20', 'bloodBuffs') || {};
+    const decay = actor.getFlag('vtm-v20', 'bloodBuffDecay') || {};
+    if (!Object.values(buffs).some(value => Number(value) > 0) && !Object.keys(decay).length) return;
+
+    // One actor update clears all temporary enhancements and decay timestamps.
+    // Permanent attributes, remaining blood, and turn budget remain unchanged.
+    await actor.update({
+      'flags.vtm-v20.-=bloodBuffs': null,
+      'flags.vtm-v20.-=bloodBuffDecay': null,
+    });
   }
 
   // -- Healing with blood --------------------------------------------------

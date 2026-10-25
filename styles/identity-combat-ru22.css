@@ -40,3 +40,18 @@ body.vtm-theme-glass-crimson .vtm-v20.sheet .ru-persistent-identity,body.vtm-the
   padding:4px 8px; margin:0 3px; font-size:11px; align-self:center;
 }
 .vtm-v20.sheet.actor.vampire .ru-identity-initiative i {font-size:12px;}
+
+/* ru.26: manually clear all temporary Blood Buff bonuses. */
+.vtm-v20.sheet.actor.vampire .blood-buff-clear,
+.vtm-v20.sheet.actor.vampire .blood-buff-clear-all {
+  display:inline-flex;align-items:center;justify-content:center;
+  width:auto;min-width:0;max-width:100%;min-height:24px;
+  padding:3px 8px;margin-left:5px;border-radius:5px;
+  border:1px solid var(--vtm-red-dim,#873c50);
+  background:rgba(79,15,32,.45);color:var(--vtm-text,#e9d7d5);
+  font-size:11px;line-height:1.25;cursor:pointer;
+}
+.vtm-v20.sheet.actor.vampire .blood-buff-clear:hover,
+.vtm-v20.sheet.actor.vampire .blood-buff-clear-all:hover {border-color:var(--vtm-gold,#ceb88e);color:var(--vtm-gold,#ceb88e);}
+.vtm-v20.sheet.actor.vampire .blood-buff-clear-all {margin:1px 0 5px;width:100%;}
+.vtm-v20.sheet.actor.vampire .blood-buff-clear-all:disabled {opacity:.4;cursor:default;}

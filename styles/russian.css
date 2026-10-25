@@ -1,9 +1,32 @@
 @font-face{font-family:V20Cyrillic;src:url('../fonts/DejaVuSerif.ttf')}
 .vtm-v20{font-family:V20Cyrillic,Georgia,serif;--font-primary:V20Cyrillic;--font-h1:V20Cyrillic;--font-h2:V20Cyrillic;--font-h3:V20Cyrillic;}
-.vtm-v20 :is(h1,h2,h3,h4,label,button,select,input,.item-name,.tab-button,.sheet-tabs a){font-family:V20Cyrillic,Georgia,serif!important;}
+/* Never set the text font on a control rendered as a Font Awesome glyph.
+   Foundry V13 renders ApplicationV2 header controls as icon-class buttons.
+   Giving those buttons a text font produces the hollow-square "missing glyph". */
+.vtm-v20 :is(h1,h2,h3,h4,label,select,input,.item-name,.tab-button,.sheet-tabs a),
+.vtm-v20 button:not([class*="fa-"]):not(.fas):not(.far):not(.fab):not(.fal):not(.fad) {
+  font-family: V20Cyrillic, Georgia, serif !important;
+}
 .vtm-v20 .sheet-tabs{flex-wrap:wrap;gap:4px}.vtm-v20 .sheet-tabs a{font-size:12px;padding:6px}.vtm-v20 .ru-sect-row{display:flex;align-items:center;gap:12px;margin:0 0 8px;color:#c9b783}.vtm-v20 .ru-sect-row select{width:180px}.vtm-v20 .ru-sect-row span{margin-left:auto;font-size:10px;opacity:.6}.vtm-v20 .header-row{gap:8px}.vtm-v20 .field label{font-size:10px}.vtm-v20 .trait-label{letter-spacing:0}.vtm-v20 .arch-pop{font-family:V20Cyrillic,Georgia,serif;text-transform:none;letter-spacing:0;min-width:260px;}
 
-.vtm-v20 :not(i):not(svg):not([class*="fa-"]):not(.fas):not(.far):not(.fab){font-family:V20Cyrillic,Georgia,serif!important;}
+/* The former universal :not(i) rule forced a text font on icon-only
+   <button class="fa-solid ..."> and broke icons all over the sheet.
+   Text inherits V20Cyrillic from .vtm-v20, so the rule is unnecessary. */
+/* Explicitly reserve Foundry's Font Awesome font for real icon elements,
+   even in theme variants which style buttons more aggressively. */
+.vtm-v20 :is(.fa,.fas,.far,.fal,.fad,.fab,.fat,.fa-solid,.fa-regular,.fa-light,.fa-thin,.fa-duotone,.fa-brands,.fa-sharp-solid),
+.vtm-v20 .window-header :is(button,a)[class*="fa-"] {
+  font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+}
+.vtm-v20 :is(.fa,.fas,.fa-solid,.fa-sharp-solid),
+.vtm-v20 .window-header :is(button,a)[class*="fa-"] {
+  font-weight: 900 !important;
+}
+.vtm-v20 :is(.far,.fa-regular) { font-weight: 400 !important; }
+.vtm-v20 :is(.fal,.fa-light) { font-weight: 300 !important; }
+.vtm-v20 :is(.fat,.fa-thin) { font-weight: 100 !important; }
+.vtm-v20 :is(.fab,.fa-brands) { font-family: "Font Awesome 6 Brands" !important; font-weight: 400 !important; }
+
 
 
 /* Встроенная анимация бросков: визуальные d10 без дополнительного модуля. */

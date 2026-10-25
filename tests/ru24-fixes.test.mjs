@@ -13,7 +13,7 @@ test('Штатные иконки Foundry: нет глобального SVG-о�
   assert.doesNotMatch(boot, /registerGlobalUiIconPatcher|\.vtm-ui-svg|UI_ICON_PATHS/);
   assert.doesNotMatch(sheet, /_syncWindowControlIcons|vtm-control-svg/);
   assert.doesNotMatch(css, /vtm-control-svg|vtm-control-icon-ready/);
-  assert.match(sheet, /icon: "fas fa-file-export"/);
+  assert.match(sheet, /icon: "fas fa-download"/);
 });
 
 test('Каталог распознает малый и большой пистолет-пулемет и их автоматический огонь', () => {
