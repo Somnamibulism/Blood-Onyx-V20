@@ -77,7 +77,7 @@ jobs:
           manifest['url']='https://github.com/'+repo
           manifest['manifest']='https://raw.githubusercontent.com/'+repo+'/main/system.json'
           manifest['download']='https://github.com/'+repo+'/releases/download/v1.2.0-ru.23/blood-onyx-v20-ru23.zip'
-          manifest_file.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          manifest_file.write_text(json.dumps({k:v for k,v in manifest.items() if k not in ('manifest','download')},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
           # Metadata drives release members, avoiding stray development files.
           pathlib.Path('/tmp/ru23-release.json').write_text(json.dumps(meta),encoding='utf-8')
@@ -88,6 +88,11 @@ jobs:
           python3 - <<'PY'
           import json,pathlib,zipfile
           meta=json.loads(pathlib.Path('/tmp/ru23-release.json').read_text())
+          mf=pathlib.Path('system.json')
+          manifest=json.loads(mf.read_text(encoding='utf-8'))
+          manifest['manifest']='https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json'
+          manifest['download']='https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.23/blood-onyx-v20-ru23.zip'
+          mf.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
           output=pathlib.Path('/tmp/blood-onyx-v20-ru23.zip')
           with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               z.writestr('vtm-v20/','')
