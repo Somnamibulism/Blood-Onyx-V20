@@ -21,7 +21,7 @@ test('Три штатные иконки верхней панели соотв�
 });
 
 test('Порядок CSS в манифесте сохраняет русскую настройку шрифта, совместимость Foundry 13', () => {
-  assert.equal(meta.version,'1.2.0-ru.26');
+  assert.equal(meta.version,'1.2.0-ru.27');
   assert.equal(meta.compatibility.maximum,'13');
   assert.ok(meta.styles.includes('styles/russian.css'));
 });

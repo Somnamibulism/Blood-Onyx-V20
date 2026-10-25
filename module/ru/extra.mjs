@@ -18,6 +18,7 @@ Whip|Кнут
 Chain|Цепь
 Dart|Дротик
 Throwing Knife|Метательный нож
+Molotov Cocktail|Коктейль Молотова
 Spear|Копье
 Semi-Auto, Lt|Легкий пистолет
 Semi-Auto, Hv|Тяжелый пистолет

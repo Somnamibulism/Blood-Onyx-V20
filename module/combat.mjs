@@ -704,6 +704,7 @@ export async function rollAttack(attacker, atk, options = {}) {
         attackSkill: atk.skill || null,
         isRanged: atk.isRanged,
         isFirearm: !!atk.firearm,
+        incendiary: !!atk.incendiary,
         targetingDamageMod: targeting?.damageMod || 0,
         targetingLabel: targeting?.label || null,
         targetingHeadshot: targeting?.headshot || false,
@@ -789,6 +790,7 @@ export async function rollAttack(attacker, atk, options = {}) {
       attackSkill: atk.skill || null,
       isRanged: atk.isRanged,
       isFirearm: !!atk.firearm,
+        incendiary: !!atk.incendiary,
       targetingDamageMod: targeting?.damageMod || 0,
       targetingLabel: targeting?.label || null,
       targetingHeadshot: targeting?.headshot || false,
@@ -1951,17 +1953,17 @@ export async function rollDamage(msg) {
   // Soak roll
   const isAgg = damageType === 'aggravated';
   const isKindred = defender.type === 'vampire';
-  let fireOrSunlight = false;
+  let fireOrSunlight = !!c.incendiary;
 
-  if (isAgg && isKindred && !c.isBite) {
+  if (isAgg && isKindred && !c.isBite && !c.incendiary) {
     fireOrSunlight = await new Promise(resolve => {
       new Dialog({
-        title: 'Aggravated Damage Source',
+        title: 'Источник аггравированного урона',
         content: `<p style="margin:8px 0">Источник урона — <b>огонь или солнечный свет</b>?</p>
           <p style="font-size:11px;color:#999">Обычная броня от такого источника не защищает.</p>`,
         buttons: {
-          yes: { icon: '<i class="fas fa-fire"></i>', label: 'Sunlight / Fire', callback: () => resolve(true) },
-          no: { icon: '<i class="fas fa-paw"></i>', label: 'Teeth / Claws / Other', callback: () => resolve(false) },
+          yes: { icon: '<i class="fas fa-fire"></i>', label: 'Огонь / солнечный свет', callback: () => resolve(true) },
+          no: { icon: '<i class="fas fa-paw"></i>', label: 'Клыки / когти / другое', callback: () => resolve(false) },
         },
         default: 'no',
         close: () => resolve(false),

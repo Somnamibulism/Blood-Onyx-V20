@@ -406,6 +406,13 @@ export const WEAPONS = [
       description: `<p>A balanced knife designed for throwing. Can be thrown hilt-first for bashing (+1 difficulty).</p>` }
   },
   {
+    // V20 house-rule template: simple thrown incendiary attack, no crafting instructions.
+    name: 'Molotov Cocktail', type: 'weapon', img: 'icons/svg/fire.svg',
+    system: { weight: 0.5, thrown: true, incendiary: true, damage: '2', damageType: 'aggravated',
+      difficulty: 6, conceal: 'J', range: '10',
+      description: `<p>Метательное зажигательное оружие. Бросок: Ловкость + Атлетика, базовая сложность 6. Условный игровой урон: 2 кубика аггравированного огнём; для размера пламени, возможного горения в следующих ходах и зоны поражения требуется решение рассказчика. Данная карточка является упрощённым домашним правилом, не инструкцией по изготовлению.</p>` }
+  },
+  {
     name: 'Spear', type: 'weapon', img: 'icons/svg/sword.svg',
     system: { hands: 2, weight: 1.5, damage: 'Str+2', damageType: 'lethal', difficulty: 6, conceal: 'N', range: '',
       requireTrait: 'attributes.strength', requireMin: 2,
@@ -1087,7 +1094,7 @@ const WEAPON_CATEGORIES = [
   {
     name: 'Thrown Weapons', parent: 'Melee Weapons',
     description: `<p>Thrown weapons deal lethal damage unless otherwise noted. They use the same Traits as melee weapons.</p>`,
-    weapons: ['Dart', 'Throwing Knife', 'Spear', 'Cursed Spear']
+    weapons: ['Dart', 'Throwing Knife', 'Molotov Cocktail', 'Spear', 'Cursed Spear']
   },
 
   // Ranged sub-categories
@@ -1249,7 +1256,7 @@ const RITUAL_CATEGORIES = [
   }
 ];
 
-const COMPENDIUM_VERSION = 1300;
+const COMPENDIUM_VERSION = 1301;
 
 export { DISCIPLINES, BACKGROUNDS, MERITS, FLAWS, ARMOR, RITUAL_CATEGORIES };
 

@@ -2,7 +2,7 @@
   "id": "vtm-v20",
   "title": "Vampire V20 — русская сборка · Blood Onyx Luxe",
   "description": "Русская система V20 для Foundry 13: общая компактная шапка, быстрые дальнобойные манёвры, исправленный Blood Buff и прямые проверки.",
-  "version": "1.2.0-ru.26",
+  "version": "1.2.0-ru.27",
   "compatibility": {
     "minimum": "13",
     "maximum": "13"
@@ -144,5 +144,5 @@
   "secondaryTokenAttribute": "blood",
   "socket": true,
   "manifest": "https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json",
-  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.26/blood-onyx-v20-ru26.zip"
+  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.27/blood-onyx-v20-ru27.zip"
 }

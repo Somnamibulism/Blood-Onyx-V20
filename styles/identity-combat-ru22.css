@@ -41,17 +41,56 @@ body.vtm-theme-glass-crimson .vtm-v20.sheet .ru-persistent-identity,body.vtm-the
 }
 .vtm-v20.sheet.actor.vampire .ru-identity-initiative i {font-size:12px;}
 
-/* ru.26: manually clear all temporary Blood Buff bonuses. */
-.vtm-v20.sheet.actor.vampire .blood-buff-clear,
-.vtm-v20.sheet.actor.vampire .blood-buff-clear-all {
-  display:inline-flex;align-items:center;justify-content:center;
-  width:auto;min-width:0;max-width:100%;min-height:24px;
-  padding:3px 8px;margin-left:5px;border-radius:5px;
-  border:1px solid var(--vtm-red-dim,#873c50);
-  background:rgba(79,15,32,.45);color:var(--vtm-text,#e9d7d5);
-  font-size:11px;line-height:1.25;cursor:pointer;
+
+/* ru.27: short flexible identity bar. Do not reserve a phantom 7th grid
+   column for a long Initiative button or an empty entire grid row. */
+.vtm-v20.sheet.actor.vampire .ru-persistent-identity {
+  display:flex; flex-wrap:wrap; align-items:center; align-content:flex-start;
+  gap:4px 9px; padding:5px 7px; margin:0 2px 4px;
+  min-width:0; width:calc(100% - 4px); height:auto; max-height:none;
+  grid-template-columns:none;
 }
-.vtm-v20.sheet.actor.vampire .blood-buff-clear:hover,
-.vtm-v20.sheet.actor.vampire .blood-buff-clear-all:hover {border-color:var(--vtm-gold,#ceb88e);color:var(--vtm-gold,#ceb88e);}
-.vtm-v20.sheet.actor.vampire .blood-buff-clear-all {margin:1px 0 5px;width:100%;}
-.vtm-v20.sheet.actor.vampire .blood-buff-clear-all:disabled {opacity:.4;cursor:default;}
+.vtm-v20.sheet.actor.vampire .ru-identity-portrait {
+  width:30px; height:32px; flex:0 0 30px;
+}
+.vtm-v20.sheet.actor.vampire .ru-identity-name {
+  flex:1.25 1 110px; max-width:100%; min-width:60px;
+  font-size:12px; line-height:1.15;
+}
+.vtm-v20.sheet.actor.vampire .ru-identity-field {
+  flex:1 1 80px; max-width:100%; min-width:65px;
+  font-size:10px; gap:0; line-height:1.15;
+}
+.vtm-v20.sheet.actor.vampire .ru-identity-field span {font-size:8px;}
+.vtm-v20.sheet.actor.vampire .ru-identity-field strong {font-size:10px;}
+.vtm-v20.sheet.actor.vampire .ru-identity-vitals {
+  display:flex; flex:1 0 100%; width:100%; min-width:0;
+  flex-wrap:wrap; justify-content:flex-start; align-items:center;
+  column-gap:12px; row-gap:3px;
+  grid-column:auto; font-size:10px; line-height:1.2;
+  white-space:normal;
+}
+.vtm-v20.sheet.actor.vampire .ru-identity-vitals > span {white-space:nowrap;}
+.vtm-v20.sheet.actor.vampire .ru-roll-initiative.ru-identity-initiative {
+  flex:0 1 auto; max-width:100%; min-width:0; width:auto;
+  margin:0; padding:3px 7px; font-size:10px; min-height:23px;
+  white-space:nowrap; line-height:1.1;
+}
+.vtm-v20.sheet.actor.vampire .ru-identity-more {
+  flex:1 0 100%; width:100%; min-width:0;
+  grid-column:auto; max-height:none; overflow:visible;
+  gap:3px 12px; padding:0; margin:0;
+}
+.vtm-v20.sheet.actor.vampire .ru-identity-more:empty {display:none;}
+.vtm-v20.sheet.actor.vampire .ru-identity-more > span {
+  max-width:calc(50% - 8px); min-width:0;
+}
+@media(max-width:630px) {
+  .vtm-v20.sheet.actor.vampire .ru-persistent-identity {
+    display:flex; flex-wrap:wrap; grid-template-columns:none;
+  }
+  .vtm-v20.sheet.actor.vampire .ru-identity-field:not(.ru-gen-field),
+  .vtm-v20.sheet.actor.vampire .ru-identity-vitals {
+    grid-column:auto;
+  }
+}

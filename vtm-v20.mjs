@@ -464,6 +464,10 @@ Hooks.once('init', () => {
     default: false,
   });
 
+  game.settings.register('vtm-v20', 'tokenNamesSynced27', {
+    scope: 'world', config: false, type: Boolean, default: false,
+  });
+
   game.settings.register('vtm-v20', 'movementBarMigrated', {
     scope: 'world',
     config: false,
@@ -554,25 +558,80 @@ Hooks.once('init', () => {
   ]);
 });
 
-async function ensureTokenNamesVisible() {
+// Token labels and combatant names are independent of Actor.name in Foundry.
+// A one-time migration fixes pre-existing scenes; the update hook below keeps
+// new renames synchronized. Do not touch scenes when an ordinary player logs in.
+async function synchronizeWorldActorNames() {
   if (!game.user?.isGM) return;
   const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
   const actorUpdates = [];
   for (const actor of game.actors ?? []) {
-    const current = Number(actor.prototypeToken?.displayName ?? -1);
-    if (current !== ALWAYS) actorUpdates.push({ _id: actor.id, 'prototypeToken.displayName': ALWAYS });
+    const changes = { _id: actor.id };
+    if (actor.prototypeToken?.name !== actor.name) changes['prototypeToken.name'] = actor.name;
+    if (Number(actor.prototypeToken?.displayName ?? -1) !== ALWAYS) changes['prototypeToken.displayName'] = ALWAYS;
+    if (Object.keys(changes).length > 1) actorUpdates.push(changes);
   }
   if (actorUpdates.length) await Actor.updateDocuments(actorUpdates);
 
   for (const scene of game.scenes ?? []) {
     const updates = [];
     for (const token of scene.tokens ?? []) {
-      const current = Number(token.displayName ?? -1);
-      if (current !== ALWAYS) updates.push({ _id: token.id, displayName: ALWAYS });
+      const actor = game.actors.get(token.actorId);
+      const changes = { _id: token.id };
+      if (actor && token.name !== actor.name) changes.name = actor.name;
+      if (Number(token.displayName ?? -1) !== ALWAYS) changes.displayName = ALWAYS;
+      if (Object.keys(changes).length > 1) updates.push(changes);
     }
     if (updates.length) await scene.updateEmbeddedDocuments('Token', updates);
   }
+  for (const combat of game.combats ?? []) {
+    const updates = [];
+    for (const combatant of combat.combatants ?? []) {
+      const actor = game.actors.get(combatant.actorId);
+      if (actor && combatant.name !== actor.name) updates.push({ _id: combatant.id, name: actor.name });
+    }
+    if (updates.length) await combat.updateEmbeddedDocuments('Combatant', updates);
+  }
 }
+
+async function synchronizeActorName(actor, newName) {
+  if (!game.user?.isGM || !newName) return;
+  const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
+  if (actor.isToken) {
+    // Renaming an unlinked synthetic actor must change its own canvas token.
+    const token = actor.token;
+    if (token && (token.name !== newName || token.displayName !== ALWAYS))
+      await token.update({name: newName, displayName: ALWAYS});
+  } else if (actor.prototypeToken?.name !== newName) {
+    await actor.update({ 'prototypeToken.name': newName }, {vtmNameSync: true});
+  }
+  for (const scene of game.scenes ?? []) {
+    const updates = [];
+    for (const token of scene.tokens ?? []) {
+      if (actor.isToken ? token.id !== actor.token?.id || scene.id !== actor.token?.parent?.id
+        : token.actorId !== actor.id) continue;
+      if (token.name !== newName || Number(token.displayName) !== ALWAYS)
+        updates.push({ _id: token.id, name: newName, displayName: ALWAYS });
+    }
+    if (updates.length) await scene.updateEmbeddedDocuments('Token', updates);
+  }
+  for (const combat of game.combats ?? []) {
+    const updates = [];
+    for (const cb of combat.combatants ?? []) {
+      const linked = actor.isToken ? (cb.tokenId === actor.token?.id && cb.parent?.scene?.id === actor.token?.parent?.id)
+        : cb.actorId === actor.id;
+      if (linked && cb.name !== newName) updates.push({ _id: cb.id, name: newName });
+    }
+    if (updates.length) await combat.updateEmbeddedDocuments('Combatant', updates);
+  }
+}
+
+Hooks.on('updateActor', (actor, changes, options) => {
+  if (!Object.hasOwn(changes, 'name') || options?.vtmNameSync) return;
+  if (!game.user?.isGM || (game.users?.activeGM && game.users.activeGM.id !== game.user.id)) return;
+  Promise.resolve(synchronizeActorName(actor, String(actor.name || '').trim()))
+    .catch(err => console.warn('V20 | Не удалось синхронизировать имена токенов', err));
+});
 
 Hooks.on('preCreateActor', (actor, data) => {
   const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
@@ -583,7 +642,12 @@ Hooks.on('preCreateActor', (actor, data) => {
 Hooks.on('preCreateToken', (document, data) => {
   const ALWAYS = CONST?.TOKEN_DISPLAY_MODES?.ALWAYS ?? 40;
   const current = Number(data.displayName ?? document.displayName ?? -1);
-  if (current !== ALWAYS) document.updateSource({ displayName: ALWAYS });
+  const actor = game.actors?.get(data.actorId || document.actorId);
+  const actorName = String(actor?.name || '').trim();
+  const rename = actorName && (data.name || document.name) !== actorName;
+  if (current !== ALWAYS || rename) document.updateSource({
+    displayName: ALWAYS, ...(rename ? {name: actorName} : {}),
+  });
 });
 
 Hooks.once('ready', () => {
@@ -593,13 +657,15 @@ Hooks.once('ready', () => {
   bindInitiativeSocketHandlers();
   registerWoundTokenHover();
 
-  // One-time: show token names on the canvas for easier scene use.
-  if (game.user.isGM && !game.settings.get('vtm-v20', 'tokenNamesVisibleMigrated')) {
+  // One-time migration: keep existing canvas tokens and combat names aligned.
+  if (game.user.isGM && (!game.settings.get('vtm-v20', 'tokenNamesVisibleMigrated')
+      || !game.settings.get('vtm-v20', 'tokenNamesSynced27'))) {
     (async () => {
-      await ensureTokenNamesVisible();
+      await synchronizeWorldActorNames();
       await game.settings.set('vtm-v20', 'tokenNamesVisibleMigrated', true);
-      console.log('VtM V20 | Token names migrated to always visible');
-    })();
+      await game.settings.set('vtm-v20', 'tokenNamesSynced27', true);
+      console.log('VtM V20 | Token and combatant names synchronized');
+    })().catch(err => console.warn('V20 | Token name migration failed', err));
   }
 
   // One-time: token bars bound to blood switch to the movement rate

@@ -95,6 +95,9 @@ export class WeaponData extends foundry.abstract.TypeDataModel {
       // bullets bruise Kindred: firearm damage downgrades to bashing on
       // vampires unless the shot is aimed at the head
       firearm: new f.BooleanField({ initial: false }),
+      // Thrown incendiaries and similar ranged attacks use Dexterity + Athletics.
+      thrown: new f.BooleanField({ initial: false }),
+      incendiary: new f.BooleanField({ initial: false }),
       // set automatically: the second one-handed weapon equipped rides here
       offHand: new f.BooleanField({ initial: false }),
       requireTrait: str(''),

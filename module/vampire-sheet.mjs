@@ -455,7 +455,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       const bookWeapon = WEAPONS.find(ref => canonicalName(ref.name) === canonicalName(w.name));
       const modeData = bookWeapon?.system || {};
       const clawStrike = /^(feral claws|звериные когти|когти зверя|удар когтями)$/i.test(canonicalName(w.name));
-      const skillKey = clawStrike ? 'brawl' : isRanged ? 'firearms' : 'melee';
+      const isThrown = !!w.system.thrown || canonicalName(w.name) === 'Molotov Cocktail';
+      const skillKey = clawStrike ? 'brawl' : isThrown ? 'athletics' : isRanged ? 'firearms' : 'melee';
       const skillVal = effectiveTraitValue(actor, `abilities.${skillKey}`);
       let dmgDisplay = w.system.damage || '0';
       const rawDmg = dmgDisplay.trim().toLowerCase();
@@ -464,7 +465,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
       attacks.push({
         id: w.id, name: clawStrike ? CLOSE_COMBAT_MANEUVER_RULES.claws.name : w.name, img: clawStrike ? 'systems/vtm-v20/assets/ru/combat/claws.svg' : w.img,
-        pool: `Ловкость + ${clawStrike ? 'Драка' : isRanged ? 'Стрельба' : 'Фехтование'} (${dex + skillVal})`,
+        pool: `Ловкость + ${clawStrike ? 'Драка' : isThrown ? 'Атлетика' : isRanged ? 'Стрельба' : 'Фехтование'} (${dex + skillVal})`,
         damage: dmgDisplay,
         damageType: w.system.damageType || 'lethal',
         damageFormula: w.system.damage,
@@ -473,6 +474,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         rate: w.system.rate || modeData.rate || '',
         fullAuto: w.system.fullAuto || modeData.fullAuto || '',
         burst: !!(w.system.burst || modeData.burst), firearm: !!w.system.firearm,
+        thrown: isThrown,
+        incendiary: !!w.system.incendiary || canonicalName(w.name) === 'Molotov Cocktail',
         ammoLabel: ammoLabel(w.system),
         offHand: !!w.system.offHand,
         note: w.system.offHand ? (ctx.ambidextrous ? 'Off hand (Ambidextrous: no penalty)' : 'Off hand: +1 difficulty') : '',
@@ -2132,7 +2135,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Read the equipped gear first. Cached attack lists can be out of date just
     // after equipping items or after a migrated character sheet re-renders.
     const equippedWeapons = [...this.document.items].filter(item =>
-      item.type === 'weapon' && item.system.equipped && (!!item.system.firearm || !!item.system.range));
+      item.type === 'weapon' && item.system.equipped && (!!item.system.firearm || !!item.system.range)
+      && !item.system.thrown && canonicalName(item.name) !== 'Molotov Cocktail');
     if (!equippedWeapons.length) {
       ui.notifications.warn('Нет экипированного стрелкового оружия. Открой «Инвентарь» и проверь отметку «Экипировано» у оружия.');
       return;
@@ -4848,15 +4852,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this._syncBloodBuffDrawer();
     });
     h2.appendChild(btn);
-    if (hasAnyBuff && canEdit) {
-      const clearButton = document.createElement('button');
-      clearButton.type = 'button';
-      clearButton.className = 'blood-buff-clear';
-      clearButton.textContent = 'Снять усиление';
-      clearButton.title = 'Снять все временные усиления физических атрибутов без возврата потраченной крови';
-      clearButton.addEventListener('click', () => this._bloodBuffClear());
-      h2.appendChild(clearButton);
-    }
 
     // Close drawer if we entered declaration
     if (inDecl && this._bloodBuffOpen) {
@@ -4941,8 +4936,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       <div class="blood-buff-drawer-header">
         <i class="fas fa-tint"></i> Усиление атрибутов кровью
       </div>
-      <p class="blood-buff-explain">Каждая «+» тратит 1 пункт крови и добавляет 1 точку к выбранному физическому атрибуту. «−» снимает одну временную точку. «Снять всё» сбрасывает все усиления без возврата потраченной крови. Лимит: ${sys.bloodPerTurn || 1} крови за ход.</p>
-      <button type="button" class="blood-buff-clear-all" ${physAttrs.some(attr => Number(buffs[attr]) > 0) ? '' : 'disabled'}>Снять всё</button>
+      <p class="blood-buff-explain">Каждая «+» тратит 1 пункт крови и добавляет 1 точку к выбранному физическому атрибуту. «−» снимает усиление, но потраченную кровь не возвращает. Лимит: ${sys.bloodPerTurn || 1} крови за ход.</p>
       ${physAttrs.map(attr => {
         const base = sys.attributes[attr] || 0;
         const buff = buffs[attr] || 0;
@@ -4971,7 +4965,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     drawer.querySelectorAll('.bb-minus').forEach(btn => {
       btn.addEventListener('click', () => this._bloodBuffRemove(btn.dataset.attr));
     });
-    drawer.querySelector('.blood-buff-clear-all')?.addEventListener('click', () => this._bloodBuffClear());
   }
 
   _syncBloodBudgetPanel() {
@@ -5077,21 +5070,6 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (buffs[attr] <= 0) updates[`flags.vtm-v20.bloodBuffs.-=${attr}`] = null;
     else updates[`flags.vtm-v20.bloodBuffs.${attr}`] = buffs[attr];
     await actor.update(updates);
-  }
-
-  async _bloodBuffClear() {
-    const actor = this.document;
-    if (!actor.isOwner) return;
-    const buffs = actor.getFlag('vtm-v20', 'bloodBuffs') || {};
-    const decay = actor.getFlag('vtm-v20', 'bloodBuffDecay') || {};
-    if (!Object.values(buffs).some(value => Number(value) > 0) && !Object.keys(decay).length) return;
-
-    // One actor update clears all temporary enhancements and decay timestamps.
-    // Permanent attributes, remaining blood, and turn budget remain unchanged.
-    await actor.update({
-      'flags.vtm-v20.-=bloodBuffs': null,
-      'flags.vtm-v20.-=bloodBuffDecay': null,
-    });
   }
 
   // -- Healing with blood --------------------------------------------------

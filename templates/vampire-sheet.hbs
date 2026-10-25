@@ -24,13 +24,14 @@
   {{/if}}
   <div class="ru-identity-field" title="Натура"><span>Натура</span><strong>{{natureDisplay}}</strong></div>
   <div class="ru-identity-field" title="Маска"><span>Маска</span><strong>{{demeanorDisplay}}</strong></div>
+  <div class="ru-identity-vitals" title="Здоровье, временная Воля и кровь"><button type="button" class="ru-roll-initiative ru-identity-initiative" title="Бросить инициативу V20 и записать результат в трекер боя"><i class="fas fa-dice"></i> Инициатива</button><span><i class="fas fa-heart"></i> {{healthSummary}}</span><span><i class="fas fa-brain"></i> {{system.willpower.value}}/{{system.willpower.max}}</span>{{#if isVampire}}<span><i class="fas fa-tint"></i> {{system.blood.value}}/{{system.blood.max}}</span>{{/if}}</div>
   <div class="ru-identity-more">
     {{#if system.sire}}<span title="Сир: {{system.sire}}">Сир: <b>{{system.sire}}</b></span>{{/if}}
     {{#if system.concept}}<span title="Концепция: {{system.concept}}">Концепция: <b>{{system.concept}}</b></span>{{/if}}
     {{#if system.apparentAge}}<span title="Возраст: {{system.apparentAge}} / {{system.trueAge}}">Возраст: <b>{{system.apparentAge}}{{#if system.trueAge}} / {{system.trueAge}}{{/if}}</b></span>{{/if}}
     {{#if system.chronicle}}<span title="Хроника: {{system.chronicle}}">Хроника: <b>{{system.chronicle}}</b></span>{{/if}}
   </div>
-  <div class="ru-identity-vitals" title="Здоровье, временная Воля и кровь"><button type="button" class="ru-roll-initiative ru-identity-initiative" title="Бросить инициативу V20 и записать результат в трекер боя"><i class="fas fa-dice"></i> Инициатива</button><span><i class="fas fa-heart"></i> {{healthSummary}}</span><span><i class="fas fa-brain"></i> {{system.willpower.value}}/{{system.willpower.max}}</span>{{#if isVampire}}<span><i class="fas fa-tint"></i> {{system.blood.value}}/{{system.blood.max}}</span>{{/if}}</div>
+
 </div>
 
 {{!-- TABS --}}
