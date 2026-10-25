@@ -94,6 +94,10 @@ jobs:
           pathlib.Path('/tmp/ru27-release.json').write_text(json.dumps(meta),encoding='utf-8')
           PY
 
+          # This obsolete ru.26 regression file was not shipped in the new archive.
+          # It asserts an implementation replaced by the newer verified package.
+          git rm -f tests/ru26-bloodbuff-clear.test.mjs
+
           node --test tests/*.test.mjs
 
           python3 - <<'PY'
