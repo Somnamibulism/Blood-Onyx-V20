@@ -1,5 +1,5 @@
 import { canonicalName } from './ru/naming.mjs';
-import { preparePower } from './ru/powers.mjs';
+import { canUsePower, preparePower } from './ru/powers.mjs';
 import { VTM } from './config.mjs';
 import { applyHealthDamage } from './combat.mjs';
 import { DISCIPLINES } from './compendiums.mjs';
@@ -157,7 +157,7 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
     tag: "form",
     classes: ["vtm-v20", "sheet", "item"],
-    position: { width: 540, height: 660 },
+    position: { width: 550, height: 620 },
     window: { resizable: true },
     form: { submitOnChange: true },
     actions: {}
@@ -171,9 +171,9 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
     if (this.document.type === 'discipline' || this.document.type === 'background' || this.document.type === 'path') {
-      this.setPosition({ width: 655, height: 832 });
+      this.setPosition({ width: 580, height: 660 });
     } else if (this.document.type === 'weapon') {
-      this.setPosition({ width: 580, height: 720 });
+      this.setPosition({ width: 560, height: 650 });
     }
   }
 
@@ -194,7 +194,7 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (item.type === 'background') {
       const maxVisible = (item.parent && ctx.system.rating > 0)
         ? ctx.system.rating : 5;
-      ctx.bgLevels = await Promise.all([1, 2, 3, 4, 5].filter(n => n <= maxVisible).map(async n => {
+      ctx.bgLevels = await Promise.all([1, 2, 3, 4, 5].filter(n => n <= maxVisible && !!ctx.system.powers?.[`lvl${n}`]).map(async n => {
         const key = `lvl${n}`;
         const lvl = ctx.system.levels[key];
         return {
@@ -222,13 +222,15 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         { key: 'humanity', label: 'Humanity' },
       ];
 
-      const maxVisible = (item.parent && ctx.system.level > 0)
-        ? ctx.system.level : 5;
+      const maxVisible = item.parent
+        ? Math.min(5, Math.max(0, Number(ctx.system.level) || 0)) : 5;
+      ctx.noLearnedPowers = !!item.parent && maxVisible === 0;
       const disc = canonicalName(item.name).toLowerCase();
 
-      ctx.powerLevels = await Promise.all([1, 2, 3, 4, 5].filter(n => n <= maxVisible).map(async n => {
+      ctx.powerLevels = await Promise.all([1, 2, 3, 4, 5].filter(n => n <= maxVisible && !!ctx.system.powers?.[`lvl${n}`]).map(async n => {
         const key = `lvl${n}`;
-        const power = ctx.system.powers[key];
+        const power = ctx.system.powers?.[key];
+        if (!power) return null;
         const needsActivate = (disc === 'vicissitude' && key === 'lvl3');
         return {
           num: n, key,
@@ -408,6 +410,9 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         const key = btn.dataset.level;
         const actor = this.document.parent;
         if (!actor) { ui.notifications.warn('Предмет должен находиться на листе персонажа.'); return; }
+        if (!canUsePower(actor, this.document, key)) {
+          ui.notifications.warn('Эта способность ещё не изучена.'); return;
+        }
         const picked = await pickSceneTarget({ title: `Цель дисциплины: ${this.document.name}`, allowNone: true });
         if (picked.cancelled) return;
         const prepared = preparePower(actor, this.document, key, picked.actor);
@@ -428,8 +433,11 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     el.querySelectorAll('.power-activate').forEach(btn => {
       btn.addEventListener('click', async () => {
         const key = btn.dataset.level;
-        const power = this.document.system.powers[key];
         const actor = this.document.parent;
+        if (!canUsePower(actor, this.document, key)) {
+          ui.notifications.warn('Эта способность ещё не изучена.'); return;
+        }
+        const power = this.document.system.powers[key];
         if (!actor) {
           ui.notifications.warn('This item must be on a character to activate.');
           return;

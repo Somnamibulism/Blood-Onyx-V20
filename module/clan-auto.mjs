@@ -1,6 +1,7 @@
-/** Automatically attach default in-clan Disciplines after a clan change.
- *  They start at 0 dots: V20 creation requires the player to spend 3 dots.
- *  Existing trained Disciplines are deliberately never deleted or reset.
+/** Synchronize clan Disciplines on an ordinary vampire sheet.
+ *  Old clan-specific Disciplines are removed when the clan changes, even if
+ *  dots were allocated. Shared clan Disciplines retain their dot ratings.
+ *  Explicitly added out-of-clan Disciplines are kept.
  */
 import { VTM } from './config.mjs';
 import { canonicalName } from './ru/naming.mjs';
@@ -12,7 +13,7 @@ const pending = new Set();
 export async function addClanDisciplines(actor, clanName) {
   if (!actor || actor.type !== 'vampire') return [];
   const names = clanDisciplinesFor(canonicalName(clanName), VTM.clanDisciplines);
-  if (!names.length || pending.has(actor.uuid)) return [];
+  if (pending.has(actor.uuid)) return [];
   pending.add(actor.uuid);
   try {
     const current = new Set(actor.items.filter(x => x.type === 'discipline')
@@ -43,6 +44,9 @@ export async function addClanDisciplines(actor, clanName) {
       delete data.folder;
       data.system ||= {};
       data.system.level = 0;
+      data.flags ||= {};
+      data.flags['vtm-v20'] ||= {};
+      data.flags['vtm-v20'].autoClan = true;
       additions.push(data);
     }
     if (additions.length) await actor.createEmbeddedDocuments('Item', additions);
@@ -54,9 +58,33 @@ export async function addClanDisciplines(actor, clanName) {
   } finally { pending.delete(actor.uuid); }
 }
 
+export async function syncClanDisciplines(actor, previousClan, nextClan) {
+  if (!actor || actor.type !== 'vampire' || pending.has(actor.uuid)) return [];
+  const previous = new Set(clanDisciplinesFor(canonicalName(previousClan), VTM.clanDisciplines).map(x => canonicalName(x).toLowerCase()));
+  const next = new Set(clanDisciplinesFor(canonicalName(nextClan), VTM.clanDisciplines).map(x => canonicalName(x).toLowerCase()));
+  const obsolete = Array.from(actor.items).filter(item => {
+    if (item.type !== 'discipline') return false;
+    const id = canonicalName(item.name).toLowerCase();
+    // Marked auto-clan items also need cleanup for custom/edited clan data.
+    return !next.has(id) && (previous.has(id) || item.flags?.['vtm-v20']?.autoClan === true);
+  });
+  if (obsolete.length) await actor.deleteEmbeddedDocuments('Item', obsolete.map(item => item.id || item._id));
+  return addClanDisciplines(actor, nextClan);
+}
+
+Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
+  if (options?.vtmSkipClanAuto || userId !== game.user.id || actor.type !== 'vampire') return;
+  if (typeof (changes?.system?.clan ?? changes?.['system.clan']) !== 'string') return;
+  // Options are shared across pre/update events; no permanent Actor flag.
+  options.vtmPreviousClan = actor.system.clan || '';
+});
+
 Hooks.on('updateActor', async (actor, changes, options, userId) => {
   if (options?.vtmSkipClanAuto || userId !== game.user.id || actor.type !== 'vampire') return;
   const next = changes?.system?.clan ?? changes?.['system.clan'];
-  if (typeof next !== 'string' || !next) return;
-  await addClanDisciplines(actor, next);
+  if (typeof next !== 'string') return;
+  // preUpdateActor captures the previous clan before the Actor changes.
+  const oldClan = options?.vtmPreviousClan;
+  if (typeof oldClan !== 'string' || canonicalName(oldClan) === canonicalName(next)) return;
+  await syncClanDisciplines(actor, oldClan, next);
 });

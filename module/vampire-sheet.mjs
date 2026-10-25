@@ -107,7 +107,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static DEFAULT_OPTIONS = {
     tag: "form",
     classes: ["vtm-v20", "sheet", "actor", "vampire"],
-    position: { width: 1100, height: 920 },
+    position: { width: 980, height: 750 },
     window: {
       resizable: true,
       controls: [
@@ -265,8 +265,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }).filter(entry=>entry.hasGuide);
       return {
         _id:d._id, name:d.name, img:d.img, system:d.system,
-        guides, hasGuides:guides.length>0,
-        activatable:true, active:isDisciplineActive(actor,d.name),
+        guides: guides.filter(entry => entry.learned),
+        hasGuides: guides.some(entry => entry.learned),
+        activatable:Number(d.system.level)>0, active:isDisciplineActive(actor,d.name),
       };
     });
     ctx.backgrounds = items.filter(i => i.type === 'background').sort((a, b) => a.sort - b.sort);
@@ -1272,7 +1273,11 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     });
 
     el.querySelectorAll('.ru-power-open').forEach(btn => {
-      btn.addEventListener('click', () => this.document.items.get(btn.dataset.itemId)?.sheet?.render(true));
+      btn.addEventListener('click', () => {
+        const item = this.document.items.get(btn.dataset.itemId);
+        if (!item || (Number(item.system.level) || 0) < 1) return;
+        item.sheet?.render(true);
+      });
     });
     el.querySelectorAll('.discipline-activate').forEach(btn => {
       btn.addEventListener('click', () => this._toggleDiscipline(btn.dataset.itemId));
@@ -4881,7 +4886,10 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _toggleDiscipline(itemId) {
     const actor = this.document;
     const item = actor.items.get(itemId);
-    if (!item) return;
+    if (!item || (Number(item.system.level) || 0) < 1) {
+      ui.notifications.warn('Для активации нужны изученные точки дисциплины.');
+      return;
+    }
     const key = canonicalName(item.name).toLowerCase();
     const active = actor.getFlag('vtm-v20', 'activeDisciplines') || [];
     const isActive = active.includes(key);

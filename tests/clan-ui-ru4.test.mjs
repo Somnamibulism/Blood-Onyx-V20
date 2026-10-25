@@ -9,7 +9,7 @@ globalThis.game = {
 };
 globalThis.foundry = {utils:{deepClone:structuredClone}};
 const {ChargenWizard} = await import('../module/chargen.mjs');
-const {addClanDisciplines} = await import('../module/clan-auto.mjs');
+const {addClanDisciplines,syncClanDisciplines} = await import('../module/clan-auto.mjs');
 const {VTM} = await import('../module/config.mjs');
 
 function wizard() {
@@ -43,15 +43,30 @@ test('У каитифа нет обязательного набора, но д�
  w.destroy();
 });
 
-test('Смена клана не стирает уже оплаченную дисциплину',()=>{
+test('Смена клана удаляет старые клановые дисциплины, даже с точками',()=>{
  const w=wizard();w._setClan('Toreador');w.d.disc[0].dots=2;
  w._setClan('Brujah');
- assert.ok(w.d.disc.find(x=>x.name==='Auspex' && x.dots===2));
- assert.ok(w.d.disc.find(x=>x.name==='Potence'));
+ assert.equal(w.d.disc.some(x=>x.name==='Auspex'),false);
  assert.equal(w.d.disc.some(x=>x.name==='Presence'),true);
+ assert.deepEqual(w.d.disc.map(x=>x.name),['Celerity','Presence','Potence']);
+ assert.equal(w.d.disc.find(x=>x.name==='Celerity').dots,0);
  w.destroy();
 });
 
+test('Общая дисциплина и вручную выбранная внеклановая сохраняются, freebies не смещаются',()=>{
+ const w=wizard();w._setClan('Toreador');
+ w.d.disc.find(x=>x.name==='Celerity').dots=2;
+ w.d.fb['disc.1']=1;
+ w.step=3;w._addFromCatalog('discipline','Animalism');
+ const manual=w.d.disc.find(x=>x.name==='Animalism');
+ assert.ok(manual && !manual.autoClan);
+ w._setClan('Brujah');
+ assert.equal(w.d.disc.find(x=>x.name==='Celerity').dots,2);
+ assert.ok(w.d.disc.includes(manual));
+ assert.equal(w.d.fb['disc.0'],1);
+ assert.equal(w.d.fb['disc.1'],undefined);
+ w.destroy();
+});
 test('Поиск и выбор всех 14 фактов биографии и 165 достоинств/недостатков',()=>{
  const w=wizard();w._setClan('Toreador');w.step=3;
  assert.equal(w.getData().backgroundCatalog.length,14);
@@ -88,7 +103,9 @@ test('Салюбри: автоподстановка Обеа и отображ�
  assert.deepEqual(w.d.disc.map(x=>x.name),['Auspex','Fortitude','Obeah']);
  w.step=3;const d=w.getData();
  assert.equal(d.salubriCreationHint,true);
- assert.equal(d.discEntries.find(x=>x.name==='Obeah').guides.length,5);
+ assert.equal(d.discEntries.find(x=>x.name==='Obeah').guides.length,0);
+ w.d.disc.find(x=>x.name==='Obeah').dots=2;
+ assert.equal(w.getData().discEntries.find(x=>x.name==='Obeah').guides.length,2);
  assert.equal(d.disciplineCatalog.find(x=>x.name==='Obeah').selected,true);
  w.destroy();
 });
@@ -115,4 +132,23 @@ test('Завершение создания сохраняет три дисци
  assert.equal(disciplines.length,3);
  assert.deepEqual(disciplines.map(x=>x.system.level),[0,0,3]);
  w.destroy();
+});
+
+test('Готовый лист удаляет старые клановые дисциплины, но сохраняет общие и авторские',async()=>{
+ const items=[
+  {id:'a',name:'Прорицание',type:'discipline',system:{level:4}},
+  {id:'c',name:'Стремительность',type:'discipline',system:{level:2}},
+  {id:'p',name:'Присутствие',type:'discipline',system:{level:1}},
+  {id:'o',name:'Анимализм',type:'discipline',system:{level:3}},
+ ];
+ const deleted=[];
+ const a={type:'vampire',uuid:'Actor.switch',items,
+  deleteEmbeddedDocuments:async(_,ids)=>{deleted.push(...ids);for(const id of ids){const pos=items.findIndex(x=>x.id===id);if(pos>=0)items.splice(pos,1);}},
+  createEmbeddedDocuments:async(_,data)=>{items.push(...data);return data;}};
+ await syncClanDisciplines(a,'Toreador','Brujah');
+ assert.deepEqual(deleted.sort(),['a']);
+ assert.equal(items.find(x=>x.name==='Стремительность').system.level,2);
+ assert.equal(items.find(x=>x.name==='Присутствие').system.level,1);
+ assert.equal(items.find(x=>x.name==='Анимализм').system.level,3);
+ assert.ok(items.find(x=>x.name==='Potence'));
 });

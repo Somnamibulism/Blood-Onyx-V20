@@ -40,6 +40,9 @@
   </div>
   {{/if}}
 
+  {{#if noLearnedPowers}}
+  <p class="ru-no-powers">Способности пока не изучены. Добавь точки в дисциплину, чтобы открыть соответствующие уровни.</p>
+  {{/if}}
   <div class="power-list">
     {{#each powerLevels}}
     <div class="power-level {{#unless this.name}}empty-power{{/unless}}">

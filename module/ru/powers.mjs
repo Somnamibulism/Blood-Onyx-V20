@@ -1,7 +1,18 @@
 import { canonicalName } from './naming.mjs';
 import { effectiveTraitValue } from '../discipline-effects.mjs';
+// No player may roll or activate a power beyond the purchased Discipline dots.
+// Check here as well as in the UI: hidden buttons alone are not permission checks.
+export function canUsePower(actor, item, key) {
+  if (!actor || !item || !['discipline', 'path'].includes(item.type)) return false;
+  if (item.parent && item.parent.id !== actor.id) return false;
+  const level = Number(String(key).match(/^lvl([1-5])$/)?.[1]);
+  return Number.isInteger(level) && level >= 1 && level <= Math.min(5, Math.max(0, Number(item.system?.level) || 0))
+    && !!item.system?.powers?.[key];
+}
+
 // Return configuration without mutating a world document or spending resources.
 export function preparePower(actor, item, key, target) {
+  if (!canUsePower(actor, item, key)) return { error: 'Способность не изучена: сначала вложи соответствующее число точек в дисциплину.' };
   const power = {...item.system.powers[key]};
   const discipline = canonicalName(item.name).toLowerCase();
   const currentWP = target?.system.willpower?.value ?? 0;

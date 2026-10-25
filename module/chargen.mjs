@@ -110,7 +110,7 @@ export class ChargenWizard {
         guides: Array.from({length:5},(_,level) => ({
           num: level+1, note: disciplineGuide(canonicalName(entry.name),level+1),
           selected:entry.dots>=level+1,
-        })).filter(x=>x.note),
+        })).filter(x=>x.note && x.selected),
       }));
       const clanDisc = clanDisciplinesFor(d.clan, VTM.clanDisciplines);
       ctx.clanDiscHint = clanDisc?.length ? clanDisc.map(displayName).join(', ') : null;
@@ -302,17 +302,35 @@ export class ChargenWizard {
     return false;
   }
 
-  // Preselect in-clan disciplines without spending starting точки дисциплин.
-  // Preserve manual picks if the player returns from later steps.
+  // When the clan changes, drop its former clan-specific Disciplines.
+  // Keep manual out-of-clan picks and preserve shared clan disciplines.
   _setClan(value) {
     const nextClan = canonicalName(value || '');
     if (this.d.clan === nextClan) return;
-    this.d.clan = nextClan;
+    const previousClan = this.d.clan;
+    const oldClanDisc = new Set(clanDisciplinesFor(previousClan, VTM.clanDisciplines).map(canonicalName));
     const expected = clanDisciplinesFor(nextClan, VTM.clanDisciplines).map(canonicalName);
+    const nextSet = new Set(expected);
     const old = this.d.disc;
-    const kept = old.filter(x => x.dots > 0 || !x.autoClan);
-    // Previously auto-selected, untrained disciplines may be replaced safely.
-    this.d.disc = kept;
+    const removedIndices = new Set();
+    this.d.disc = old.filter((entry, idx) => {
+      const name = canonicalName(entry.name);
+      const remove = !nextSet.has(name) && (oldClanDisc.has(name) || entry.autoClan);
+      if (remove) removedIndices.add(idx);
+      return !remove;
+    });
+    // Freebie investments are index-based. Reindex after deletion so they
+    // cannot silently upgrade a different discipline.
+    const indices = old.map((_, idx) => idx).filter(idx => !removedIndices.has(idx));
+    const fb = {};
+    for (const [key, value] of Object.entries(this.d.fb)) {
+      if (!key.startsWith('disc.')) { fb[key] = value; continue; }
+      const oldIdx = Number(key.slice(5));
+      const newIdx = indices.indexOf(oldIdx);
+      if (newIdx >= 0) fb[`disc.${newIdx}`] = value;
+    }
+    this.d.fb = fb;
+    this.d.clan = nextClan;
     for (const name of expected) {
       if (this.d.disc.some(x => canonicalName(x.name) === name)) continue;
       const source = DISCIPLINES.find(x => x.name === name);
@@ -850,6 +868,9 @@ export class ChargenWizard {
           if (src) {
             const obj = src.toObject();
             obj.system.level = totalDots;
+            obj.flags ||= {};
+            obj.flags['vtm-v20'] ||= {};
+            if (x.autoClan) obj.flags['vtm-v20'].autoClan = true;
             delete obj._id;
             items.push(obj);
             continue;
@@ -859,11 +880,15 @@ export class ChargenWizard {
       if (x.itemData) {
         const obj = foundry.utils.deepClone(x.itemData);
         obj.system.level = totalDots;
+        obj.flags ||= {};
+        obj.flags['vtm-v20'] ||= {};
+        if (x.autoClan) obj.flags['vtm-v20'].autoClan = true;
         delete obj._id;
         items.push(obj);
         continue;
       }
-      items.push({ name: x.name, type: 'discipline', system: { level: totalDots } });
+      items.push({ name: x.name, type: 'discipline', system: { level: totalDots },
+        flags: { 'vtm-v20': { autoClan: !!x.autoClan } } });
     }
     for (let i = 0; i < d.bg.length; i++) {
       const x = d.bg[i];

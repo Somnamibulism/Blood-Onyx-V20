@@ -1016,3 +1016,98 @@
     justify-content: center;
   }
 }
+
+/* ru.10: fixed-size window chrome, scroll only the current content panel. */
+.vtm-v20.sheet.actor.vampire .window-content,
+.vtm-v20.sheet.item .window-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.vtm-v20.sheet.actor.vampire .sheet-inner,
+.vtm-v20.sheet.item .sheet-inner {
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.vtm-v20.sheet.actor.vampire .sheet-body,
+.vtm-v20.sheet.item .sheet-content {
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+.vtm-v20.sheet.actor.vampire .portrait-panel { flex: 0 0 128px; width: 128px; }
+.vtm-v20.sheet.actor.vampire .sheet-inner { gap: 3px; padding: 6px 9px; }
+.vtm-v20.sheet.actor.vampire .sheet-top { gap: 7px; }
+.vtm-v20.sheet.actor.vampire .sheet-header { padding-bottom: 3px; }
+.vtm-v20.sheet.actor.vampire .status-bar { gap: 4px; padding: 3px 0; }
+.vtm-v20.sheet.actor.vampire .sheet-tabs { gap: 4px; grid-template-columns: repeat(6, minmax(0, auto)); }
+.vtm-v20.sheet.actor.vampire .sheet-tabs .item,
+.vtm-v20.sheet.actor.vampire .money-section { min-height: 31px; border-radius: 7px; padding: 4px 8px; font-size: 11px; }
+.vtm-v20.sheet.actor.vampire .section-block { margin-bottom: 7px; padding: 8px 10px; border-radius: 8px; }
+.vtm-v20.sheet.actor.vampire h2 { font-size: 17px; line-height: 1.35; margin-bottom: 7px; padding-bottom: 4px; }
+.vtm-v20.sheet.actor.vampire h3 { font-size: 13px; line-height: 1.4; }
+.vtm-v20.sheet.actor.vampire .trait-columns { gap: 8px; }
+.vtm-v20.sheet.actor.vampire .trait-column { min-width: 0; }
+.vtm-v20.sheet.actor.vampire .trait-row { gap: 5px; min-height: 25px; padding: 3px 5px; }
+.vtm-v20.sheet.actor.vampire .trait-label {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  font-size: 11px;
+}
+.vtm-v20.sheet.actor.vampire .header-row > .field,
+.vtm-v20.sheet.actor.vampire .status-block,
+.vtm-v20.sheet.actor.vampire .item-list .item,
+.vtm-v20.sheet.actor.vampire .card-header,
+.vtm-v20.sheet.actor.vampire .card-actions { min-width: 0; }
+.vtm-v20.sheet.actor.vampire :is(input,select,button) { box-sizing: border-box; }
+.vtm-v20.sheet.actor.vampire .header-row :is(input,select) { min-width: 0; max-width: 100%; }
+.vtm-v20.sheet.actor.vampire .sheet-tabs .item { overflow-wrap: anywhere; text-align: center; white-space: normal; }
+.vtm-v20.sheet.actor.vampire .discipline-guide-list { max-height: 240px; }
+.vtm-v20.sheet.item .sheet-header { padding: 7px 10px; gap: 8px; }
+.vtm-v20.sheet.item .item-portrait { width: 72px; height: 72px; }
+.vtm-v20.sheet.item .sheet-content { padding: 8px 10px; }
+.vtm-v20.sheet.item .power-level { padding: 8px 10px; margin-bottom: 7px; }
+.vtm-v20.sheet.item .power-header { gap: 6px; min-width: 0; }
+.vtm-v20.sheet.item .power-name-input { min-width: 0; overflow: visible; font-size: 12px; height: auto; min-height: 28px; }
+.vtm-v20.sheet.item .power-desc,
+.vtm-v20.sheet.item .power-guide-note,
+.vtm-v20.sheet.item .power-meta,
+.vtm-v20.sheet.item .disc-description { overflow-wrap: anywhere; line-height: 1.45; }
+.vtm-v20.sheet.item .ru-no-powers {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid rgba(196,92,118,.28);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--vtm-text-dim);
+}
+/* Text must wrap instead of vanishing under the onyx frames. */
+.vtm-v20.sheet :is(.item-name,.disc-name,.bg-name,.attack-name,.roll-info,.sheet-body .item,.power-level) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.vtm-v20.sheet :is(.power-list,.power-level,.power-desc,.discipline-guide,.discipline-guide-list) { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 1040px) {
+  .vtm-v20.sheet.actor.vampire .sheet-tabs { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .vtm-v20.sheet.actor.vampire .money-section { margin: 0; }
+}
+@media (max-width: 750px) {
+  .vtm-v20.sheet.actor.vampire .trait-columns { grid-template-columns: 1fr 1fr; }
+  .vtm-v20.sheet.actor.vampire .header-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .vtm-v20.sheet.actor.vampire .portrait-panel { flex: 0 0 110px; width: 110px; }
+}
+@media (max-width: 540px) {
+  .vtm-v20.sheet.actor.vampire .trait-columns { grid-template-columns: 1fr; }
+  .vtm-v20.sheet.actor.vampire .sheet-top { flex-direction: column; }
+  .vtm-v20.sheet.actor.vampire .portrait-panel { display: none; }
+  .vtm-v20.sheet.actor.vampire .sheet-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}

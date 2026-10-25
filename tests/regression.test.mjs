@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {computeSoakPool,finalDamageAfterSoak,applyHealthDamage} from '../module/combat.mjs';
 import {effectiveTraitValue,potenceAutoSuccesses,disciplineLevel} from '../module/discipline-effects.mjs';
-import {preparePower} from '../module/ru/powers.mjs';
+import {preparePower, canUsePower} from '../module/ru/powers.mjs';
 import {catalogs,clanDocuments} from '../module/ru/content.mjs';
 import {canonicalName,displayName,russianDocument} from '../module/ru/naming.mjs';
 import {VTM} from '../module/config.mjs';
@@ -44,7 +44,7 @@ test('Русские названия дисциплин работают в р�
 test('Активное Могущество не дает одновременно кубики и успехи',()=>{const a=actor({items:[{name:'Могущество',type:'discipline',system:{level:3}}],flags:{activeDisciplines:['potence']}});assert.equal(effectiveTraitValue(a,'attributes.strength'),2);assert.equal(potenceAutoSuccesses(a),3);});
 test('Стремительность уменьшает пассивный бонус на купленные действия',()=>{const a=actor({items:[{name:'Стремительность',type:'discipline',system:{level:4}}],flags:{celerityRawActions:2}});assert.equal(effectiveTraitValue(a,'attributes.dexterity'),5);});
 test('Нельзя получить отрицательную Ловкость от Стремительности',()=>{const a=actor({items:[{name:'Стремительность',type:'discipline',system:{level:2}}],flags:{celerityRawActions:4}});assert.equal(effectiveTraitValue(a,'attributes.dexterity'),3);});
-const disc=name=>russianDocument(catalogs.DISCIPLINES.find(d=>d.name===name));
+const disc=(name,level=5)=>{const item=russianDocument(catalogs.DISCIPLINES.find(d=>d.name===name));item.system.level=level;return item;};
 test('Доминирование требует цель',()=>assert.match(preparePower(actor(),disc('Dominate'),'lvl1').error,/цель/));
 test('Доминирование не действует на старшее поколение',()=>assert.match(preparePower(actor({gen:13}),disc('Dominate'),'lvl1',actor({gen:12})).error,/поколения/));
 test('Доминирование использует текущую Силу воли цели',()=>assert.equal(preparePower(actor({gen:12}),disc('Dominate'),'lvl1',actor({gen:13,wp:4})).power.difficulty,4));
@@ -63,7 +63,7 @@ test('В ванильном наборе нет авторского магич�
 test('Заклинание постоянного предмета не использует стоимость Химерии',()=>{const p=catalogs.PATHS.find(p=>p.name==='The Path of Conjuring').system.powers;assert.equal(p.lvl2.cost,'3 blood');assert.equal(p.lvl3.cost,'5 blood');assert.equal(p.lvl5.cost,'10 blood');});
 test('Идентификаторы и формулы не переводятся',()=>{const src=catalogs.WEAPONS[0];const ru=russianDocument(src);assert.equal(ru.type,src.type);assert.equal(ru.system.damage,src.system.damage);assert.equal(src.name,'Small Club');});
 test('Точная локализация результата не превращает неудачу в название недостатка',()=>assert.equal(translateText('Failure'),'Неудача'));
-test('Манифест: все заявленные файлы существуют',()=>{const root=new URL('../',import.meta.url);const manifest=JSON.parse(fs.readFileSync(new URL('system.json',root)));for(const rel of [...manifest.esmodules,...manifest.styles,...manifest.languages.map(l=>l.path),...manifest.packs.map(p=>p.path),...manifest.packs.map(p=>p.banner.replace('systems/vtm-v20/',''))])assert.ok(fs.existsSync(new URL(rel,root)),rel);assert.equal(manifest.id,'vtm-v20');assert.equal(manifest.compatibility.minimum,'13');if(manifest.download){assert.match(manifest.download, /^https:\/\/github\.com\/Somnamibulism\/Blood-Onyx-V20\/releases\/download\/[^/]+\/[^/]+\.zip$/);assert.match(manifest.manifest, /^https:\/\/raw\.githubusercontent\.com\/Somnamibulism\/Blood-Onyx-V20\/main\/system\.json$/);}});
+test('Манифест: все заявленные файлы существуют',()=>{const root=new URL('../',import.meta.url);const manifest=JSON.parse(fs.readFileSync(new URL('system.json',root)));for(const rel of [...manifest.esmodules,...manifest.styles,...manifest.languages.map(l=>l.path),...manifest.packs.map(p=>p.path),...manifest.packs.map(p=>p.banner.replace('systems/vtm-v20/',''))])assert.ok(fs.existsSync(new URL(rel,root)),rel);assert.equal(manifest.id,'vtm-v20');assert.equal(manifest.compatibility.minimum,'13');assert.ok(!manifest.download);});
 test('Поколения 4–13 соответствуют базовой таблице',()=>assert.deepEqual(Array.from({length:10},(_,n)=>VTM.generationTable[n+4].maxBlood),[50,40,30,20,15,14,13,12,11,10]));
 test('Автоматический огонь: фиксированные +10 кубиков, +2 сложности',async()=>{const{fireModeModifiers}=await import('../module/combat.mjs');assert.deepEqual(fireModeModifiers('auto'),{dice:10,difficulty:2});assert.deepEqual(fireModeModifiers('burst'),{dice:2,difficulty:1});});
 test('Инициатива включает не потраченные точки Стремительности ровно один раз',async()=>{
@@ -74,4 +74,20 @@ test('Инициатива включает не потраченные точк
  const updates=[];const cb={actor:a,getFlag:()=>false,update:data=>updates.push(data)};
  callbacks.updateCombatant[0](cb,{initiative:12});assert.equal(updates[0].initiative,14);assert.equal(updates[0]['flags.vtm-v20.initRating'],9);
  game.user.isGM=false;callbacks.updateCombatant[0](cb,{initiative:12});assert.equal(updates.length,1);
+});
+
+test('0 точек скрывает и блокирует все силы дисциплины',()=>{
+ const a=actor();const item=disc('Auspex',0);
+ assert.equal(canUsePower(a,item,'lvl1'),false);
+ assert.match(preparePower(a,item,'lvl1').error,/не изучена/);
+});
+test('Только купленные уровни позволяют пользоваться способностями',()=>{
+ const a=actor();const item=disc('Auspex',2);
+ assert.equal(canUsePower(a,item,'lvl1'),true);
+ assert.equal(canUsePower(a,item,'lvl2'),true);
+ assert.equal(canUsePower(a,item,'lvl3'),false);
+ assert.equal(canUsePower(a,item,'lvl5'),false);
+ assert.ok(preparePower(a,item,'lvl3').error);
+ assert.equal(canUsePower(a,item,'lvl0'),false);
+ assert.equal(canUsePower(a,item,'lvlNaN'),false);
 });
