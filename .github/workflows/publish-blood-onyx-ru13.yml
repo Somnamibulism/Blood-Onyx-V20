@@ -1,0 +1,96 @@
+name: Publish Blood Onyx V20 ru.13
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'incoming/*ru.13*.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify and publish version 1.2.0-ru.13
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v1.2.0-ru.13"
+          ASSET="blood-onyx-v20-ru13.zip"
+          ZIP="$(find incoming -maxdepth 1 -type f -name '*ru.13*.zip' -print -quit)"
+          if [ -z "$ZIP" ]; then
+            echo "No incoming ru.13 ZIP found."
+            exit 0
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists. Refusing to overwrite it."
+            exit 1
+          fi
+          export SOURCE_ZIP="$ZIP"
+          export STAGING="$RUNNER_TEMP/blood-onyx-ru13"
+          mkdir -p "$STAGING"
+          python3 - <<'PY'
+          import json, os, pathlib, stat, zipfile
+          archive=pathlib.Path(os.environ['SOURCE_ZIP'])
+          stage=pathlib.Path(os.environ['STAGING'])
+          with zipfile.ZipFile(archive) as z:
+              members=z.infolist()
+              if not members or sum(m.file_size for m in members)>120_000_000:
+                  raise SystemExit('Archive is empty or suspiciously large')
+              for info in members:
+                  p=pathlib.PurePosixPath(info.filename)
+                  if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0]!='vtm-v20':
+                      raise SystemExit(f'Unsafe archive path: {info.filename}')
+                  if stat.S_ISLNK(info.external_attr >> 16):
+                      raise SystemExit('Symlinks are not supported')
+              if z.testzip() is not None:
+                  raise SystemExit('Corrupt ZIP')
+              z.extractall(stage)
+          root=stage/'vtm-v20'
+          file=root/'system.json'
+          d=json.loads(file.read_text(encoding='utf-8'))
+          if d.get('id')!='vtm-v20' or d.get('version')!='1.2.0-ru.13':
+              raise SystemExit('Unexpected system ID or version')
+          for relative in ['vtm-v20.mjs','CHANGELOG-RU.13.md','module/library-extras.mjs','tests/library-ru13.test.mjs']:
+              if not (root/relative).is_file():
+                  raise SystemExit(f'Missing expected release component: {relative}')
+          for name in ['equipment','containers','v5lore']:
+              p=root/'packs'/name
+              p.mkdir(parents=True,exist_ok=True)
+              (p/'.gitkeep').touch()
+          d['url']='https://github.com/Somnamibulism/Blood-Onyx-V20'
+          d['manifest']='https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json'
+          d['download']='https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.13/blood-onyx-v20-ru13.zip'
+          file.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          import os, pathlib, zipfile
+          stage=pathlib.Path(os.environ['STAGING'])
+          root=stage/'vtm-v20'
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'blood-onyx-v20-ru13.zip'
+          with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              z.write(root,'vtm-v20/')
+              for p in sorted(root.rglob('*')):
+                  z.write(p, 'vtm-v20/'+p.relative_to(root).as_posix())
+          with zipfile.ZipFile(out) as z:
+              if z.testzip() is not None:
+                  raise SystemExit('Failed to validate release ZIP')
+          print('Prepared installable ZIP:',out,out.stat().st_size)
+          PY
+          rsync -a "$STAGING/vtm-v20/" ./
+          git rm -- "$ZIP"
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Release Blood Onyx V20 1.2.0-ru.13"
+          git push origin HEAD:main
+          gh release create "$TAG" "$RUNNER_TEMP/$ASSET" --repo "$GITHUB_REPOSITORY" --target main --title "Blood Onyx V20 ru.13" --notes-file "$STAGING/vtm-v20/CHANGELOG-RU.13.md"
+          echo "Published $TAG"
