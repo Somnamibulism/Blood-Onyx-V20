@@ -8,7 +8,7 @@ const roll = read('templates/roll-dialog.hbs');
 const dice = read('module/dice.mjs');
 const system = JSON.parse(read('system.json'));
 test('Russian build has new UI and preserves Foundry 13 format',()=>{
-  assert.equal(system.version,'1.2.0-ru.32');
+  assert.equal(system.version,'1.2.0-ru.33');
   assert.ok(system.styles.includes('styles/identity-combat-ru22.css'));
   assert.ok(system.styles.includes('styles/glass-sheet-ru15.css'));
   assert.ok(system.styles.includes('styles/quick-powers-ru29.css'));

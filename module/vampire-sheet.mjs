@@ -305,7 +305,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       (pathsByCategory[cat] ??= []).push(p);
     }
     ctx.pathCategories = Object.entries(pathsByCategory).map(([key, paths]) => ({
-      key, label: key.charAt(0).toUpperCase() + key.slice(1) + ' Paths', paths
+      key, label: key === 'koldunic' ? 'Колдовство колдунов · пути' : key.charAt(0).toUpperCase() + key.slice(1) + ' Paths', paths
     }));
     ctx.hasPaths = allPaths.length > 0;
 

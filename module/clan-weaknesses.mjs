@@ -15,6 +15,7 @@ export const CLAN_WEAKNESSES = {
   "Toreador": "Faced with genuine beauty, they must roll Self-Control (difficulty 6) or stand entranced while the moment lasts.",
   "Tremere": "The clan's blood binds with frightening ease: two draughts of another vampire's vitae form a full blood bond, the first counting as two.",
   "Tzimisce": "They must rest amid at least two handfuls of earth from a place that mattered in life; each day without it halves their dice pools, down to a single die.",
+  "Old Clan Tzimisce": "V20: Старые Цимисхи вынуждены спать с минимум двумя горстями земли родного края. За каждые сутки без неё пул кубиков уменьшается наполовину, вплоть до одного кубика. Штраф исчезает после полноценного дневного сна в родной земле. Их клановые дисциплины: Анимализм, Прорицание, Доминирование. Колдовство колдунов изучается отдельно и не даётся автоматически.",
   "Ventrue": "Exacting tastes rule them: each Ventrue can feed only from a particular kind of mortal and gains nothing from any other blood.",
   "Salubri Antitribu": "V20: питаются только кровью, полученной насильственно от противника или после схватки с жертвой; добровольная кровь не насыщает. Начальное поколение 10–12. Третий глаз с Валерена 2.",
   "Baali": "Истинная вера и освящённые предметы воздействуют на Баали особенно сильно; последствия отыгрываются согласно V20 (глава о линии крови Баали).",

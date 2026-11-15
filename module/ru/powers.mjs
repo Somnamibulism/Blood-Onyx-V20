@@ -26,8 +26,15 @@ export function canUsePower(actor,item,key){
   if (!actor || !item || !['discipline','path'].includes(item.type)) return false;
   if(item.parent && item.parent.id!==actor.id) return false;
   const lvl=Number(String(key).match(/^lvl([1-5])$/)?.[1]);
-  return Number.isInteger(lvl) && lvl>=1 && lvl<=Math.min(5,Math.max(0,number(item.system?.level)))
+  const learned = Number.isInteger(lvl) && lvl>=1 && lvl<=Math.min(5,Math.max(0,number(item.system?.level)))
     && !!item.system?.powers?.[key];
+  if (!learned) return false;
+  if (item.type === 'path' && item.system?.category === 'koldunic') {
+    const knownSorcery = Array.from(actor.items || []).some(d => d.type === 'discipline'
+      && canonicalName(d.name) === 'Koldunic Sorcery' && Number(d.system?.level || 0) >= lvl);
+    return knownSorcery;
+  }
+  return true;
 }
 
 export function powerUsesRoll(item,key){
@@ -97,6 +104,13 @@ export function preparePower(actor,item,key,target){
     calc(7,'Усмирение Зверя: фиксированная сложность 7');
     audit.threshold=wpPermanent(target);
     audit.note=`Продолжительная проверка: необходимо накопить ${audit.threshold} успехов (постоянная Воля цели). Не подавляет Зверя вампира обычным способом.`;
+  }
+  if(item.type === 'path' && item.system?.category === 'koldunic'){
+    const lvl = Math.max(1, Math.min(5, Number(key.slice(3)) || 1));
+    const pathRating = Math.max(1, Math.min(5, Number(item.system?.level) || lvl));
+    calc(3 + pathRating, `Колдовство колдунов (Rites of the Blood): 3 + рейтинг изученного пути ${pathRating}`);
+    power.cost = '1 blood';
+    audit.note = 'Расход 1 крови. Вне Восточной Европы ведущая может повысить сложность на +1; величина эффекта и возможное сопротивление определяются сценой и правилами силы.';
   }
   if(id==='auspex:lvl3') audit.note='Сложность 4–9 зависит от возраста предмета и силы впечатлений; уточни у рассказчицы.';
   if(id==='auspex:lvl5') audit.note='Для астральной проекции сложность зависит от расстояния (обычно 5/7/9).';

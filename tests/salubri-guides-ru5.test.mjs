@@ -36,7 +36,7 @@ test('Обеа, пять сил, русские названия, оригина
   assert.equal(obeah.system.powers.lvl4.cost,'2 Willpower');
 });
 test('У всех 20 дисциплин есть пояснение каждой из пяти точек',()=>{
-  assert.equal(catalogs.DISCIPLINES.length,20);
+  assert.equal(catalogs.DISCIPLINES.length,21);
   for(const d of catalogs.DISCIPLINES){
     assert.equal(disciplineGuides[d.name]?.length,5,d.name);
     for(let n=1;n<=5;n++){

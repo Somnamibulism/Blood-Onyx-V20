@@ -1,3 +1,4 @@
+import { KOLDUNIC_PATHS } from './koldunic-paths.mjs';
 export const PATHS = [
   {
     name: 'Path of Blood', type: 'path', img: 'systems/vtm-v20/VTM icons/Thaumaturgy.png',
@@ -231,3 +232,6 @@ PATHS.push({
  lvl5:{name:'House the Maeljin',desc:`<p>Впускает в себя аспект Маэльджина, позволяя ему временно вселиться в колдуна. Последствия опасны, требуют контроля ведущего.</p>`,primary:'willpower',secondary:'',difficulty:8,cost:'1 blood'}
  }}
 });
+
+// The six Ways stay in the same library as the other blood-magic paths.
+PATHS.push(...KOLDUNIC_PATHS);

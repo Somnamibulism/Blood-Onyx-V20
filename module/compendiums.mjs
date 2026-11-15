@@ -1192,6 +1192,10 @@ const PATH_CATEGORIES = [
       'The Path of the Father\'s Vengeance', 'Thaumaturgical Countermagic', 'Weather Control', 'Tyranny of the Wyrm']
   },
   {
+    name: 'Пути Колдовства колдунов (V20)', parent: null,
+    items: ['Way of Earth (Koldunic)', 'Way of Wind (Koldunic)', 'Way of Water (Koldunic)', 'Way of Fire (Koldunic)', 'Way of Spirit (Koldunic)', 'Way of Sorrow (Koldunic)']
+  },
+  {
     name: 'Necromantic Paths', parent: null,
     items: ['The Sepulchre Path', 'The Ash Path', 'The Bone Path', 'The Cenotaph Path',
       'The Corpse in the Monster', 'The Grave\'s Decay', 'Path of the Four Humors', 'Vitreous Path']
@@ -1271,7 +1275,17 @@ const RITUAL_CATEGORIES = [
   }
 ];
 
-const COMPENDIUM_VERSION = 1303;
+const COMPENDIUM_VERSION = 1304;
+
+// Optional learned tradition, never automatically granted to a clan.
+DISCIPLINES.push({
+  name: 'Koldunic Sorcery', type: 'discipline', img: 'systems/vtm-v20/VTM icons/Thaumaturgy.png',
+  system: { level: 0,
+    description: `<p><b>Колдовство колдунов</b> — древняя магия земли и духов, традиция Старых Цимисхов, изучаемая по отдельности. Нужен наставник и одобрение ведущего. Уровень этой дисциплины ограничивает максимальную силу каждого изученного колдовского пути. Добавь выбранные Пути из библиотеки «Пути магии» отдельно; клан сам не выдаёт их.</p><p><b>Активация путей по V20: Rites of the Blood:</b> бросок постоянной Силы воли, сложность 3 + рейтинг изученного пути, расход 1 пункта крови за применение. Вне Восточной Европы ведущий может назначить +1 к сложности. Детали конкретных сил смотри в карточках путей.</p>`,
+    powers: Object.fromEntries(Array.from({length:5},(_,i)=>[`lvl${i+1}`,{
+      name: `Koldunic Mastery ${i+1}`, desc: `<p><b>Уровень ${i+1}:</b> Колдовство колдунов: можешь изучать и применять силы своих отдельных путей не выше уровня ${i+1}. Само по себе открытие этого уровня не призывает духа и не тратит кровь.</p>`, primary:'',secondary:'',difficulty:6,cost:''
+    }])) }
+});
 
 export { DISCIPLINES, BACKGROUNDS, MERITS, FLAWS, ARMOR, RITUAL_CATEGORIES };
 

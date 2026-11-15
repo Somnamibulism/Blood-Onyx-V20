@@ -43,11 +43,11 @@ test('Первоначальная загрузка наполняет спра�
  const {populateCompendiums}=await import('../module/compendiums.mjs');
  await populateCompendiums({force:true});
  assert.equal(saved.size,12);
- assert.equal([...saved.values()].flat().length,435);
+ assert.equal([...saved.values()].flat().length,443);
  assert.ok(saved.get('disciplines').some(it=>it.name==='Стойкость'));
  for(const it of [...saved.values()].flat()) if(it.folder) assert.ok(folders.has(it.folder));
  assert.ok([...folders.values()].some(f=>f.name==='Дробящее оружие'));
- assert.equal(settings.get('compendiumVersion').default,1303);
+ assert.equal(settings.get('compendiumVersion').default,1304);
  const count=[...saved.values()].flat().length;
  await populateCompendiums();
  assert.equal([...saved.values()].flat().length,count,'second run cannot duplicate entries');

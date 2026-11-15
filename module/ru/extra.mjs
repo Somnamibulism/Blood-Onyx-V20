@@ -1,4 +1,47 @@
 export const extraNames = Object.fromEntries(`
+Old Clan Tzimisce|Старые Цимисхи
+Koldunic Sorcery|Колдовство колдунов
+Koldunic Mastery 1|Колдовство · уровень 1
+Koldunic Mastery 2|Колдовство · уровень 2
+Koldunic Mastery 3|Колдовство · уровень 3
+Koldunic Mastery 4|Колдовство · уровень 4
+Koldunic Mastery 5|Колдовство · уровень 5
+Way of Earth (Koldunic)|Колдовство: путь земли
+Way of Wind (Koldunic)|Колдовство: путь ветра
+Way of Water (Koldunic)|Колдовство: путь воды
+Way of Fire (Koldunic)|Колдовство: путь огня
+Way of Spirit (Koldunic)|Колдовство: путь духа
+Way of Sorrow (Koldunic)|Колдовство: путь скорби
+Grasping Soil|Охватывающая земля
+Endurance of Stone|Стойкость камня
+Hungry Earth|Ненасытная земля
+Root of Vitality|Корень жизненной силы
+Kupala's Fury|Ярость Купалы
+Breath of Whispers|Дыхание шёпота
+Biting Gale|Кусающий шквал
+Breeze of Lethargy|Ветер вялости
+Ride the Tempest|Оседлать бурю
+Tempest|Буря
+Pool of Lies|Озеро лжи
+Watery Haven|Водное убежище
+Fog Over Sea|Туман над морем
+Minions of the Deep|Слуги глубин
+Doom Tide|Гибельный прилив
+Fiery Courage|Огненная храбрость
+Combust|Воспламенение
+Wall of Magma|Стена магмы
+Heat Wave|Волна жара
+Volcanic Blast|Вулканический выброс
+Way of Spirit: Stage 1|Путь духа I
+Way of Spirit: Stage 2|Путь духа II
+Way of Spirit: Stage 3|Путь духа III
+Way of Spirit: Stage 4|Путь духа IV
+Way of Spirit: Stage 5|Путь духа V
+The Frustrations of Nestrecha|Тяготы Нестречи
+The Insults of Krivda|Оскорбления Кривды
+The Weeping of Kruchina|Слёзы Кручины
+The Misfortune of Chernogolov|Невезение Черноголова
+The Starvation of Marena|Голод Марены
 Salubri Antitribu|Салюбри-воины
 Valeren|Валерен
 Burning Touch|Обжигающее касание

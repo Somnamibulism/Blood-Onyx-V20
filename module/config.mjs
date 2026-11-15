@@ -18,7 +18,7 @@ VTM.abilities = {
 VTM.clans = [
   'Assamite', 'Brujah', 'Followers of Set', 'Gangrel', 'Giovanni',
   'Lasombra', 'Malkavian', 'Nosferatu', 'Ravnos', 'Toreador',
-  'Tremere', 'Tzimisce', 'Ventrue', 'Salubri', 'Salubri Antitribu', 'Baali', 'Nagaraja', 'Caitiff', 'Pander'
+  'Tremere', 'Tzimisce', 'Old Clan Tzimisce', 'Ventrue', 'Salubri', 'Salubri Antitribu', 'Baali', 'Nagaraja', 'Caitiff', 'Pander'
 ];
 
 VTM.clanDisciplines = {
@@ -34,6 +34,7 @@ VTM.clanDisciplines = {
   'Toreador':         ['Auspex', 'Celerity', 'Presence'],
   'Tremere':          ['Auspex', 'Dominate', 'Thaumaturgy'],
   'Tzimisce':         ['Animalism', 'Auspex', 'Vicissitude'],
+  'Old Clan Tzimisce':['Animalism', 'Auspex', 'Dominate'],
   'Ventrue':          ['Dominate', 'Fortitude', 'Presence'],
   'Salubri':          ['Auspex', 'Fortitude', 'Obeah'],
   'Salubri Antitribu':['Auspex', 'Fortitude', 'Valeren'],
@@ -108,8 +109,8 @@ VTM.bearingLabels = [
 // Difficulty modifier by path/humanity rating
 VTM.bearingModifiers = { 10: -2, 9: -1, 8: -1, 7: 0, 6: 0, 5: 0, 4: 0, 3: 1, 2: 1, 1: 2, 0: null };
 
-VTM.pathCategories = ['thaumaturgical', 'necromantic'];
-VTM.ritualTypes = ['thaumaturgical', 'necromantic'];
+VTM.pathCategories = ['thaumaturgical', 'necromantic', 'koldunic'];
+VTM.ritualTypes = ['thaumaturgical', 'necromantic', 'koldunic'];
 VTM.meritTypes = ['physical', 'social', 'mental', 'supernatural'];
 VTM.damageTypes = ['bashing', 'lethal', 'aggravated'];
 VTM.concealOptions = ['P', 'J', 'T', 'N'];
