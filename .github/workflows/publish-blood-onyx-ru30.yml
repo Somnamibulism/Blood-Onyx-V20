@@ -60,7 +60,7 @@ jobs:
           ))
           if not all(p in selected for p in (
               'system.json', 'vtm-v20.mjs', 'module/quick-combat-powers.mjs',
-              'styles/quick-powers-ru30.css', 'templates/vampire-sheet.hbs'
+              'styles/quick-powers-ru29.css', 'templates/vampire-sheet.hbs'
           )):
               raise SystemExit('Required system files missing from release ZIP')
           output = pathlib.Path('/tmp/blood-onyx-v20-ru30.zip')
