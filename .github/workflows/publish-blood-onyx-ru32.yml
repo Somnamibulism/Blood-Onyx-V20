@@ -90,5 +90,5 @@ jobs:
             echo "Release already exists; refusing to overwrite"
             exit 1
           fi
-          gh release create "$TAG" "$ASSET" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Blood Onyx V20 ru.32" --notes-file CHANGELOG-RU.31.md
+          gh release create "$TAG" "$ASSET" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Blood Onyx V20 ru.32" --notes-file CHANGELOG-RU.32.md
           echo "Published installable release $TAG"
