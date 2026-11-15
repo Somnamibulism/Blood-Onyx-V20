@@ -18,7 +18,7 @@ VTM.abilities = {
 VTM.clans = [
   'Assamite', 'Brujah', 'Followers of Set', 'Gangrel', 'Giovanni',
   'Lasombra', 'Malkavian', 'Nosferatu', 'Ravnos', 'Toreador',
-  'Tremere', 'Tzimisce', 'Ventrue', 'Salubri', 'Caitiff', 'Pander'
+  'Tremere', 'Tzimisce', 'Ventrue', 'Salubri', 'Baali', 'Nagaraja', 'Caitiff', 'Pander'
 ];
 
 VTM.clanDisciplines = {
@@ -36,6 +36,8 @@ VTM.clanDisciplines = {
   'Tzimisce':         ['Animalism', 'Auspex', 'Vicissitude'],
   'Ventrue':          ['Dominate', 'Fortitude', 'Presence'],
   'Salubri':          ['Auspex', 'Fortitude', 'Obeah'],
+  'Baali':            ['Daimoinon', 'Obfuscate', 'Presence'],
+  'Nagaraja':         ['Auspex', 'Dominate', 'Necromancy'],
   'Caitiff':          [],
   'Pander':           [],
 };

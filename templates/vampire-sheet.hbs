@@ -270,6 +270,7 @@
                 <b>{{this.level}}. {{this.title}}</b>
                 <p>{{this.note}}</p>
                 {{#if this.learned}}
+                  {{#if this.quickLabel}}<button type="button" class="ru-power-quick" data-power-key="{{../name}}:{{this.key}}" data-item-id="{{../_id}}" title="Включить или выключить способность V20"><i class="fas fa-bolt"></i> {{this.quickLabel}}</button>{{/if}}
                   {{#if this.canRoll}}<button type="button" class="ru-power-roll" data-item-id="{{../_id}}" data-level="{{this.key}}" title="Бросить проверку этой силы по V20"><i class="fas fa-dice"></i> Бросок V20</button>{{/if}}
                   <button type="button" class="ru-power-open" data-item-id="{{../_id}}" title="Открыть описание и настройки силы"><i class="fas fa-book-open"></i> Подробнее</button>
                 {{/if}}
@@ -725,6 +726,17 @@
 
   {{!-- COMBAT --}}
   <div class="tab combat" data-group="primary" data-tab="combat">
+    {{#if quickBattleActions.length}}
+    <div class="ru29-power-quickbar" aria-label="Особые силы в бою">
+      <strong><i class="fas fa-bolt"></i> Особые силы</strong>
+      <span class="ru29-quick-help">Появляются по изученным дисциплинам; повторное нажатие убирает временную силу.</span>
+      <div class="ru29-quick-row">
+      {{#each quickBattleActions}}
+        <button type="button" class="ru-power-quick {{#if this.active}}active{{/if}}" data-item-id="{{this.itemId}}" data-power-key="{{this.key}}" title="{{this.label}}"><i class="fas fa-bolt"></i> {{this.label}}</button>
+      {{/each}}
+      </div>
+    </div>
+    {{/if}}
 
     <div class="section-block">
       <div class="combat-attack-header">

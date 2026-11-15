@@ -180,6 +180,18 @@ const DISCIPLINES = [
 
 DISCIPLINES.push(OBEAH);
 
+DISCIPLINES.push({
+  name: 'Daimoinon', type: 'discipline', img: 'systems/vtm-v20/VTM icons/Obtenebration.png',
+  system: {level: 0, description: `<p><b>Демонион, V20:</b> дисциплина Баали; изучается отдельно от клана. Проверки и влияние на жертв определяются отдельными силами.</p>`, powers: {
+    lvl1: {name:'Sense the Sin', desc:`<p>Запах греха: Восприятие + Эмпатия, сложность = Самоконтроль/Инстинкт цели + 4. Открывает её слабость; степень подробности зависит от успехов.</p>`,primary:'attributes.perception',secondary:'abilities.empathy',difficulty:6,cost:''},
+    lvl2: {name:'Fear of the Void Below',desc:`<p>Низменный страх: сначала узнай слабость жертвы. Смекалка + Запугивание, сложность = Смелость цели + 4. 1 успех: страх, 2: паническое бегство, 3+: обморок; решение и условия у ведущего.</p>`,primary:'attributes.wits',secondary:'abilities.intimidation',difficulty:6,cost:''},
+    lvl3: {name:'Conflagration',desc:`<p>Всесожжение: 1+ крови (не больше допустимого лимита за ход), бросок Ловкость + Оккультизм, сложность 6. При попадании 1 уровень аггравированного урона на каждую потраченную кровь; цель вправе уклоняться, огонь вызывает Ротшрек. Кнопка «Метнуть пламя» есть прямо в листе персонажа.</p>`,primary:'',secondary:'',difficulty:6,cost:''},
+    lvl4: {name:'Psychomachia',desc:`<p>Психомахия: необходимо знать страх/изъян жертвы. Цель проверяет свою самую слабую Добродетель (сл. 6) и при провале сталкивается с отражением собственных кошмаров; реакцию ведёт рассказчик.</p>`,primary:'',secondary:'',difficulty:6,cost:''},
+    lvl5: {name:'Condemnation',desc:`<p>Проклятие: Интеллект + Оккультизм против постоянной Воли цели. Успехи распределяются между тяжестью и длительностью проклятия; применяется с участием ведущего.</p>`,primary:'attributes.intelligence',secondary:'abilities.occult',difficulty:6,cost:''}
+  }}
+});
+
+
 const BACKGROUNDS = [
   {
     name: 'Allies', type: 'background', img: 'icons/svg/mystery-man.svg',
@@ -1175,7 +1187,7 @@ const PATH_CATEGORIES = [
     items: ['Path of Blood', 'Elemental Mastery', 'The Green Path', 'Hands of Destruction',
       'The Lure of Flames', 'Neptune\'s Might', 'Movement of the Mind', 'The Path of Conjuring',
       'The Path of Corruption', 'The Path of Mars', 'The Path of Technomancy',
-      'The Path of the Father\'s Vengeance', 'Thaumaturgical Countermagic', 'Weather Control']
+      'The Path of the Father\'s Vengeance', 'Thaumaturgical Countermagic', 'Weather Control', 'Tyranny of the Wyrm']
   },
   {
     name: 'Necromantic Paths', parent: null,
@@ -1185,6 +1197,7 @@ const PATH_CATEGORIES = [
 ];
 
 const RITUAL_CATEGORIES = [
+  {name:'Мистицизм Бездны (V20)',parent:null,items:['Weight of Shadows','Feed the Darkness','Abyssal Threads','Maw of Ahriman','Ahriman’s Wight','Light Within Shadow','Comforting Darkness','Claiming the Dark','Vision of Shadow','Commune with the Abyss']},
   // Parent folders
   {
     name: 'Necromantic Rituals', parent: null,
@@ -1256,7 +1269,7 @@ const RITUAL_CATEGORIES = [
   }
 ];
 
-const COMPENDIUM_VERSION = 1301;
+const COMPENDIUM_VERSION = 1302;
 
 export { DISCIPLINES, BACKGROUNDS, MERITS, FLAWS, ARMOR, RITUAL_CATEGORIES };
 

@@ -58,7 +58,7 @@ test('Переполнение ударного переводит ячейку 
 for(const[name,group]of Object.entries(catalogs))test(`Справочник ${name}: русские описания и допустимые метаданные`,()=>{
  for(const it of group){assert.match(it.system.description,/[А-Яа-яЁё]/,it.name);const data=russianDocument(it);assert.equal(canonicalName(data.name),it.name,it.name);for(const p of Object.values(it.system.powers||{})){assert.ok(p.difficulty>=2&&p.difficulty<=10,it.name);if(p.name)assert.match(p.desc,/[А-Яа-яЁё]/,p.name);}}
 });
-test('Полный набор: 13 кланов, салюбри, каитифы и пандеры',()=>{assert.equal(clanDocuments.length,16);for(const c of clanDocuments)for(const d of c.system.disciplines)assert.ok(catalogs.DISCIPLINES.some(it=>it.name===d));});
+test('Полный набор: 13 кланов, салюбри, каитифы и пандеры',()=>{assert.equal(clanDocuments.length,18);for(const c of clanDocuments)for(const d of c.system.disciplines)assert.ok(catalogs.DISCIPLINES.some(it=>it.name===d));});
 test('В ванильном наборе нет авторского магического оружия',()=>assert.ok(!catalogs.WEAPONS.some(it=>it.name==='Blessed Macuahuitl')));
 test('Заклинание постоянного предмета не использует стоимость Химерии',()=>{const p=catalogs.PATHS.find(p=>p.name==='The Path of Conjuring').system.powers;assert.equal(p.lvl2.cost,'3 blood');assert.equal(p.lvl3.cost,'5 blood');assert.equal(p.lvl5.cost,'10 blood');});
 test('Идентификаторы и формулы не переводятся',()=>{const src=catalogs.WEAPONS[0];const ru=russianDocument(src);assert.equal(ru.type,src.type);assert.equal(ru.system.damage,src.system.damage);assert.equal(src.name,'Small Club');});

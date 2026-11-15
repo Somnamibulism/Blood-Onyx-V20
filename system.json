@@ -2,12 +2,12 @@
   "id": "vtm-v20",
   "title": "Vampire V20 — русская сборка · Blood Onyx Luxe",
   "description": "Русская система V20 для Foundry 13: общая компактная шапка, быстрые дальнобойные манёвры, исправленный Blood Buff и прямые проверки.",
-  "version": "1.2.0-ru.28",
+  "version": "1.2.0-ru.29",
   "compatibility": {
     "minimum": "13",
     "maximum": "13"
   },
-  "url": "https://github.com/Somnamibulism/Blood-Onyx-V20",
+  "url": "https://github.com/The-Final-Artificer/Foundry-VTM-V20",
   "authors": [
     {
       "name": "The Final Artificer"
@@ -23,6 +23,7 @@
     "styles/vtm-v20.css",
     "styles/russian.css",
     "styles/blood-onyx-compact.css",
+    "styles/quick-powers-ru29.css",
     "styles/overview-pages-ru17.css",
     "styles/token-wounds-ru18.css",
     "styles/chat-fold-ru20.css",
@@ -142,7 +143,5 @@
   "initiative": "1d10 + @attributes.dexterity + @attributes.wits",
   "primaryTokenAttribute": "health",
   "secondaryTokenAttribute": "blood",
-  "socket": true,
-  "manifest": "https://raw.githubusercontent.com/Somnamibulism/Blood-Onyx-V20/main/system.json",
-  "download": "https://github.com/Somnamibulism/Blood-Onyx-V20/releases/download/v1.2.0-ru.28/blood-onyx-v20-ru28.zip"
+  "socket": true
 }

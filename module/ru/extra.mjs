@@ -1,4 +1,13 @@
 export const extraNames = Object.fromEntries(`
+Baali|Баали
+Nagaraja|Нагараджа
+Daimoinon|Демонион
+Sense the Sin|Запах греха
+Fear of the Void Below|Низменный страх
+Conflagration|Всесожжение
+Psychomachia|Психомахия
+Condemnation|Проклятие
+Tyranny of the Wyrm|Тирания Вирма
 Sense Vitality|Биение жизни
 Anesthetic Touch|Обезболивающее касание
 Corpore Sano|Корпоре сано

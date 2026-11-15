@@ -1,4 +1,5 @@
 import { rollDisciplinePower } from './item-sheet.mjs';
+import { quickLabel, quickActive, canQuickUse, useQuickPower, rating } from './quick-combat-powers.mjs';
 import { powerUsesRoll } from './ru/powers.mjs';
 import { renderDamageCard } from './combat-report.mjs';
 import { snapshotHealth, healthChangeAudit, auditDice } from './combat-report.mjs';
@@ -275,7 +276,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           hasGuide: !!note,
           passive: passiveDisciplines.has(canonical),
           canRoll: Number(d.system.level)>index && powerUsesRoll(d,key),
-          key,
+          key, quickLabel: quickLabel(actor, `${canonical.toLowerCase()}:${key}`),
         };
       }).filter(entry=>entry.hasGuide);
       return {
@@ -284,6 +285,13 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         hasGuides: guides.some(entry => entry.learned),
         activatable:Number(d.system.level)>0, active:isDisciplineActive(actor,d.name),
       };
+    });
+    // Only genuinely learned powers are available; clan alone never grants an attack.
+    ctx.quickBattleActions = items.filter(i => i.type === 'discipline').flatMap(d => {
+      const disc = canonicalName(d.name).toLowerCase();
+      return Object.keys({ 'protean:lvl2':1,'serpentis:lvl2':1,'obtenebration:lvl3':1,'quietus:lvl4':1,'daimoinon:lvl3':1 })
+        .filter(key => key.startsWith(`${disc}:`) && canQuickUse(actor,key))
+        .map(key => ({ itemId:d.id || d._id, key, label:quickLabel(actor,key), active:quickActive(actor,key) }));
     });
     ctx.backgrounds = items.filter(i => i.type === 'background').sort((a, b) => a.sort - b.sort);
 
@@ -464,7 +472,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         dmgDisplay = damageDisplay(w.system.damage, strVal, potAuto);
       }
       attacks.push({
-        id: w.id, name: clawStrike ? CLOSE_COMBAT_MANEUVER_RULES.claws.name : w.name, img: clawStrike ? 'systems/vtm-v20/assets/ru/combat/claws.svg' : w.img,
+        id: w.id, name: (actor.getFlag('vtm-v20','onyxBaalWeaponId')===w.id && rating(actor,'Quietus')>=4 ? '☠ Ласка Баала · ' : '') + (clawStrike ? CLOSE_COMBAT_MANEUVER_RULES.claws.name : w.name), img: clawStrike ? 'systems/vtm-v20/assets/ru/combat/claws.svg' : w.img,
         pool: `Ловкость + ${clawStrike ? 'Драка' : isThrown ? 'Атлетика' : isRanged ? 'Стрельба' : 'Фехтование'} (${dex + skillVal})`,
         damage: dmgDisplay,
         damageType: w.system.damageType || 'lethal',
@@ -478,7 +486,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         incendiary: !!w.system.incendiary || canonicalName(w.name) === 'Molotov Cocktail',
         ammoLabel: ammoLabel(w.system),
         offHand: !!w.system.offHand,
-        note: w.system.offHand ? (ctx.ambidextrous ? 'Off hand (Ambidextrous: no penalty)' : 'Off hand: +1 difficulty') : '',
+        note: (actor.getFlag('vtm-v20','onyxBaalWeaponId') === w.id && rating(actor,'Quietus') >= 4 ? 'Ласка Баала: если атака попала, подтвердите 1 кровь у ведущего и замените урон на аггравированный; промах не тратит кровь. ' : '') + (w.system.offHand ? (ctx.ambidextrous ? 'Off hand (Ambidextrous: no penalty)' : 'Off hand: +1 difficulty') : ''),
       });
     }
     if (actor.getFlag('vtm-v20', 'horridReality')) {
@@ -495,7 +503,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const serpentis = items.find(i => i.type === 'discipline' && canonicalName(i.name).toLowerCase() === 'serpentis');
     const tongueSkill = actor.getFlag('vtm-v20', 'tongueSkill');
-    if (serpentis && serpentis.system.level >= 2 && tongueSkill) {
+    if (serpentis && serpentis.system.level >= 2 && tongueSkill && actor.getFlag('vtm-v20','onyxTongueActive') === true) {
       const skillVal = effectiveTraitValue(actor, `abilities.${tongueSkill}`);
       const skillLabel = tongueSkill.charAt(0).toUpperCase() + tongueSkill.slice(1);
       attacks.push({
@@ -506,6 +514,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         damageType: 'aggravated', damageFormula: 'Str',
         skill: `abilities.${tongueSkill}`, isRanged: false,
       });
+    }
+    const abyssTentacles = actor.getFlag('vtm-v20', 'onyxTentacles');
+    if (abyssTentacles && rating(actor,'Obtenebration') >= 3) {
+      const dexterity = Number(abyssTentacles.dexterity)||0;
+      const strength = Number(abyssTentacles.strength)||0;
+      attacks.push({id:'abyss-tentacle-constrict',name:'Сжатие щупальцем (после захвата)',img:'systems/vtm-v20/assets/ru/combat/claws.svg',pool:`Ловкость щупальца + Драка (${dexterity + effectiveTraitValue(actor,'abilities.brawl')})`,poolTraits:['abilities.brawl'],accuracyMod:dexterity,damage:`${strength+1} (сжатие)`,damageFormula:String(strength+1),damageType:'lethal',skill:'abilities.brawl',isRanged:false,note:'Только после захвата; сопротивление Силы ведущий рассчитывает отдельно.'});
     }
     const quietus = items.find(i => i.type === 'discipline' && canonicalName(i.name).toLowerCase() === 'quietus');
     if (quietus && quietus.system.level >= 5) {
@@ -1270,6 +1284,16 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         if(item)await rollDisciplinePower(this.document,item,btn.dataset.level);
       });
     });
+    el.querySelectorAll('.ru-power-quick').forEach(btn => {
+      btn.addEventListener('click', async ev => {
+        ev.preventDefault(); ev.stopPropagation();
+        if (btn.disabled) return;
+        btn.disabled = true;
+        try { const item=this.document.items.get(btn.dataset.itemId); if(item) await useQuickPower(this.document, `${canonicalName(item.name).toLowerCase()}:${btn.dataset.powerKey.split(':').pop()}`); }
+        catch(error) { console.error('Blood Onyx quick power',error); ui.notifications.error('Не удалось применить силу.'); }
+        finally { btn.disabled = false; }
+      });
+    });
     el.querySelectorAll('.ru-power-open').forEach(btn => {
       btn.addEventListener('click', () => {
         const item = this.document.items.get(btn.dataset.itemId);
@@ -1294,6 +1318,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       btn.addEventListener('click', () => {
         const item = this.document.items.get(btn.dataset.itemId);
         if (!item) return;
+        if (item.system.ritualType === 'abyssal') {
+          const lvl=Number(item.system.level)||0;
+          const occult=effectiveTraitValue(this.document,'abilities.occult');
+          if (rating(this.document,'Obtenebration')<lvl || occult<lvl) {ui.notifications.warn(`Мистицизм Бездны: нужны Затмение и Оккультизм не ниже ${lvl}.`); return;}
+          ui.notifications.info('Ритуал Бездны: проверь компоненты и побочные эффекты с ведущим.');
+        }
         game.vtm.rollDicePool(this.document, {
           trait: item.system.primary,
           trait2: item.system.secondary,
@@ -3597,6 +3627,12 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     if (a.reload) return dexPool(dex + effectiveTraitValue(this.document, 'abilities.firearms'));
     if (a.attackId === 'unarmed' || a.attackId === 'kick') return dexPool(dex + effectiveTraitValue(this.document, 'abilities.brawl'));
+    // A summoned tentacle rolls ITS own Dexterity, not the vampire's. This
+    // one-off branch keeps the original declaration pools completely untouched.
+    if (a.attackId === 'abyss-tentacle-constrict') {
+      const t=this.document.getFlag('vtm-v20','onyxTentacles');
+      return t ? Math.max(1, Number(t.dexterity || 0) + effectiveTraitValue(this.document,'abilities.brawl')) : 0;
+    }
     if (a.attackId?.startsWith('custom-')) {
       const customId = a.attackId.replace('custom-', '');
       const custom = (sys.customAttacks ?? []).find(c => c.id === customId);

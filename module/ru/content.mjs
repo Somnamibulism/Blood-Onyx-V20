@@ -84,7 +84,7 @@ export function localizeCatalogs() {
 localizeCatalogs();
 export const clanDocuments=VTM.clans.map(name=>({
   name,type:'clan',img:'icons/svg/mystery-man.svg',system:{
-    disciplines:[...(VTM.clanDisciplines[name]||[])],weakness:weaknesses[name],
-    description:`<p><b>${escapeHTML(displayName(name))}</b></p><p>Дисциплины: ${(VTM.clanDisciplines[name]||[]).map(displayName).join(', ')||'выбираются индивидуально'}.</p><p>${escapeHTML(weaknesses[name])}</p><p>Секта выбирается в листе отдельно от клана. Для антитрибу с измененными дисциплинами создай отдельный клановый предмет; стандартная карточка не меняет родословную автоматически.</p>`
+    disciplines:[...(VTM.clanDisciplines[name]||[])],weakness:weaknesses[name] || CLAN_WEAKNESSES[name] || "",
+    description:`<p><b>${escapeHTML(displayName(name))}</b></p><p>Дисциплины: ${(VTM.clanDisciplines[name]||[]).map(displayName).join(', ')||'выбираются индивидуально'}.</p><p>${escapeHTML(weaknesses[name] || CLAN_WEAKNESSES[name] || "")}</p><p>Секта выбирается в листе отдельно от клана. Для антитрибу с измененными дисциплинами создай отдельный клановый предмет; стандартная карточка не меняет родословную автоматически.</p>`
   }
 }));

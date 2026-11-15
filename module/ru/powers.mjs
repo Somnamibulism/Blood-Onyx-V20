@@ -7,7 +7,7 @@ const ROLL_OVERRIDES = {
   'chimerstry:lvl5': ['attributes.manipulation','abilities.subterfuge'],
   'quietus:lvl3': ['attributes.stamina',''],
 };
-const NO_ROLL = new Set(['auspex:lvl1']);
+const NO_ROLL = new Set(['auspex:lvl1','daimoinon:lvl3']);
 const REQUIRED_TARGETS = new Set([
   'dominate:lvl1','dominate:lvl2','dominate:lvl3','dominate:lvl4','dominate:lvl5',
   'auspex:lvl4',

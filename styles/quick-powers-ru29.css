@@ -1,0 +1,11 @@
+/* Optional compact bar in Combat: never overrides original attack controls. */
+.ru29-power-quickbar{border:1px solid rgba(197,158,95,.3);border-radius:8px;padding:10px;margin:7px 0 12px;}
+.ru29-power-quickbar>strong{display:block;margin-bottom:3px;}
+.ru29-quick-help{display:block;opacity:.75;font-size:12px;margin-bottom:7px;}
+.ru29-quick-row{display:flex;flex-wrap:wrap;gap:6px;}
+.ru29-quickbar .ru-power-quick,.ru29-power-quickbar .ru-power-quick{border:1px solid rgba(197,158,95,.55);border-radius:5px;padding:5px 9px;cursor:pointer;}
+.ru29-power-quickbar .ru-power-quick.active{background:rgba(197,158,95,.19);}
+.ru29-power-quickbar .ru-power-quick:disabled{opacity:.5;cursor:wait;}
+.discipline-guide-entry .ru-power-quick {margin: 4px 6px 4px 0; padding: 4px 9px; border:1px solid rgba(197,158,95,.55); border-radius:5px; color:var(--vtm-gold,#c9a959); cursor:pointer; font-size:12px;}
+.discipline-guide-entry .ru-power-quick:hover {background:rgba(197,158,95,.12);}
+.discipline-guide-entry .ru-power-quick:disabled {opacity:.5;cursor:wait;}
