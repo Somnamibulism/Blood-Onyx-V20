@@ -48,6 +48,6 @@ test('Подсказки воинской линии в мастере и уст
   const manifest=JSON.parse(fs.readFileSync(new URL('../system.json',import.meta.url)));
   assert.match(template,/salubriWarriorCreationHint/);
   assert.match(logic,/d.clan === 'Salubri Antitribu'/);
-  assert.equal(manifest.version,'1.2.0-ru.30');
-  assert.ok(manifest.download.endsWith('/v1.2.0-ru.30/blood-onyx-v20-ru30.zip'));
+  assert.equal(manifest.version,'1.2.0-ru.31');
+  assert.ok(manifest.download.endsWith('/v1.2.0-ru.31/blood-onyx-v20-ru31.zip'));
 });

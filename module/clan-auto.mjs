@@ -7,6 +7,7 @@ import { VTM } from './config.mjs';
 import { canonicalName } from './ru/naming.mjs';
 import { clanDisciplinesFor } from './clan-weaknesses.mjs';
 import { DISCIPLINES } from './compendiums.mjs';
+import { cleanupUnavailableClaws } from './quick-combat-powers.mjs';
 
 const pending = new Set();
 
@@ -69,7 +70,9 @@ export async function syncClanDisciplines(actor, previousClan, nextClan) {
     return !next.has(id) && (previous.has(id) || item.flags?.['vtm-v20']?.autoClan === true);
   });
   if (obsolete.length) await actor.deleteEmbeddedDocuments('Item', obsolete.map(item => item.id || item._id));
-  return addClanDisciplines(actor, nextClan);
+  const added = await addClanDisciplines(actor, nextClan);
+  await cleanupUnavailableClaws(actor);
+  return added;
 }
 
 Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
@@ -87,4 +90,18 @@ Hooks.on('updateActor', async (actor, changes, options, userId) => {
   const oldClan = options?.vtmPreviousClan;
   if (typeof oldClan !== 'string' || canonicalName(oldClan) === canonicalName(next)) return;
   await syncClanDisciplines(actor, oldClan, next);
+});
+
+ // Manually unlearning Protean also invalidates active temporary claw weapons.
+Hooks.on('updateItem', async (item, changes, options, userId) => {
+  if (userId !== game.user?.id || item?.type !== 'discipline'
+      || canonicalName(item.name).toLowerCase() !== 'protean') return;
+  const nextLevel = changes?.system?.level ?? changes?.['system.level'];
+  if (nextLevel === undefined || Number(nextLevel) >= 2) return;
+  await cleanupUnavailableClaws(item.parent);
+});
+Hooks.on('deleteItem', async (item, options, userId) => {
+  if (userId !== game.user?.id || item?.type !== 'discipline'
+      || canonicalName(item.name).toLowerCase() !== 'protean') return;
+  await cleanupUnavailableClaws(item.parent);
 });

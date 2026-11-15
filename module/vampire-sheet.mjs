@@ -1,5 +1,5 @@
 import { rollDisciplinePower } from './item-sheet.mjs';
-import { quickLabel, quickActive, canQuickUse, useQuickPower, rating } from './quick-combat-powers.mjs';
+import { quickLabel, quickActive, canQuickUse, useQuickPower, rating, cleanupUnavailableClaws } from './quick-combat-powers.mjs';
 import { powerUsesRoll } from './ru/powers.mjs';
 import { renderDamageCard } from './combat-report.mjs';
 import { snapshotHealth, healthChangeAudit, auditDice } from './combat-report.mjs';
@@ -235,6 +235,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     ctx.chargenActive = false;
     const actor = this.document;
+    // Repair stale summoned claws from worlds saved before ru.31 on first open.
+    if (actor.type === 'vampire' && actor.isOwner) await cleanupUnavailableClaws(actor);
     const sys = actor.system;
     ctx.system = sys;
     ctx.actor = actor;
@@ -463,6 +465,8 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       const bookWeapon = WEAPONS.find(ref => canonicalName(ref.name) === canonicalName(w.name));
       const modeData = bookWeapon?.system || {};
       const clawStrike = /^(feral claws|звериные когти|когти зверя|удар когтями)$/i.test(canonicalName(w.name));
+      // Hide old claws on read-only sheets until their owner can clean them up.
+      if (clawStrike && !canQuickUse(actor, 'protean:lvl2')) continue;
       const isThrown = !!w.system.thrown || canonicalName(w.name) === 'Molotov Cocktail';
       const skillKey = clawStrike ? 'brawl' : isThrown ? 'athletics' : isRanged ? 'firearms' : 'melee';
       const skillVal = effectiveTraitValue(actor, `abilities.${skillKey}`);

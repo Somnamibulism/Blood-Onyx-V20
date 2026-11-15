@@ -12,9 +12,34 @@ export const quickPowers = Object.freeze({
 export function rating(actor, name) {
   return Number(actor?.items?.find(i => i.type === 'discipline' && canonicalName(i.name).toLowerCase() === name.toLowerCase())?.system?.level || 0);
 }
-export function clawItem(actor) {return actor.items.find(i=>i.type==='weapon' && canonicalName(i.name).toLowerCase()==='feral claws');}
+// Both the quickbar and the older Discipline item sheet can create these weapons.
+// The older route did not mark them with a temporary-power flag.
+export function temporaryClawItem(item) {
+  if (item?.type !== 'weapon') return false;
+  if (item.flags?.[scope]?.onyxTemporaryPower === 'protean:lvl2') return true;
+  return canonicalName(item.name).toLowerCase() === 'feral claws'
+    && String(item.system?.damage || '').replace(/\s+/g,'').toLowerCase() === 'str+1'
+    && item.system?.damageType === 'aggravated';
+}
+export function clawItem(actor) {return Array.from(actor?.items || []).find(temporaryClawItem);}
+
+// Removes only summoned claws when Protean 2 is no longer known. Not a clan
+// blacklist: out-of-clan Protean 2 still keeps its activated attack.
+export async function cleanupUnavailableClaws(actor) {
+  if (!actor || actor.type !== 'vampire' || canQuickUse(actor, 'protean:lvl2')) return false;
+  const items = Array.from(actor.items || []).filter(temporaryClawItem);
+  if (!items.length) return false;
+  await actor.deleteEmbeddedDocuments('Item', items.map(item => item.id || item._id));
+  // The old Discipline-activation route also left an active-Discipline marker.
+  if (rating(actor, 'Protean') < 1 && typeof actor.getFlag === 'function' && typeof actor.setFlag === 'function') {
+    const active = actor.getFlag(scope, 'activeDisciplines');
+    if (Array.isArray(active) && active.includes('protean'))
+      await actor.setFlag(scope, 'activeDisciplines', active.filter(name => name !== 'protean'));
+  }
+  return true;
+}
 export function quickActive(actor, key) {
-  if (key === 'protean:lvl2') return !!clawItem(actor);
+  if (key === 'protean:lvl2') return canQuickUse(actor,key) && !!clawItem(actor);
   if (key === 'serpentis:lvl2') return !!actor.getFlag(scope,'onyxTongueActive');
   if (key === 'obtenebration:lvl3') return !!actor.getFlag(scope,'onyxTentacles');
   if (key === 'quietus:lvl4') return !!actor.getFlag(scope,'onyxBaalWeaponId');
