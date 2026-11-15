@@ -21,6 +21,7 @@ import { archetypeAuthentic, clanAuthentic, traitAuthentic } from './authentic-s
 import { clanWeaknessInfo, clanItemInfo, clanOptions } from './clan-weaknesses.mjs';
 import { disciplineLevel, isDisciplineActive, potenceLevel, potenceAutoSuccesses, celerityLevel, celerityRawMode, effectiveTraitValue, effectiveStrength, usesStrengthTrait } from './discipline-effects.mjs';
 import { exportSheet } from './sheet-export.mjs';
+import { canToggleSheetLock, isSheetLocked } from './sheet-lock.mjs';
 import { trackSize, countDamage, rebuildTrack } from './health-track.mjs';
 import { pickSceneTarget } from './target-actions.mjs';
 import { CLOSE_COMBAT_MANEUVER_RULES } from './maneuver-rules.mjs';
@@ -465,7 +466,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       const bookWeapon = WEAPONS.find(ref => canonicalName(ref.name) === canonicalName(w.name));
       const modeData = bookWeapon?.system || {};
       const clawStrike = /^(feral claws|звериные когти|когти зверя|удар когтями)$/i.test(canonicalName(w.name));
-      // Hide old claws on read-only sheets until their owner can clean them up.
+      // Also hide stale legacy claw attacks on read-only sheets before cleanup.
       if (clawStrike && !canQuickUse(actor, 'protean:lvl2')) continue;
       const isThrown = !!w.system.thrown || canonicalName(w.name) === 'Molotov Cocktail';
       const skillKey = clawStrike ? 'brawl' : isThrown ? 'athletics' : isRanged ? 'firearms' : 'melee';
@@ -900,8 +901,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     const locked = actor.getFlag('vtm-v20', 'sheetLocked') !== false;
     ctx.isGM = game.user.isGM;
+    ctx.canUnlockSheet = canToggleSheetLock(actor, game.user);
     ctx.lockState = locked;
-    ctx.sheetLocked = locked && !game.user.isGM;
+    ctx.sheetLocked = isSheetLocked(actor, game.user);
 
     const fx = [];
     if (actor.getFlag('vtm-v20', 'horridForm'))
@@ -1042,7 +1044,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     const locked = this.document.getFlag('vtm-v20', 'sheetLocked') !== false;
     // Chargen manages its own inputs; the lock overlay would eat the clicks
-    el.classList.toggle('sheet-locked', locked && !game.user.isGM && !this._chargen);
+    el.classList.toggle('sheet-locked', isSheetLocked(this.document, game.user) && !this._chargen);
 
     this._syncChargenButton();
     this._syncCompactButton();
@@ -1091,9 +1093,14 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this.render();
     });
 
-    // Lock
-    el.querySelector('.sheet-lock')?.addEventListener('click', () => {
-      this.document.setFlag('vtm-v20', 'sheetLocked', !locked);
+    // Player owners may unlock their own sheet; viewers cannot. The UI lock is
+    // never changed implicitly by combat, which updates Actor data directly.
+    el.querySelector('.sheet-lock')?.addEventListener('click', async event => {
+      event.preventDefault();
+      if (!canToggleSheetLock(this.document, game.user)) return;
+      const current = this.document.getFlag('vtm-v20', 'sheetLocked') !== false;
+      await this.document.setFlag('vtm-v20', 'sheetLocked', !current);
+      this.render();
     });
 
     el.querySelector('.show-portrait')?.addEventListener('click', () => {

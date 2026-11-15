@@ -54,9 +54,14 @@ export function healthChangeAudit({ before, after, requested = 0, remote = false
       : 'Команда передана ведущему; состояние чужого токена локально не подтверждено.';
   } else if (changed) {
     note = `Лист цели обновлён. Запрошено ${amount} ур.; при заполненной шкале уровни ран могут усиливаться вместо добавления ячеек.`;
+  } else if ((before.bash + before.leth + before.agg) >= before.slots) {
+    status = 'saturated';
+    note = before.agg >= before.slots
+      ? `Шкала уже заполнена аггравированными ранами (${before.agg}/${before.slots}). Новый урон ${amount} ур. не добавляет клеток; дальнейший исход определяет ведущий по V20.`
+      : `Шкала ранений уже заполнена (${before.slots}/${before.slots}); новые ${amount} ур. не изменили её уровни. Дальнейший исход определяет ведущий.`;
   } else {
     status = 'warning';
-    note = `ВНИМАНИЕ: запрошено ${amount} ур., но шкала до и после одинакова. Проверь переполнение шкалы и права записи.`;
+    note = `ВНИМАНИЕ: запрошено ${amount} ур., но шкала до и после одинакова. Проверь целевой токен, состояние данных и права записи.`;
   }
   return { before: describe(before), after: describe(after), diff, note, status, requested: amount };
 }
@@ -138,7 +143,11 @@ export function buildDamageReport(data = {}) {
   if (data.quillsNotice) steps.push({ label: 'Контрудар', text: String(data.quillsNotice) });
   return {
     steps,
-    final: netDamage ? `Здоровье (${data.defenderName || 'цель'}): применено ${netDamage} ур. (${type}).` : '0 уровней: урон полностью остановлен или сведен к нулю.',
+    final: data.healthAudit?.status === 'saturated'
+      ? `Здоровье (${data.defenderName || 'цель'}): ${netDamage} ур. (${type}); шкала уже заполнена, новых отметок нет.`
+      : data.healthAudit?.status === 'warning'
+        ? `Здоровье (${data.defenderName || 'цель'}): ${netDamage} ур. (${type}); запись в лист не подтверждена.`
+        : netDamage ? `Здоровье (${data.defenderName || 'цель'}): применено ${netDamage} ур. (${type}).` : '0 уровней: урон полностью остановлен или сведен к нулю.',
     finalClass: netDamage ? 'is-hit' : 'is-zero',
     healthAudit: data.healthAudit || null,
   };

@@ -18,6 +18,11 @@
 <div class="ru-persistent-identity" aria-label="Краткие сведения о персонаже">
   <img src="{{actor.img}}" alt="" class="ru-identity-portrait" />
   <div class="ru-identity-name" title="{{actor.name}}">{{actor.name}}</div>
+  {{#if canUnlockSheet}}
+  <button type="button" class="sheet-lock ru-identity-lock" title="{{#if lockState}}Разблокировать лист для ручного редактирования{{else}}Заблокировать ручное редактирование{{/if}}" aria-label="{{#if lockState}}Разблокировать лист{{else}}Заблокировать лист{{/if}}">
+    <i class="fas {{#if lockState}}fa-lock{{else}}fa-lock-open{{/if}}" aria-hidden="true"></i>
+  </button>
+  {{/if}}
   {{#if isVampire}}
   <div class="ru-identity-field" title="Клан"><span>Клан</span><strong>{{clanDisplay}}</strong></div>
   <div class="ru-identity-field ru-gen-field" title="Поколение"><span>Поколение</span><strong>{{system.generation}}</strong></div>
@@ -67,9 +72,6 @@
       </h1>
       {{#if isGM}}
       <a class="show-portrait" title="Показать портрет игрокам"><i class="fas fa-eye"></i></a>
-      <a class="sheet-lock" title="{{#if lockState}}Unlock Sheet{{else}}Lock Sheet{{/if}}">
-        <i class="fas {{#if lockState}}fa-lock{{else}}fa-lock-open{{/if}}"></i>
-      </a>
       {{/if}}
     </div>
     {{#if isVampire}}

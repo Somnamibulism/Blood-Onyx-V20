@@ -94,3 +94,10 @@ body.vtm-theme-glass-crimson .vtm-v20.sheet .ru-persistent-identity,body.vtm-the
     grid-column:auto;
   }
 }
+
+/* ru.32 — a small owner-only padlock remains accessible on every tab. */
+.vtm-v20.sheet.actor.vampire .ru-persistent-identity .ru-identity-lock {
+  flex:0 0 29px; width:29px; min-width:29px; height:29px; min-height:29px;
+  padding:0; margin:0; border-radius:7px; cursor:pointer;
+}
+.vtm-v20.sheet.actor.vampire .ru-persistent-identity .ru-identity-lock i {font-size:12px;}
