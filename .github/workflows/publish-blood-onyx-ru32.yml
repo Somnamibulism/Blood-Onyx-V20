@@ -1,0 +1,94 @@
+name: Publish Blood Onyx V20 ru.32
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "incoming/ru32-ready.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blood-onyx-ru32-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release sources
+        uses: actions/checkout@v4
+      - name: Validate version and run regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f incoming/ru32-ready.txt
+          node --test tests/*.test.mjs
+      - name: Build Foundry installable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import zipfile
+
+          repo = 'Somnamibulism/Blood-Onyx-V20'
+          manifest_path = pathlib.Path('system.json')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          expected_download = f'https://github.com/{repo}/releases/download/v1.2.0-ru.32/blood-onyx-v20-ru32.zip'
+          expected_manifest = f'https://raw.githubusercontent.com/{repo}/main/system.json'
+          if manifest.get('id') != 'vtm-v20' or manifest.get('version') != '1.2.0-ru.32':
+              raise SystemExit('Wrong system ID or version')
+          if manifest.get('download') != expected_download or manifest.get('manifest') != expected_manifest:
+              raise SystemExit('Foundry manifest URLs do not match release')
+          entries = subprocess.check_output(['git', 'ls-files', '-z']).decode('utf-8').split('\0')
+          allowed_prefixes = (
+              'module/', 'templates/', 'styles/', 'assets/', 'fonts/',
+              'lang/', 'packs/', 'VTM icons/', 'Compendium header images/', 'tests/'
+          )
+          allowed_roots = {
+              'system.json', 'template.json', 'vtm-v20.mjs', 'BUILD-INFO.json',
+              'LICENSE', 'README.md', 'README-UPSTREAM.md',
+              'README-LIBRARIES-RU.md', 'VALIDATION.md', '.gitignore'
+          }
+          selected = sorted(p for p in entries if p and (
+              p.startswith(allowed_prefixes) or p in allowed_roots
+              or p.startswith('CHANGELOG-RU.')
+          ))
+          if not all(p in selected for p in (
+              'system.json', 'vtm-v20.mjs', 'module/quick-combat-powers.mjs',
+              'styles/quick-powers-ru29.css', 'templates/vampire-sheet.hbs'
+          )):
+              raise SystemExit('Required system files missing from release ZIP')
+          output = pathlib.Path('/tmp/blood-onyx-v20-ru32.zip')
+          with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+              z.writestr('vtm-v20/', '')
+              for path in selected:
+                  file = pathlib.Path(path)
+                  if file.is_file():
+                      z.write(file, 'vtm-v20/' + path)
+          with zipfile.ZipFile(output) as z:
+              if z.testzip() is not None:
+                  raise SystemExit('ZIP checksum failed')
+              embedded_manifest = json.loads(z.read('vtm-v20/system.json'))
+              if embedded_manifest.get('download') != expected_download:
+                  raise SystemExit('Embedded manifest has invalid download')
+          print('Verified installer:', output, output.stat().st_size, 'bytes; files', len(selected))
+          PY
+      - name: Publish release archive
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v1.2.0-ru.32"
+          ASSET="/tmp/blood-onyx-v20-ru32.zip"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; refusing to overwrite"
+            exit 1
+          fi
+          gh release create "$TAG" "$ASSET" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Blood Onyx V20 ru.32" --notes-file CHANGELOG-RU.31.md
+          echo "Published installable release $TAG"
