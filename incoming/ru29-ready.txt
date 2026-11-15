@@ -1,2 +1,4 @@
 Blood Onyx V20 ru.29 release packaging
 Manifest download URL fixed; publish installable release.
+
+Retry release after correcting manifest regression test.
