@@ -121,6 +121,7 @@ export class ChargenWizard {
     }
     ctx.clanChoices = clanOptions(VTM.clans).map(value => ({ value, label: displayName(value) }));
     ctx.salubriCreationHint = d.clan === 'Salubri';
+    ctx.salubriWarriorCreationHint = d.clan === 'Salubri Antitribu';
     ctx.generationFromBackground = generationFromBackground;
     if (this.step === 3) {
       ctx.disciplineCatalog = DISCIPLINES.map(x => ({ name: x.name, label: displayName(x.name), selected: d.disc.some(i => canonicalName(i.name) === x.name) }));

@@ -16,6 +16,7 @@ export const CLAN_WEAKNESSES = {
   "Tremere": "The clan's blood binds with frightening ease: two draughts of another vampire's vitae form a full blood bond, the first counting as two.",
   "Tzimisce": "They must rest amid at least two handfuls of earth from a place that mattered in life; each day without it halves their dice pools, down to a single die.",
   "Ventrue": "Exacting tastes rule them: each Ventrue can feed only from a particular kind of mortal and gains nothing from any other blood.",
+  "Salubri Antitribu": "V20: питаются только кровью, полученной насильственно от противника или после схватки с жертвой; добровольная кровь не насыщает. Начальное поколение 10–12. Третий глаз с Валерена 2.",
   "Baali": "Истинная вера и освящённые предметы воздействуют на Баали особенно сильно; последствия отыгрываются согласно V20 (глава о линии крови Баали).",
   "Nagaraja": "V20: нуждаются в сырой человеческой плоти наряду с кровью. Каждая ночь без плоти даёт накопительный штраф −1 куб ко всем Физическим пулам; каждая порция плоти восстанавливает 1 куб. Порция от жертвы причиняет ей 1 непоглощаемый уровень летального урона. Отмечайте голод плоти с ведущим.",
   "Caitiff": "Clanless and scorned: Social rolls against Kindred who know what they are suffer +2 difficulty, and Caitiff may not take Status at character creation.",

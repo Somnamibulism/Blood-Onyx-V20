@@ -5,6 +5,7 @@ import { RITUALS } from './rituals-data.mjs';
 import { getOverrides, applyAuthentic, getRev, getAppliedRev, markApplied } from './authentic-store.mjs';
 
 import { OBEAH } from './obeah-data.mjs';
+import { VALEREN } from './valeren-data.mjs';
 const DISCIPLINES = [
   {
     name: 'Animalism', type: 'discipline', img: 'systems/vtm-v20/VTM icons/Animalism.png',
@@ -179,6 +180,7 @@ const DISCIPLINES = [
 ];
 
 DISCIPLINES.push(OBEAH);
+DISCIPLINES.push(VALEREN);
 
 DISCIPLINES.push({
   name: 'Daimoinon', type: 'discipline', img: 'systems/vtm-v20/VTM icons/Obtenebration.png',
@@ -1269,7 +1271,7 @@ const RITUAL_CATEGORIES = [
   }
 ];
 
-const COMPENDIUM_VERSION = 1302;
+const COMPENDIUM_VERSION = 1303;
 
 export { DISCIPLINES, BACKGROUNDS, MERITS, FLAWS, ARMOR, RITUAL_CATEGORIES };
 

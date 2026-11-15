@@ -152,3 +152,15 @@ test('Готовый лист удаляет старые клановые ди�
  assert.equal(items.find(x=>x.name==='Анимализм').system.level,3);
  assert.ok(items.find(x=>x.name==='Potence'));
 });
+
+test('Салюбри-воины получают Валерен и не теряют общие дисциплины при смене варианта',()=>{
+ const w=wizard();w._setClan('Салюбри-воины');
+ assert.deepEqual(w.d.disc.map(x=>x.name),['Auspex','Fortitude','Valeren']);
+ assert.equal(w.getData().salubriWarriorCreationHint,true);
+ w.d.disc.find(x=>x.name==='Fortitude').dots=2;
+ w._setClan('Салюбри');
+ assert.deepEqual(w.d.disc.map(x=>x.name),['Auspex','Fortitude','Obeah']);
+ assert.equal(w.d.disc.find(x=>x.name==='Fortitude').dots,2);
+ assert.equal(w.getData().salubriWarriorCreationHint,false);
+ w.destroy();
+});
