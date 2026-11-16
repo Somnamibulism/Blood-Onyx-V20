@@ -466,8 +466,8 @@
           {{#each rituals}}
           <div class="item" data-item-id="{{this._id}}">
             <span class="item-name item-open">{{this.name}}</span>
-            <span class="item-cost">Lv.{{this.system.level}}</span>
-            <button type="button" class="ritual-cast" data-item-id="{{this._id}}" title="Roll the casting">
+            <span class="item-cost">Ур.{{this.system.level}}</span>
+            <button type="button" class="ritual-cast" data-item-id="{{this._id}}" title="Бросить проверку ритуала">
               <i class="fas fa-dice-d20"></i>
             </button>
             <div class="item-controls">
@@ -788,6 +788,11 @@
         <button type="button" class="ru-ranged-maneuver" data-mode="single"><i class="fas fa-crosshairs"></i> Выстрел</button>
         <button type="button" class="ru-ranged-maneuver" data-mode="burst"><i class="fas fa-list"></i> Короткая очередь</button>
         <button type="button" class="ru-ranged-maneuver" data-mode="auto"><i class="fas fa-fire-alt"></i> Длинная очередь</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="moving" title="V20: +1 сложность при стрельбе в движении"><i class="fas fa-person-running"></i> На бегу</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="aim" title="V20: +1 куб за ход прицеливания, максимум Восприятие"><i class="fas fa-bullseye"></i> Прицелиться</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="multi" title="Несколько отдельных выстрелов с разделением пула кубов"><i class="fas fa-bars"></i> Несколько выстрелов</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="dual" title="Два пистолета: отдельные атаки с разделением пула"><i class="fas fa-hand-point-right"></i> Два оружия</button>
+        <button type="button" class="ru-ranged-maneuver" data-mode="strafe" title="Автоматический огонь по площади с ручным распределением успехов"><i class="fas fa-arrows-left-right"></i> Веерный огонь</button>
         <button type="button" class="ru-ranged-maneuver" data-mode="reload"><i class="fas fa-redo"></i> Перезарядка</button>
         <span class="ru-quick-label">Восстановление</span>
         <button type="button" class="ru-combat-soak"><i class="fas fa-shield-alt"></i> Поглощение</button>

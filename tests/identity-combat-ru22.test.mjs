@@ -8,7 +8,7 @@ const roll = read('templates/roll-dialog.hbs');
 const dice = read('module/dice.mjs');
 const system = JSON.parse(read('system.json'));
 test('Russian build has new UI and preserves Foundry 13 format',()=>{
-  assert.equal(system.version,'1.2.0-ru.33');
+  assert.equal(system.version,'1.2.0-ru.34');
   assert.ok(system.styles.includes('styles/identity-combat-ru22.css'));
   assert.ok(system.styles.includes('styles/glass-sheet-ru15.css'));
   assert.ok(system.styles.includes('styles/quick-powers-ru29.css'));
@@ -36,8 +36,8 @@ test('Ranged helper uses equipped real weapons and existing attack + reload butt
   for(const mode of ['single','burst','auto','reload'])assert.ok(html.includes(`data-mode="${mode}"`));
   assert.match(sheet,/_chooseRangedManeuver\(mode\)/);
   assert.match(sheet,/item\.system\.equipped/);
-  assert.match(sheet,/_promptFireMode\(atk, \{ forcedMode \}\)/);
-  assert.match(sheet,/_declAddAttack\(attackId, forcedMode\)/);
+  assert.match(sheet,/_promptFireMode\(atk, \{ forcedMode:/);
+  assert.match(sheet,/_declAddAttack\(attackId, specialManeuver/);
   assert.match(html,/ru-combat-soak/);assert.match(html,/ru-combat-heal/);
 });
 test('Blood Buff is named and its activation is atomic',()=>{

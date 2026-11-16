@@ -1,4 +1,6 @@
 import { canonicalName } from './ru/naming.mjs';
+import { isSheetLocked } from './sheet-lock.mjs';
+import { content as translatedCatalogContent } from './ru/data.mjs';
 import { canUsePower, preparePower, powerUsesRoll, powerRequiresTarget } from './ru/powers.mjs';
 import { powerAuditData } from './ru/power-report.mjs';
 import { rollFixedPool } from './dice.mjs';
@@ -256,6 +258,12 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
 
+  // A locked parent character must also lock its embedded item editor.
+  _onChangeForm(formConfig, event) {
+    if (this.document.parent && isSheetLocked(this.document.parent, game.user)) return;
+    super._onChangeForm(formConfig, event);
+  }
+
   // -- Context --------------------------------------------------------------
 
   async _prepareContext(options) {
@@ -265,7 +273,7 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     ctx.system = item.system;
     ctx.config = CONFIG.VTM;
     ctx.isGM = game.user.isGM;
-    ctx.isEditable = this.isEditable;
+    ctx.isEditable = this.isEditable && !(item.parent && isSheetLocked(item.parent, game.user));
     ctx.typeLabel = game.i18n.localize(`TYPES.Item.${item.type}`);
     ctx.hasEI = game.modules.get('enhanced-inventory')?.active ?? false;
 
@@ -293,11 +301,11 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const traitOpts = [
         ...Object.values(VTM.attributes).flat().map(k => ({ key: `attributes.${k}`, label: loc(k) })),
         ...Object.values(VTM.abilities).flat().map(k => ({ key: `abilities.${k}`, label: loc(k) })),
-        { key: 'virtues.conscience', label: 'Conscience' },
-        { key: 'virtues.selfControl', label: 'Self-Control' },
-        { key: 'virtues.courage', label: 'Courage' },
-        { key: 'willpower', label: 'Willpower' },
-        { key: 'humanity', label: 'Humanity' },
+        { key: 'virtues.conscience', label: 'Совесть' },
+        { key: 'virtues.selfControl', label: 'Самоконтроль' },
+        { key: 'virtues.courage', label: 'Смелость' },
+        { key: 'willpower', label: 'Сила воли' },
+        { key: 'humanity', label: 'Человечность' },
       ];
 
       const maxVisible = item.parent
@@ -380,7 +388,17 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ctx.clanDisciplineOptions = names.map(n => ({ name: n, checked: chosen.has(n) }));
     }
 
-    ctx.enrichedDescription = await TextEditor.enrichHTML(item.system.description || '', { relativeTo: item });
+    // Legacy imported rituals may retain the source English description even
+    // after the shipped ritual catalog was translated. Show the curated Russian
+    // description without overwriting customized texts or item documents.
+    const canonical = canonicalName(item.name);
+    const ru = item.type === 'ritual' ? translatedCatalogContent[canonical] : null;
+    const shownDescription = (ru?.description && /[A-Za-z]{4}/.test(item.system.description || '') && !/[А-Яа-яЁё]/.test(item.system.description || ''))
+      ? `<p>${String(ru.description).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>` : (item.system.description || '');
+    if (shownDescription !== (item.system.description || '')) {
+      ctx.system = { ...item.system.toObject(), description: shownDescription };
+    }
+    ctx.enrichedDescription = await TextEditor.enrichHTML(shownDescription, { relativeTo: item });
     // Dot cap follows the owner's generation; unowned items show the mortal cap
     ctx.traitMax = item.parent?.system?.traitMax || 5;
     return ctx;
@@ -392,6 +410,17 @@ export class VtmItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _onRender(context, options) {
     super._onRender(context, options);
     const el = this.element;
+    if (this.document.parent && isSheetLocked(this.document.parent, game.user)) {
+      el.classList.add('sheet-locked');
+      // Prevent actions that call item.update directly and don't go through
+      // the normal Foundry form handler, while allowing read/navigation.
+      el.querySelectorAll('input,textarea,select,prose-mirror,button,.dot,.bonus-add,.bonus-remove,.item-delete,[contenteditable]').forEach(ctrl => {
+        if ('disabled' in ctrl) ctrl.disabled = true;
+        ctrl.style.pointerEvents = 'none';
+        if (ctrl.hasAttribute('contenteditable')) ctrl.setAttribute('contenteditable','false');
+      });
+      return;
+    }
 
     el.querySelectorAll('.clan-disc-check').forEach(cb =>
       cb.addEventListener('change', () => {

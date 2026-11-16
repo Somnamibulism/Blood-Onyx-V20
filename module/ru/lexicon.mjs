@@ -540,3 +540,24 @@ Potence|Могущество
 Willpower|Воля
 Humanity|Человечность
 `.trim().split('\n').map(s=>s.split('|')));
+
+// ru.34: missing names from dialogs and legacy item tooltips.
+addEntries(`
+Rituals|Ритуалы
+Weapons|Оружие
+Inventory|Инвентарь
+Off hand|Другая рука
+Equipped|Экипировано
+Unequip|Убрать оружие
+Equip|Экипировать
+Shoot|Стрелять
+Reloaded|Перезаряжено
+Three-Round Burst|Короткая очередь
+Full Auto|Автоматический огонь
+Frenzy|Безумие
+Rötschreck|Ротшрек
+Fire|Огонь
+Courage|Смелость
+Bonfire|Костёр
+Lighting a cigarette|Прикуривание сигареты
+`);

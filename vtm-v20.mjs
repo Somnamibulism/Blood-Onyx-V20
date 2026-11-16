@@ -300,12 +300,14 @@ Hooks.once('init', () => {
   Actors.registerSheet('vtm-v20', VampireSheet, {
     types: ['vampire', 'mortal'],
     makeDefault: true,
-    label: 'VTM.SheetVampire'
+    label: 'VTM.SheetVampire',
+    themes: null // Skin is controlled by the single Blood Onyx client theme selector.
   });
 
   Items.registerSheet('vtm-v20', VtmItemSheet, {
     makeDefault: true,
-    label: 'VTM.SheetItem'
+    label: 'VTM.SheetItem',
+    themes: null
   });
 
   registerCompendiumSettings();
@@ -359,17 +361,17 @@ Hooks.once('init', () => {
   });
 
   game.settings.registerMenu('vtm-v20', 'authenticTextMenu', {
-    name: 'Authentic Text',
-    label: 'Open Authentic Text Manager',
-    hint: 'Own the book? Paste its text here to replace the shipped descriptions with the originals, locally in this world.',
+    name: 'Подлинный текст правил',
+    label: 'Открыть менеджер текстов',
+    hint: 'Если у тебя есть приобретённая книга правил, добавь сюда фрагменты исходного текста вместо кратких описаний, поставляемых в сборке. Замена действует только в этом мире.',
     icon: 'fas fa-book-open',
     type: AuthenticTextManager,
     restricted: true,
   });
 
   game.settings.register('vtm-v20', 'moneyAnimation', {
-    name: 'Money Change Animation',
-    hint: 'Show a floating icon and play a sound when money is changed.',
+    name: 'Анимация изменения денег',
+    hint: 'Показывать всплывающий значок и проигрывать звук при изменении денег персонажа.',
     scope: 'world',
     config: true,
     type: Boolean,
@@ -377,8 +379,8 @@ Hooks.once('init', () => {
   });
 
   game.settings.register('vtm-v20', 'declarationTimer', {
-    name: 'Declaration Timer',
-    hint: 'Show a countdown timer during the declaration phase. When time runs out, the turn is automatically skipped.',
+    name: 'Таймер объявления действий',
+    hint: 'Показывать обратный отсчёт в фазе объявления действий. По окончании времени ход автоматически пропускается.',
     scope: 'world',
     config: true,
     type: Boolean,
@@ -386,8 +388,8 @@ Hooks.once('init', () => {
   });
 
   game.settings.register('vtm-v20', 'declarationTimerSeconds', {
-    name: 'Declaration Timer (seconds)',
-    hint: 'How many seconds each player has to declare their actions.',
+    name: 'Таймер объявления действий (секунды)',
+    hint: 'Сколько секунд выделяется игроку на объявление действий.',
     scope: 'world',
     config: true,
     type: Number,
@@ -396,12 +398,12 @@ Hooks.once('init', () => {
   });
 
   game.settings.register('vtm-v20', 'celerityMode', {
-    name: 'Celerity Rules',
-    hint: 'Which Celerity ruleset combat uses. Hover the markers below for what each one does.',
+    name: 'Правила Стремительности',
+    hint: 'Какие правила Стремительности использовать в бою. Подробности показаны в подсказках ниже.',
     scope: 'world',
     config: true,
     type: String,
-    choices: { homebrew: 'Homebrew (enhanced)', raw: 'RAW V20' },
+    choices: { homebrew: 'Авторский вариант (усиленный)', raw: 'Базовые правила V20' },
     default: 'raw',
   });
 
@@ -422,7 +424,7 @@ Hooks.once('init', () => {
   });
 
   // Theme: a class on the body, the stylesheet does the rest
-  const SHEET_THEME_CLASSES = ['vtm-theme-modern', 'vtm-theme-dark-obsidian', 'vtm-theme-glass-crimson', 'vtm-theme-printed'];
+  const SHEET_THEME_CLASSES = ['vtm-theme-modern', 'vtm-theme-dark-obsidian', 'vtm-theme-glass-crimson', 'vtm-theme-glass-onyx', 'vtm-theme-printed'];
   const applySheetTheme = () => {
     const body = document.body;
     for (const cls of SHEET_THEME_CLASSES) body.classList.remove?.(cls);
@@ -435,10 +437,11 @@ Hooks.once('init', () => {
       modern: 'vtm-theme-modern',
       obsidian: 'vtm-theme-dark-obsidian',
       glass: 'vtm-theme-glass-crimson',
+      blackglass: 'vtm-theme-glass-onyx vtm-theme-glass-crimson',
       printed: 'vtm-theme-printed',
     })[theme] || 'vtm-theme-modern';
 
-    body.classList.add?.(themeClass);
+    for (const cls of themeClass.split(' ')) body.classList.add?.(cls);
   };
   game.settings.register('vtm-v20', 'sheetTheme', {
     name: 'Тема интерфейса Blood Onyx',
@@ -450,6 +453,7 @@ Hooks.once('init', () => {
       modern: 'Blood Onyx — базовая',
       obsidian: 'Dark Obsidian — тёмная',
       glass: 'Glass Crimson — полупрозрачное стекло',
+      blackglass: 'Glass Onyx — чёрное стекло',
       printed: 'Printed Sheet — печатная',
     },
     default: 'modern',

@@ -6047,3 +6047,8 @@ body.vtm-theme-printed .vtm-roll .result-botch { color: #701722; }
   padding-left: 4px;
   pointer-events: none;
 }
+
+/* ru.34: Block all manual changes, not just dotted traits. */
+.vtm-v20.sheet-locked :is(.item-equip,.portrait-edit,.blood-spend,.blood-gain,.health-box,.wp-track .square,.spec-edit,.exp-fields input,.path-select,.bg-notes,.bio-toolbar,.ru-homebrew-create,.item-delete,.item-create,.attack-create,.attack-delete) { pointer-events:none!important;opacity:.50;cursor:default!important; }
+.vtm-v20.sheet-locked :is(input,textarea,select,[contenteditable=true],prose-mirror) { caret-color:transparent; }
+.vtm-v20.sheet-locked .bio-body { user-select:text; }

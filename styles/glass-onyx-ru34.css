@@ -1,0 +1,52 @@
+/* Glass Onyx is Glass Crimson's transparent material with neutral black glass. */
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson {
+  --vtm-bg:rgba(6,8,11,.65);--vtm-surface:rgba(17,21,29,.28);
+  --vtm-surface-light:rgba(35,42,51,.32);--vtm-border:rgba(180,194,214,.24);
+  --vtm-red:#a7b8cf;--vtm-red-dim:#536778;--vtm-red-glow:rgba(147,168,193,.17);
+  --vtm-gold:#d9d2c4;--vtm-text:#e8eaf0;--vtm-text-dim:#a6afb9;
+  --vtm-text-bright:#fff;--color-cool-5:rgba(6,8,11,.74);
+  --color-cool-5-90:rgba(6,8,11,.85);--color-cool-5-75:rgba(6,8,11,.65);
+  --color-cool-5-50:rgba(6,8,11,.48);--color-cool-4:rgba(21,27,34,.6);
+  --color-cool-3:rgba(180,194,214,.19);
+  --color-shadow-primary:#9badc7;--color-shadow-highlight:#d9d2c4;
+  --color-scrollbar:#536778;--vtm-panel-fx:blur(18px) saturate(95%);
+}
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .window-app:not([class*=compendium]) .window-header,
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet .window-header {
+  background-image:linear-gradient(110deg,rgba(24,30,39,.46),rgba(3,5,9,.55))!important;
+  border-color:rgba(175,191,211,.24)!important;
+}
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .window-app:not([class*=compendium]) .window-content,
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet .window-content {
+  background-image:linear-gradient(155deg,rgba(31,39,48,.37),rgba(5,8,12,.36) 64%,rgba(17,23,29,.28))!important;
+  background-color:rgba(5,7,11,.13)!important;
+  border-color:rgba(175,191,211,.26)!important;
+  backdrop-filter:blur(16px) saturate(95%)!important;
+}
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet :is(.sheet-header,.portrait-panel,.status-block,.section-block,.trait-column,.item-list,.path-block,.health-track,.ru-library-picker,.combat-drawer,.combat-box,.attack-row,.ru-combat-hint,.money-section,.sheet-tabs .item,.decl-attack-list,.decl-actions,.res-actions,.ru-persistent-identity,.ru-combat-quick-maneuvers) {
+  background:linear-gradient(165deg,rgba(48,57,70,.23),rgba(5,9,14,.27))!important;
+  border-color:rgba(180,194,214,.25)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 3px 12px rgba(0,0,0,.10)!important;
+}
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet :is(input,select,textarea,button),
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet .attack-row .card-header {
+  background:linear-gradient(180deg,rgba(43,50,61,.25),rgba(7,11,16,.31))!important;
+  border-color:rgba(177,192,213,.25)!important;
+  color:#edf0f4;
+}
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet .attack-row:hover {
+  box-shadow:0 0 0 1px rgba(178,193,212,.17),0 0 16px rgba(151,172,199,.09)!important;
+}
+
+/* Stronger specificity than inherited Crimson rules, including window frames. */
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet.window-app,
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet.actor,
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet.item {
+  background:rgba(5,7,11,.18)!important;
+  background-color:rgba(5,7,11,.18)!important;
+  border-color:rgba(165,180,203,.29)!important;
+  box-shadow:0 20px 55px rgba(0,0,0,.30),0 0 0 1px rgba(255,255,255,.05)!important;
+}
+body.vtm-theme-glass-onyx.vtm-theme-glass-crimson .vtm-v20.sheet .trait-row:hover {
+  background:rgba(125,148,178,.11)!important;
+}

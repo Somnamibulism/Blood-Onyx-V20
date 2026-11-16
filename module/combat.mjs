@@ -541,29 +541,10 @@ export async function rollAttack(attacker, atk, options = {}) {
     biteKiss = mode === 'kiss';
   }
 
-  // Sweep: legs (Dex + Brawl, Str) or an equipped melee weapon (Dex + Melee,
-  // weapon damage). Same trip either way.
-  if (atk.sweep) {
-    const weapon = Array.from(attacker.items).find(i => i.type === 'weapon' && i.system.equipped && !i.system.range);
-    let mode = 'legs';
-    if (weapon) {
-      mode = await new Promise(resolve => {
-        new Dialog({
-          title: `${attacker.name}: Sweep`,
-          content: '<p style="margin:8px 0;color:#ddd;">Sweep with your legs, or with a weapon?</p>',
-          buttons: {
-            legs: { icon: '<i class="fas fa-shoe-prints"></i>', label: 'Legs (Dex + Brawl)', callback: () => resolve('legs') },
-            weapon: { icon: '<i class="fas fa-broom"></i>', label: `${weapon.name} (Dex + Melee)`, callback: () => resolve('weapon') },
-          },
-          default: 'legs',
-          close: () => resolve(null),
-        }, { classes: ['vtm-v20', 'dialog'], width: 380 }).render(true);
-      });
-      if (!mode) return false;
-    }
-    atk = mode === 'weapon'
-      ? { ...atk, skill: 'abilities.melee', damageFormula: weapon.system.damage || 'Str', damageType: weapon.system.damageType || 'bashing', name: `Sweep (${weapon.name})` }
-      : { ...atk, skill: 'abilities.brawl', damageFormula: 'Str', damageType: 'bashing' };
+  // Sweep: explicit weapon variant rows choose the correct weapon and pool
+  // BEFORE declaration; the leg sweep remains the original base maneuver.
+  if (atk.sweep && !atk.forcedWeaponId) {
+    atk = { ...atk, skill: 'abilities.brawl', damageFormula: 'Str', damageType: 'bashing' };
   }
 
   // Fire mode (picked on the sheet): burst is a flat +2 dice at +1 difficulty,
@@ -608,7 +589,10 @@ export async function rollAttack(attacker, atk, options = {}) {
 
   const computedPool = actionDiceCount(atkPool.pool + blindTargetBonus + strugglingImmobilizedBonus);
   const hasPoolOverride = options.poolOverride !== undefined && options.poolOverride !== null;
-  let pool = actionDiceCount((hasPoolOverride ? options.poolOverride : computedPool) + flankBonus + fireBonus - lengthPenalty);
+  const aimFlag = attacker.getFlag('vtm-v20', 'aimedShot') || {};
+  const aimBonus = atk.isRanged && !options.movingShot && !fireMode && aimFlag.weaponId === atk.id
+    ? Math.min(Math.max(0, Number(aimFlag.turns) || 0), Math.max(0, Number(attacker.system.attributes?.perception) || 0)) : 0;
+  let pool = actionDiceCount((hasPoolOverride ? options.poolOverride : computedPool) + flankBonus + fireBonus + aimBonus - lengthPenalty);
   const targetingDifficulty = targeting?.difficultyMod || 0;
   // Multiple opponents in close combat: +1 difficulty per extra foe, max +4
   const multiOpp = atk.isRanged ? 0 : Math.min(attacker.getFlag('vtm-v20', 'multiOpp') || 0, 4);
@@ -620,7 +604,10 @@ export async function rollAttack(attacker, atk, options = {}) {
   const rangeLabel = rangeMode === 'pointblank' ? 'point blank -2 diff' : 'max range +2 diff';
   // Off hand: +1 difficulty, waived by the Ambidextrous merit
   const offHandDiff = (atk.offHand && !Array.from(attacker.items).some(i => i.type === 'merit' && /ambidext/i.test(canonicalName(i.name)))) ? 1 : 0;
-  const baseDifficulty = Math.min(cover.difficulty + targetingDifficulty + multiOpp + atkUnbalanced + fireDiff + rangeDiff + offHandDiff, 10);
+  // V20: shooting while moving increases difficulty by one; no flat dice
+  // penalty is baked here (the separate movement/action budget still applies).
+  const movingDiff = atk.isRanged && options.movingShot ? 1 : 0;
+  const baseDifficulty = Math.min(cover.difficulty + targetingDifficulty + multiOpp + atkUnbalanced + fireDiff + rangeDiff + offHandDiff + movingDiff, 10);
   let difficulty = attackerBlinded ? Math.min(baseDifficulty + 2, 10) : baseDifficulty;
   const label = defender ? `${atk.name} -> ${defender.name}` : `${atk.name} Attack`;
 
@@ -636,6 +623,7 @@ export async function rollAttack(attacker, atk, options = {}) {
     if (flankBonus) poolBits.push(flankLabel);
     if (lengthPenalty) poolBits.push('weapon length -1');
     if (fireBonus) poolBits.push(fireMode === 'auto' ? `full auto +${fireBonus}` : 'burst +2');
+    if (aimBonus) poolBits.push(`прицеливание +${aimBonus}`);
     const poolLabel = options.poolOverride
       ? ['declared allocation', flankBonus ? flankLabel : '', fireBonus ? (fireMode === 'auto' ? `full auto +${fireBonus}` : 'burst +2') : '', lengthPenalty ? 'weapon length -1' : '', options.poolNote].filter(Boolean).join(', ')
       : poolBits.join(' + ');
@@ -644,6 +632,7 @@ export async function rollAttack(attacker, atk, options = {}) {
     if (multiOpp) diffNotes.push(`outnumbered +${multiOpp} diff`);
     if (atkUnbalanced) diffNotes.push('unbalanced +1 diff');
     if (fireDiff) diffNotes.push(fireMode === 'auto' ? 'full auto +2 diff' : 'burst +1 diff');
+    if (movingDiff) diffNotes.push('стрельба в движении +1 сложность');
     if (rangeDiff) diffNotes.push(rangeLabel);
     if (offHandDiff) diffNotes.push('off hand +1 diff');
     if (attackerBlinded) diffNotes.push('blinded +2 diff');

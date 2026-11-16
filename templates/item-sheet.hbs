@@ -17,7 +17,7 @@
 <div class="sheet-content">
   {{#if (or (eq item.type "discipline") (eq item.type "path"))}}
   <div class="form-group">
-    <label>Level</label>
+    <label>Уровень</label>
     <div class="dot-row" data-path="system.level">
       {{{vtmDots system.level traitMax}}}
     </div>
@@ -25,7 +25,7 @@
 
   {{#if (eq item.type "path")}}
   <div class="form-group">
-    <label>Category</label>
+    <label>Категория</label>
     <select name="system.category">
       {{#each config.pathCategories}}
       <option value="{{this}}" {{#if (eq this ../system.category)}}selected{{/if}}>{{this}}</option>
@@ -48,9 +48,9 @@
     <div class="power-level {{#unless this.name}}empty-power{{/unless}}">
       <div class="power-header">
         <span class="power-num">{{this.num}}</span>
-        <input type="text" name="system.powers.{{this.key}}.name" value="{{this.name}}" placeholder="Power Name" class="power-name-input" />
+        <input type="text" name="system.powers.{{this.key}}.name" value="{{this.name}}" placeholder="Название способности" class="power-name-input" />
         {{#if this.hasRoll}}
-        <button type="button" class="power-roll" data-level="{{this.key}}" title="Roll"><i class="fas fa-dice-d20"></i></button>
+        <button type="button" class="power-roll" data-level="{{this.key}}" title="Бросить проверку"><i class="fas fa-dice-d20"></i></button>
         {{/if}}
         {{#if this.hasActivate}}
         <button type="button" class="power-activate" data-level="{{this.key}}" title="Activate"><i class="fas fa-bolt"></i></button>
@@ -70,9 +70,9 @@
           <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
           {{/each}}
         </select>
-        <label class="power-diff-label">Diff</label>
+        <label class="power-diff-label">Сл.</label>
         <input type="number" name="system.powers.{{this.key}}.difficulty" value="{{this.difficulty}}" min="2" max="10" class="power-diff" />
-        <input type="text" name="system.powers.{{this.key}}.cost" value="{{this.cost}}" placeholder="Цена: 1 blood, 2 Willpower" class="power-cost" />
+        <input type="text" name="system.powers.{{this.key}}.cost" value="{{this.cost}}" placeholder="Цена: 1 кровь, 2 Сила воли" class="power-cost" />
       </div>
       <details class="ru-power-homebrew">
         <summary>Автоэффект / хоумбрю</summary>
@@ -120,11 +120,11 @@
 
   {{#if (eq item.type "ritual")}}
   <div class="form-group">
-    <label>Level</label>
+    <label>Уровень</label>
     <input type="number" name="system.level" value="{{system.level}}" min="1" max="5" />
   </div>
   <div class="form-group">
-    <label>Type</label>
+    <label>Тип</label>
     <select name="system.ritualType">
       {{#each config.ritualTypes}}
       <option value="{{this}}" {{#if (eq this ../system.ritualType)}}selected{{/if}}>{{this}}</option>
@@ -132,7 +132,7 @@
     </select>
   </div>
   <div class="form-group ritual-cast-group">
-    <label>Casting Roll</label>
+    <label>Проверка ритуала</label>
     <div class="ritual-cast-row">
       <select name="system.primary" class="power-trait">
         {{#each ritualPrimaryOptions}}
@@ -145,20 +145,20 @@
         <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
         {{/each}}
       </select>
-      <label class="power-diff-label">Diff</label>
-      <input type="number" class="power-diff ritual-diff" value="{{ritualCastDiff}}" min="2" max="10" title="Automatic: 3 + ritual level (max 9). Type another number to override, or the automatic value to follow the level again." />
-      <button type="button" class="ritual-roll" title="Roll the casting"><i class="fas fa-dice-d20"></i></button>
+      <label class="power-diff-label">Сл.</label>
+      <input type="number" class="power-diff ritual-diff" value="{{ritualCastDiff}}" min="2" max="10" title="Автоматическая сложность: 3 + уровень ритуала (максимум 9). Укажи другое число вручную или верни вычисленное значение." />
+      <button type="button" class="ritual-roll" title="Бросить проверку ритуала"><i class="fas fa-dice-d20"></i></button>
     </div>
   </div>
   {{/if}}
 
   {{#if (eq item.type "clan")}}
   <div class="form-group">
-    <label>Weakness</label>
+    <label>Слабость</label>
   </div>
-  <textarea name="system.weakness" class="clan-weakness" rows="5" placeholder="Shown on the sheet when hovering the mark next to Clan...">{{system.weakness}}</textarea>
+  <textarea name="system.weakness" class="clan-weakness" rows="5" placeholder="Показывается на листе при наведении на метку рядом с кланом...">{{system.weakness}}</textarea>
   <div class="form-group">
-    <label>Typical Disciplines</label>
+    <label>Типичные дисциплины</label>
   </div>
   <div class="clan-disc-grid">
     {{#each clanDisciplineOptions}}
@@ -169,7 +169,7 @@
 
   {{#if (eq item.type "background")}}
   <div class="form-group">
-    <label>Rating</label>
+    <label>Уровень</label>
     <div class="dot-row" data-path="system.rating">
       {{{vtmDots system.rating traitMax}}}
     </div>
@@ -190,7 +190,7 @@
     <div class="power-level {{#unless this.name}}empty-power{{/unless}}">
       <div class="power-header">
         <span class="power-num">{{this.num}}</span>
-        <input type="text" name="system.levels.{{this.key}}.name" value="{{this.name}}" placeholder="Level Name" class="power-name-input" />
+        <input type="text" name="system.levels.{{this.key}}.name" value="{{this.name}}" placeholder="Название уровня" class="power-name-input" />
       </div>
       <div class="power-desc">
         {{#if ../isEditable}}
@@ -206,11 +206,11 @@
 
   {{#if (eq item.type "merit")}}
   <div class="form-group">
-    <label>Cost</label>
+    <label>Стоимость</label>
     <input type="number" name="system.cost" value="{{system.cost}}" min="-7" max="7" />
   </div>
   <div class="form-group">
-    <label>Type</label>
+    <label>Тип</label>
     <select name="system.meritType">
       {{#each config.meritTypes}}
       <option value="{{this}}" {{#if (eq this ../system.meritType)}}selected{{/if}}>{{this}}</option>
@@ -221,30 +221,30 @@
 
   {{#if (eq item.type "weapon")}}
   <div class="form-group">
-    <label>Equipped</label>
+    <label>Экипировано</label>
     <input type="checkbox" name="system.equipped" {{#if system.equipped}}checked{{/if}} />
   </div>
   <div class="form-group">
-    <label>Weight (kg)</label>
+    <label>Вес (кг)</label>
     <input type="number" name="system.weight" value="{{system.weight}}" min="0" step="0.1" />
   </div>
   <div class="form-group">
-    <label>Hands</label>
+    <label>Хват</label>
     <select name="system.hands">
-      <option value="1" {{#if (eq system.hands 1)}}selected{{/if}}>One-handed</option>
-      <option value="2" {{#if (eq system.hands 2)}}selected{{/if}}>Two-handed</option>
+      <option value="1" {{#if (eq system.hands 1)}}selected{{/if}}>Одноручное</option>
+      <option value="2" {{#if (eq system.hands 2)}}selected{{/if}}>Двуручное</option>
     </select>
   </div>
   <div class="form-group">
-    <label>Firearm</label>
-    <input type="checkbox" name="system.firearm" {{#if system.firearm}}checked{{/if}} title="Firearms deal bashing damage to Kindred unless aimed at the head" />
+    <label>Огнестрельное</label>
+    <input type="checkbox" name="system.firearm" {{#if system.firearm}}checked{{/if}} title="Пули обычно наносят вампирам ударный урон, кроме попаданий в голову" />
   </div>
   <div class="form-group">
-    <label>Damage</label>
+    <label>Урон</label>
     <input type="text" name="system.damage" value="{{system.damage}}" />
   </div>
   <div class="form-group">
-    <label>Type</label>
+    <label>Тип</label>
     <select name="system.damageType">
       {{#each config.damageTypes}}
       <option value="{{this}}" {{#if (eq this ../system.damageType)}}selected{{/if}}>{{this}}</option>
@@ -256,11 +256,11 @@
     <input type="text" name="system.conceal" value="{{system.conceal}}" />
   </div>
   <div class="form-group">
-    <label>Range</label>
+    <label>Дальность</label>
     <input type="text" name="system.range" value="{{system.range}}" placeholder="—" />
   </div>
   <div class="form-group">
-    <label>Capacity</label>
+    <label>Магазин</label>
     <input type="text" name="system.capacity" value="{{system.capacity}}" placeholder="—" />
   </div>
   <div class="form-group">
@@ -290,15 +290,15 @@
 
   {{#if (eq item.type "armor")}}
   <div class="form-group">
-    <label>Equipped</label>
+    <label>Экипировано</label>
     <input type="checkbox" name="system.equipped" {{#if system.equipped}}checked{{/if}} />
   </div>
   <div class="form-group">
-    <label>Weight (kg)</label>
+    <label>Вес (кг)</label>
     <input type="number" name="system.weight" value="{{system.weight}}" min="0" step="0.1" />
   </div>
   <div class="form-group">
-    <label>Rating</label>
+    <label>Уровень</label>
     <input type="number" name="system.rating" value="{{system.rating}}" min="0" max="5" />
   </div>
   <div class="form-group">
@@ -332,11 +332,11 @@
 
   {{#if (eq item.type "equipment")}}
   <div class="form-group">
-    <label>Equipped</label>
+    <label>Экипировано</label>
     <input type="checkbox" name="system.equipped" {{#if system.equipped}}checked{{/if}} />
   </div>
   <div class="form-group">
-    <label>Weight (kg)</label>
+    <label>Вес (кг)</label>
     <input type="number" name="system.weight" value="{{system.weight}}" min="0" step="0.1" />
   </div>
   <div class="form-group">
@@ -347,15 +347,15 @@
 
   {{#if (eq item.type "container")}}
   <div class="form-group">
-    <label>Equipped</label>
+    <label>Экипировано</label>
     <input type="checkbox" name="system.equipped" {{#if system.equipped}}checked{{/if}} />
   </div>
   <div class="form-group">
-    <label>Weight (kg)</label>
+    <label>Вес (кг)</label>
     <input type="number" name="system.weight" value="{{system.weight}}" min="0" step="0.1" />
   </div>
   <div class="form-group">
-    <label>Capacity</label>
+    <label>Магазин</label>
     <input type="number" name="system.capacity" value="{{system.capacity}}" min="0" max="100" />
   </div>
   {{/if}}
