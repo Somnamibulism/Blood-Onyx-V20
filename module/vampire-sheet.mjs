@@ -1097,13 +1097,13 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       p.classList.toggle('active', p.dataset.tab === this._tab));
     el.querySelector('.sheet-body')?.classList.toggle('bio-active', this._tab === 'bio');
 
+    // The library is a catalog and remains visible even in a locked or
+    // read-only sheet. Only writing the selected item into the actor is gated.
+    // In ru.34 the binding was accidentally skipped whenever the lock was on,
+    // leaving every picker empty (especially the weapons picker).
+    const canEdit = this.isEditable && canManuallyEditSheet(this.document, game.user);
+    this._bindInlineLibraries(el, {canEdit});
     if (!this.isEditable) return;
-
-    const canEdit = canManuallyEditSheet(this.document, game.user);
-    // Dropdowns use V20 source catalogs directly, even before GM compendium
-    // seeding finishes. When a pack is available we import its real document
-    // instead, preserving its GM customizations.
-    if (canEdit) this._bindInlineLibraries(el);
 
     // Path changes are manual edits and must obey the same lock as other fields.
     // A dedicated update avoids competing native auto-save and ensures the bearing refreshes.
@@ -1945,7 +1945,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   // Foundry V13 owns all window-header icons. Never inject additional SVGs:
   // standard Font Awesome icons are already supplied by core controls.
 
-  _bindInlineLibraries(el) {
+  _bindInlineLibraries(el, {canEdit = false} = {}) {
     for (const picker of el.querySelectorAll('.ru-library-picker')) {
       const kind = picker.dataset.libraryKind;
       const source = RU_LIBRARY_SOURCES[kind] || [];
@@ -1972,17 +1972,22 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         } else {
           select.add(new Option('Ничего не найдено', ''));
         }
-        add.disabled = !hits.length;
+        add.disabled = !canEdit || !hits.length;
+        add.title = canEdit ? '' : 'Разблокируйте лист, чтобы добавить предмет';
       };
+      // Populate on every render, not only on <details> toggle. This also
+      // covers browsers that restore the open state without firing toggle.
+      filtered();
       picker.addEventListener('toggle', () => { if (picker.open) { filtered(); search.focus(); } });
       search.addEventListener('input', filtered);
       add.addEventListener('click', async ev => {
         ev.preventDefault();
+        if (!canEdit || !canManuallyEditSheet(this.document, game.user)) return;
         const item = source[Number(select.value)];
         if (!item) return;
         add.disabled=true;
         try { await this._addFromLibrary(item, packName); }
-        finally { add.disabled=false; }
+        finally { add.disabled = !canManuallyEditSheet(this.document, game.user); }
       });
       open.addEventListener('click', ev => {
         ev.preventDefault();
@@ -1996,7 +2001,7 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async _addFromLibrary(item, packName) {
-    if (!this.isEditable) return;
+    if (!this.isEditable || !canManuallyEditSheet(this.document, game.user)) return;
     const translatedName = displayName(item.name);
     const canonical = canonicalName(translatedName);
     const duplicate = this.document.items.find(owned =>
@@ -2022,6 +2027,9 @@ export class VampireSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     delete data._id;
     delete data.id;
     delete data.folder;
+    // The pack lookup above is asynchronous: recheck the lock just before
+    // creating the embedded document to avoid writes after a remote relock.
+    if (!canManuallyEditSheet(this.document, game.user)) return;
     const [created] = await this.document.createEmbeddedDocuments('Item',[data]);
     if (created) ui.notifications.info(`Добавлено в лист: ${created.name}`);
   }
